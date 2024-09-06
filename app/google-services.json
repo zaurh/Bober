@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107296471290",
+    "project_id": "bober-e086b",
+    "storage_bucket": "bober-e086b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107296471290:android:2b5dd5cf3f51133a967143",
+        "android_client_info": {
+          "package_name": "com.zaurh.bober"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDppUKnSIfi9TkuTSB6s3kKGWzbAlwXh2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
