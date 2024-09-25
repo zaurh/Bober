@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,17 +82,17 @@ fun MatchUserItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
 
                 Text(
                     text = userData.username ?: "",
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.primary
                 )
-                if (typing){
+                if (typing) {
                     Text(text = "typing...", fontSize = 14.sp, color = Color.Gray)
 
-                }else{
+                } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val tickIcon = when (lastMessageStatus) {
                             MessageStatus.SENT -> R.drawable.sent_ic
@@ -99,16 +100,27 @@ fun MatchUserItem(
                             MessageStatus.READ -> R.drawable.read_ic
                             MessageStatus.FAILED -> R.drawable.sent_ic
                         }
-                        if (lastMessageSenderIsCurrent){
-                            Image(painterResource(id = tickIcon) , contentDescription = "message_status",modifier = Modifier.size(16.dp))
+                        if (lastMessageSenderIsCurrent) {
+                            Image(
+                                painterResource(id = tickIcon),
+                                contentDescription = "message_status",
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.size(4.dp))
-                        Text(text = lastMessage, fontSize = 14.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            text = lastMessage,
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
 
             }
             Column(
+                modifier = Modifier.wrapContentWidth(),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.End
             ) {
@@ -132,9 +144,6 @@ fun MatchUserItem(
                     )
                 }
             }
-
-
         }
-
     }
 }

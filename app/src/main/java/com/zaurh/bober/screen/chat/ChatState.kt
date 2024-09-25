@@ -8,5 +8,6 @@ data class ChatState(
     val recipientOnlineStatus: Boolean? = null,
     val recipientLastSeen: Long? = null,
     val recipientIsTyping: Boolean? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val socketIsObserving: Boolean = false
 )

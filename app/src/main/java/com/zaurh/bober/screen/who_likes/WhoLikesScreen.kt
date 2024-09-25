@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.who_likes.components.WL_Content
 import com.zaurh.bober.screen.who_likes.components.WL_TopBar
@@ -13,7 +12,7 @@ import com.zaurh.bober.screen.who_likes.components.WL_TopBar
 @Composable
 fun WhoLikesScreen(
     navController: NavController,
-    whoLikesViewModel: WhoLikesViewModel = hiltViewModel()
+    whoLikesViewModel: WhoLikesViewModel
 ) {
     Scaffold(
         topBar = {

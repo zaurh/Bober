@@ -95,10 +95,18 @@ class MainActivity : ComponentActivity() {
                         webSocketRepository.closeSession()
                     }
                 }
+
+                val navigateTo = intent.getStringExtra("navigate_to")
+                LaunchedEffect(navigateTo) {
+                    if (navigateTo != null) {
+                        navController.navigate(navigateTo)
+                    }
+                }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
+                   
                     SetupNavGraph(
                         navController = navController,
                         startDestination = if (signedIn.value) Screen.PagerScreen.route else Screen.SignInScreen.route,

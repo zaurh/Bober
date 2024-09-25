@@ -72,6 +72,7 @@ fun MatchScreen(
         GotMatchAlert(recipientImage = recipientImage)
     }
 
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -82,7 +83,6 @@ fun MatchScreen(
         Box {
             val users = userDataList.value
                 .filter {
-
                     val distance = matchViewModel.distance.value
                     val blockList = currentUser.value?.blockList ?: listOf()
                     val likedUsers = currentUser.value?.likedUsers ?: listOf()
@@ -130,9 +130,7 @@ fun MatchScreen(
 
                 states.forEach { (matchProfile, state) ->
                     if (state.swipedDirection == null) {
-
                         val alphaOffset = state.offset.value.x
-
                         MatchCardItem(
                             modifier = Modifier
                                 .fillMaxSize()

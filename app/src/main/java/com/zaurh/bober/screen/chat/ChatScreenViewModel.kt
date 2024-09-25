@@ -16,6 +16,7 @@ import com.zaurh.bober.domain.repository.UserRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.screen.match.GotMatchState
+import com.zaurh.bober.screen.settings.notifications.NotificationType
 import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
 import com.zaurh.bober.screen.settings.notifications.showNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -74,6 +75,9 @@ class ChatScreenViewModel @Inject constructor(
         val dataStore = NotificationPreferences(context)
 
         viewModelScope.launch {
+            _state.value = state.value.copy(
+                socketIsObserving = true
+            )
             webSocketRepository.initSession()
             getAllMessages()
             webSocketRepository.observeMessages()
@@ -234,7 +238,8 @@ class ChatScreenViewModel @Inject constructor(
                             channelId = "chat",
                             context = context,
                             text = text,
-                            title = messageData.senderUsername ?: ""
+                            title = messageData.senderUsername ?: "",
+                            notificationType = NotificationType.CHAT
                         )
                     }
                 }
@@ -280,7 +285,8 @@ class ChatScreenViewModel @Inject constructor(
                     channelId = "like",
                     context = context,
                     title = "Bober",
-                    text = "Someone liked you!"
+                    text = "Someone liked you!",
+                    notificationType = NotificationType.LIKE
                 )
             }
         }
@@ -311,7 +317,8 @@ class ChatScreenViewModel @Inject constructor(
                         channelId = "match",
                         context = context,
                         title = "Bober",
-                        text = "You've got a new match!"
+                        text = "You've got a new match!",
+                        notificationType = NotificationType.MATCH
                     )
                 }
             }

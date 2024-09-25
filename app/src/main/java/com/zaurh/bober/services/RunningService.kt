@@ -6,6 +6,8 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.zaurh.bober.domain.repository.WebSocketRepository
+import com.zaurh.bober.model.MessageData
+import com.zaurh.bober.screen.settings.notifications.NotificationType
 import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
 import com.zaurh.bober.screen.settings.notifications.showNotification
 import com.zaurh.bober.ui.MainActivity
@@ -14,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,6 +33,7 @@ class RunningService : Service() {
         return null
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundService()
         startWebSocketConnection()
@@ -38,55 +42,85 @@ class RunningService : Service() {
 
     private fun startWebSocketConnection() {
         serviceScope.launch {
-            if (serviceScope.isActive) {
-                val notification = NotificationPreferences(this@RunningService)
+            while (serviceScope.isActive) {
+                try {
+//                    if (!webSocketRepository.isConnected()) {
+//                        webSocketRepository.initSession() // Connect only if not connected
+//                    }
 
-                webSocketRepository.observeMessages().collect { message ->
-                    when (message.text) {
-                        "typing:",
-                        "triggerOnline:",
-                        "readMessages:",
-                        "deliveredMessage:",
-                        "switched to:" -> {}
-                        "got_match:" -> {
-                            notification.getLikesStatus.collect{
-                                if (it){
-                                    showNotification(
-                                        channelId = "match",
-                                        context = this@RunningService,
-                                        text = "You've got a new match!",
-                                        title = "Bober"
-                                    )
-                                }
-                            }
-                        }
-                        "like_sent:" -> {
-                            notification.getLikesStatus.collect{
-                                if (it){
-                                    showNotification(
-                                        channelId = "like",
-                                        context = this@RunningService,
-                                        text = "Someone liked you!",
-                                        title = "Bober"
-                                    )
-                                }
-                            }
-                        }
-
-                        else ->
-                            notification.getMessagesStatus.collect{
-                                if (it){
-                                    val text = if (message.text?.endsWith(".gif") == true) "Sent GIF" else message.text ?: ""
-
-                                    showNotification(
-                                        channelId = "like",
-                                        context = this@RunningService,
-                                        text = text,
-                                        title = "${message.senderUsername}"
-                                    )
-                                }
-                            }
+                    webSocketRepository.observeMessages().collect { message ->
+                        // Handle incoming messages and notifications
+                        handleIncomingMessages(message)
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    delay(5000) // Adjust this delay
+                }
+            }
+        }
+    }
+
+//    private fun startWebSocketConnection() {
+//        serviceScope.launch {
+//            if (serviceScope.isActive) {
+//                webSocketRepository.observeMessages().collect { message ->
+//                    handleIncomingMessages(message)
+//                }
+//            }
+//        }
+//    }
+
+
+    private suspend fun handleIncomingMessages(message: MessageData) {
+        val notification = NotificationPreferences(this@RunningService)
+        when (message.text) {
+            "typing:",
+            "triggerOnline:",
+            "readMessages:",
+            "deliveredMessage:",
+            "switched to:" -> {
+            }
+
+            "got_match:" -> {
+                notification.getLikesStatus.collect {
+                    if (it) {
+                        showNotification(
+                            channelId = "match",
+                            context = this@RunningService,
+                            text = "You've got a new match!",
+                            title = "Bober",
+                            notificationType = NotificationType.MATCH
+                        )
+                    }
+                }
+            }
+
+            "like_sent:" -> {
+                notification.getLikesStatus.collect {
+                    if (it) {
+                        showNotification(
+                            channelId = "like",
+                            context = this@RunningService,
+                            text = "Someone liked you!",
+                            title = "Bober",
+                            notificationType = NotificationType.LIKE
+                        )
+                    }
+                }
+            }
+
+            else -> notification.getMessagesStatus.collect {
+                if (it) {
+                    val text =
+                        if (message.text?.endsWith(".gif") == true) "Sent GIF" else message.text
+                            ?: ""
+                    showNotification(
+                        channelId = "chat",
+                        context = this@RunningService,
+                        text = text,
+                        title = "${message.senderUsername}",
+                        notificationType = NotificationType.CHAT
+                    )
                 }
             }
         }
@@ -120,7 +154,6 @@ class RunningService : Service() {
 
         startForeground(1, notification)
     }
-
 
 
     override fun onDestroy() {

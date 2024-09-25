@@ -17,4 +17,3 @@ interface TenorApi {
         @Query("key") apiKey: String = TENOR_API_KEY
     ): TenorResponse
 }
-

@@ -18,9 +18,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.data.user.UserData
@@ -32,7 +29,7 @@ import com.zaurh.bober.screen.home.components.SearchBar
 @Composable
 fun HomeScreen(
     navController: NavController,
-    homeViewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel,
     chatScreenViewModel: ChatScreenViewModel
 ) {
 
@@ -45,10 +42,7 @@ fun HomeScreen(
     val chatState = chatScreenViewModel.state.value
 
 
-    LifecycleEventEffect(event = Lifecycle.Event.ON_START) {
-        homeViewModel.getAllUsers()
-        homeViewModel.getUserData()
-    }
+
 
 
     BackHandler(

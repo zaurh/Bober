@@ -17,6 +17,7 @@ import com.zaurh.bober.screen.chat.ChatScreen
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.edit_profile.EditProfileScreen
 import com.zaurh.bober.screen.home.HomeScreen
+import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.liked_users.LikedUsersScreen
 import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
@@ -31,6 +32,7 @@ import com.zaurh.bober.screen.sign_up.sign_up_about.SignUpAbout
 import com.zaurh.bober.screen.sign_up.sign_up_image.SignUpImage
 import com.zaurh.bober.screen.sign_up.sign_up_username.SignUpUsername
 import com.zaurh.bober.screen.who_likes.WhoLikesScreen
+import com.zaurh.bober.screen.who_likes.WhoLikesViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -45,6 +47,8 @@ fun SetupNavGraph(
     val signUpViewModel = hiltViewModel<SignUpViewModel>()
     val signInViewModel = hiltViewModel<SignInViewModel>()
     val blockedUsersViewModel = hiltViewModel<BlockedUsersViewModel>()
+    val whoLikesViewModel = hiltViewModel<WhoLikesViewModel>()
+    val homeViewModel = hiltViewModel<HomeViewModel>()
 
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -53,7 +57,8 @@ fun SetupNavGraph(
             PagerScreen(
                 navController = navController,
                 chatScreenViewModel = chatScreenViewModel,
-                matchViewModel = matchViewModel
+                matchViewModel = matchViewModel,
+                homeViewModel = homeViewModel
             )
         }
 
@@ -125,7 +130,8 @@ fun SetupNavGraph(
         }
         composable(route = Screen.WhoLikesScreen.route) {
             WhoLikesScreen(
-                navController = navController
+                navController = navController,
+                whoLikesViewModel = whoLikesViewModel
             )
         }
         composable(route = Screen.SettingsScreen.route) {
@@ -149,7 +155,8 @@ fun SetupNavGraph(
         composable(route = Screen.HomeScreen.route) {
             HomeScreen(
                 navController = navController,
-                chatScreenViewModel = chatScreenViewModel
+                chatScreenViewModel = chatScreenViewModel,
+                homeViewModel = homeViewModel
             )
         }
     }

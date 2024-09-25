@@ -94,7 +94,7 @@ class EditProfileViewModel @Inject constructor(
     fun onUsernameChange(username: String) {
         if (username.length <= 20){
             _usernameState.value = usernameState.value.copy(
-                text = username
+                text = username.lowercase()
             )
         }
     }

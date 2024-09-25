@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface WebSocketRepository {
 
+    suspend fun isConnected(): Boolean
 
     suspend fun initSession(): Resource<Unit>
 

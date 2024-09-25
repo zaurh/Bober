@@ -33,6 +33,10 @@ class WebSocketRepoImpl @Inject constructor(
 
     private var socket: WebSocketSession? = null
 
+    override suspend fun isConnected(): Boolean {
+        return socket?.isActive ?: false
+    }
+
 
     override suspend fun initSession(): Resource<Unit> {
         return try {

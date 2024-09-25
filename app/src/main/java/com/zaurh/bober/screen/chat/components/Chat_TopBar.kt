@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -120,7 +121,17 @@ fun Chat_TopBar(
             IconButton(onClick = {
                 chatScreenViewModel.openModalSheet()
             }) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (chatState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            color = MaterialTheme.colorScheme.secondary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(Modifier.size(8.dp))
+                    }
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                }
             }
         }
     )
