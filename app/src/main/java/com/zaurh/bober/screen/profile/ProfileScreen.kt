@@ -7,7 +7,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.profile.components.ProfileContent
 import com.zaurh.bober.screen.profile.components.Profile_TopBar
@@ -17,7 +16,7 @@ import com.zaurh.bober.util.calculateAge
 @Composable
 fun ProfileScreen(
     username: String,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel,
     navController: NavController
 ) {
     val profileData = profileViewModel.profileDataState.collectAsState()

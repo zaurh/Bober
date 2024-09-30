@@ -3,7 +3,12 @@ package com.zaurh.bober.navigation
 import SignUpGender
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,8 +26,10 @@ import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.liked_users.LikedUsersScreen
 import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
+import com.zaurh.bober.screen.match.components.GotMatchAlert
 import com.zaurh.bober.screen.pager.PagerScreen
 import com.zaurh.bober.screen.profile.ProfileScreen
+import com.zaurh.bober.screen.profile.ProfileViewModel
 import com.zaurh.bober.screen.settings.SettingsScreen
 import com.zaurh.bober.screen.settings.notifications.NotificationScreen
 import com.zaurh.bober.screen.sign_in.SignInScreen
@@ -49,6 +56,8 @@ fun SetupNavGraph(
     val blockedUsersViewModel = hiltViewModel<BlockedUsersViewModel>()
     val whoLikesViewModel = hiltViewModel<WhoLikesViewModel>()
     val homeViewModel = hiltViewModel<HomeViewModel>()
+    val profileViewModel = hiltViewModel<ProfileViewModel>()
+
 
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -101,7 +110,8 @@ fun SetupNavGraph(
             val username = arguments.getString("username")
             ProfileScreen(
                 username = username ?: "",
-                navController = navController
+                navController = navController,
+                profileViewModel = profileViewModel
             )
         }
         composable(
@@ -160,5 +170,6 @@ fun SetupNavGraph(
             )
         }
     }
+
 
 }

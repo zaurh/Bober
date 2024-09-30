@@ -30,11 +30,11 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.message.MessageStatus
-import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.user.ChatData
 
 @Composable
-fun MatchUserItem(
-    userData: UserData,
+fun HomeChatItem(
+    chatData: ChatData,
     lastMessage: String,
     lastMessageStatus: MessageStatus,
     lastMessageTime: String,
@@ -54,7 +54,7 @@ fun MatchUserItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box {
-            val profilePic = userData.imageUrl?.firstOrNull() ?: ""
+            val profilePic = chatData.recipientImage
             AsyncImage(
                 modifier = Modifier
                     .size(60.dp)
@@ -85,7 +85,7 @@ fun MatchUserItem(
             Column(modifier = Modifier.weight(1f)) {
 
                 Text(
-                    text = userData.username ?: "",
+                    text = chatData.recipientUsername,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.primary
                 )

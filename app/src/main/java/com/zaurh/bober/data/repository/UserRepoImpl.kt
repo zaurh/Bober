@@ -1,13 +1,22 @@
 package com.zaurh.bober.data.repository
 
 import android.content.SharedPreferences
-import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.data.responses.AddMediaResponse
-import com.zaurh.bober.data.responses.GetAllUsersResponse
+import com.zaurh.bober.data.responses.BlockedUserData
+import com.zaurh.bober.data.responses.BlockedUsersResponse
+import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
+import com.zaurh.bober.data.responses.LikedUserData
+import com.zaurh.bober.data.responses.LikedUsersResponse
+import com.zaurh.bober.data.responses.MatchedUserData
+import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
+import com.zaurh.bober.data.responses.WhoLikesData
+import com.zaurh.bober.data.responses.WhoLikesResponse
+import com.zaurh.bober.data.user.BoberData
+import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.user.UserUpdate
 import com.zaurh.bober.domain.repository.UserRepository
@@ -30,9 +39,25 @@ class UserRepoImpl @Inject constructor(
     private val _profileData = MutableStateFlow<UserData?>(null)
     override val profileData: StateFlow<UserData?> get() = _profileData
 
-    private val _userListData = MutableStateFlow<List<UserData?>>(listOf())
-    override val userListData: StateFlow<List<UserData?>>
-        get() = _userListData
+    private val _boberDataList = MutableStateFlow<List<BoberData?>>(listOf())
+    override val boberDataList: StateFlow<List<BoberData?>>
+        get() = _boberDataList
+
+    private val _likedUserList = MutableStateFlow<List<LikedUserData?>>(listOf())
+    override val likedUserList: StateFlow<List<LikedUserData?>>
+        get() = _likedUserList
+
+    private val _blockedUserList = MutableStateFlow<List<BlockedUserData?>>(listOf())
+    override val blockedUserList: StateFlow<List<BlockedUserData?>>
+        get() = _blockedUserList
+
+    private val _whoLikesList = MutableStateFlow<List<WhoLikesData>>(listOf())
+    override val whoLikesList: StateFlow<List<WhoLikesData>>
+        get() = _whoLikesList
+
+    private val _matchedUserList = MutableStateFlow<List<MatchedUserData>>(listOf())
+    override val matchedUserList: StateFlow<List<MatchedUserData>>
+        get() = _matchedUserList
 
 
 
@@ -46,7 +71,7 @@ class UserRepoImpl @Inject constructor(
 
             val response = api.getUserData("Bearer $token")
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
 
@@ -83,7 +108,7 @@ class UserRepoImpl @Inject constructor(
         return try {
             val response = api.getProfileID(username)
 
-            if (response.success){
+            if (response.success) {
                 _profileData.value = response.user
             }
 
@@ -109,7 +134,11 @@ class UserRepoImpl @Inject constructor(
     }
 
 
-    override suspend fun updateUserData(userUpdate: UserUpdate, onSuccess: () -> Unit, onFailure: () -> Unit): UpdateUserResponse {
+    override suspend fun updateUserData(
+        userUpdate: UserUpdate,
+        onSuccess: () -> Unit,
+        onFailure: () -> Unit
+    ): UpdateUserResponse {
         val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
             success = false,
             message = "Token retrieve failed."
@@ -120,11 +149,11 @@ class UserRepoImpl @Inject constructor(
                 userUpdate = userUpdate
             )
 
-            if (response.success){
+            if (response.success) {
                 onSuccess()
                 _userData.value = response.user
 
-            }else{
+            } else {
                 onFailure()
             }
             UpdateUserResponse(
@@ -137,23 +166,122 @@ class UserRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllUsersData(): GetAllUsersResponse {
+
+    override suspend fun getBobers(): GetBobersResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return GetAllUsersResponse(
+            val token = prefs.getString("jwt", null) ?: return GetBobersResponse(
                 success = false,
                 message = "Token retrieve failed."
             )
-            val response = api.getAllUsersData("Bearer $token")
-            if (response.success){
-                _userListData.value = response.userList
+            val response = api.getBobers("Bearer $token")
+            if (response.success) {
+                _boberDataList.value = response.boberDataList
             }
-            GetAllUsersResponse(
+
+            GetBobersResponse(
                 success = response.success,
-                userList = response.userList,
+                boberDataList = response.boberDataList,
                 message = response.message
             )
         } catch (e: Exception) {
-            GetAllUsersResponse(success = false, message = e.message ?: "")
+            GetBobersResponse(success = false, message = e.message ?: "")
+        }
+    }
+
+    override suspend fun getMatchedUsers(): MatchedUserResponse {
+        return try {
+            val token = prefs.getString("jwt", null) ?: return MatchedUserResponse(
+                success = false,
+                message = "Token retrieve failed."
+            )
+            val response = api.getMatchedUsers("Bearer $token")
+
+            if (response.success) {
+                _matchedUserList.value = response.matchedUserList
+                _userData.value = userData.value?.copy(
+                    matchList = response.matchedUserList
+                )
+            }
+
+            MatchedUserResponse(
+                success = response.success,
+                matchedUserList = response.matchedUserList,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            MatchedUserResponse(success = false, message = e.message ?: "")
+        }
+    }
+
+    override suspend fun getLikedUsers(): LikedUsersResponse {
+        return try {
+            val token = prefs.getString("jwt", null) ?: return LikedUsersResponse(
+                success = false,
+                message = "Token retrieve failed."
+            )
+            val response = api.getLikedUsers("Bearer $token")
+            if (response.success) {
+                _likedUserList.value = response.likedUserList
+                _userData.value = userData.value?.copy(
+                    likedUsers = response.likedUserList.map { it.id ?: "" }
+                )
+            }
+
+            LikedUsersResponse(
+                success = response.success,
+                likedUserList = response.likedUserList,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            LikedUsersResponse(success = false, message = e.message ?: "")
+        }
+    }
+
+    override suspend fun getBlockedUsers(): BlockedUsersResponse {
+        return try {
+            val token = prefs.getString("jwt", null) ?: return BlockedUsersResponse(
+                success = false,
+                message = "Token retrieve failed."
+            )
+            val response = api.getBlockedUsers("Bearer $token")
+            if (response.success) {
+                _blockedUserList.value = response.blockList
+                _userData.value = userData.value?.copy(
+                    blockList = response.blockList.map { it.id ?: "" }
+                )
+            }
+
+            BlockedUsersResponse(
+                success = response.success,
+                blockList = response.blockList,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            BlockedUsersResponse(success = false, message = e.message ?: "")
+        }
+    }
+
+    override suspend fun getWhoLikes(): WhoLikesResponse {
+        return try {
+            val token = prefs.getString("jwt", null) ?: return WhoLikesResponse(
+                success = false,
+                message = "Token retrieve failed."
+            )
+            val response = api.getWhoLikes("Bearer $token")
+            if (response.success) {
+                _whoLikesList.value = response.whoLikesList
+                _userData.value = userData.value?.copy(
+                    gotLiked = response.whoLikesList.map { it.id }
+                )
+            }
+
+            WhoLikesResponse(
+                success = response.success,
+                whoLikesList = response.whoLikesList,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            WhoLikesResponse(success = false, message = e.message ?: "")
         }
     }
 
@@ -192,7 +320,7 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -216,7 +344,7 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -240,7 +368,7 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -264,7 +392,7 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -288,7 +416,7 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -301,7 +429,11 @@ class UserRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun report(recipientId: String, reason: String, optional: String): MessageResponse {
+    override suspend fun report(
+        recipientId: String,
+        reason: String,
+        optional: String
+    ): MessageResponse {
         val token = prefs.getString("jwt", null) ?: return MessageResponse(
             success = false,
             message = "Token retrieve failed."
@@ -334,7 +466,30 @@ class UserRepoImpl @Inject constructor(
                 recipientId = recipientId
             )
 
-            if (response.success){
+            if (response.success) {
+                _userData.value = response.user
+            }
+            UpdateUserResponse(
+                success = response.success,
+                user = response.user,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            UpdateUserResponse(success = false, message = e.message ?: "")
+        }
+    }
+
+    override suspend fun boberium(): UpdateUserResponse {
+        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
+            success = false,
+            message = "Token retrieve failed."
+        )
+        return try {
+            val response = api.boberium(
+                token = "Bearer $token"
+            )
+
+            if (response.success) {
                 _userData.value = response.user
             }
             UpdateUserResponse(
@@ -377,7 +532,8 @@ class UserRepoImpl @Inject constructor(
                 success = false,
                 message = "Token retrieve failed."
             )
-            val response = api.decryptLocation(token = "Bearer $token", recipientLocation = recipientLocation)
+            val response =
+                api.decryptLocation(token = "Bearer $token", recipientLocation = recipientLocation)
 
             GetLocationResponse(
                 success = response.success,

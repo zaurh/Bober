@@ -44,16 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
-import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.screen.profile.ProfileViewModel
-import com.zaurh.bober.util.calculateAge
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MatchCardItem(
     modifier: Modifier,
-    profileData: UserData,
+    boberData: BoberData,
     profileViewModel: ProfileViewModel,
     matchViewModel: MatchViewModel,
     onClick: () -> Unit,
@@ -64,7 +63,7 @@ fun MatchCardItem(
 
     Box(modifier) {
         val pagerState = rememberPagerState(
-            pageCount = { profileData.imageUrl?.size ?: 10 },
+            pageCount = { boberData.image.size },
             initialPage = imageIndex ?: 0
         )
         val scope = rememberCoroutineScope()
@@ -77,7 +76,7 @@ fun MatchCardItem(
         Box {
 
             HorizontalPager(userScrollEnabled = false, state = pagerState, key = {
-                profileData.imageUrl?.get(it) ?: ""
+                boberData.image[it]
             }) { index ->
                 AsyncImage(
                     contentScale = ContentScale.Crop,
@@ -103,7 +102,7 @@ fun MatchCardItem(
                                 }
                             }
                         },
-                    model = profileData.imageUrl?.get(index),
+                    model = boberData.image[index],
                     contentDescription = "",
                     placeholder = painterResource(id = R.drawable.placeholder_image)
 
@@ -116,7 +115,7 @@ fun MatchCardItem(
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                repeat(profileData.imageUrl?.size ?: 10) { iteration ->
+                repeat(boberData.image.size) { iteration ->
                     val color =
                         if (pagerState.currentPage == iteration) Color.White else Color.DarkGray
                     Box(
@@ -133,9 +132,9 @@ fun MatchCardItem(
             Column(Modifier.align(Alignment.BottomStart).padding(bottom = 70.dp)) {
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    val name = if (profileData.name != "") profileData.name else profileData.username
+                    val name = if (boberData.name != "") boberData.name else boberData.username
                     Text(
-                        text = "$name, ${calculateAge(profileData.birthDate ?: "")}",
+                        text = "$name, ${boberData.age}",
                         color = Color.White,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Medium,
@@ -155,11 +154,11 @@ fun MatchCardItem(
                     }
                 }
 
-                LaunchedEffect(key1 = profileData) {
-                    matchViewModel.decryptLocation(profileData.encryptedLocation ?: "")
-                }
+//                LaunchedEffect(key1 = matchUser) {
+//                    matchViewModel.decryptLocation(matchUser.encryptedLocation ?: "")
+//                }
 
-                val distance = matchViewModel.distance.value
+                val distance = boberData.distance
                 val distanceText = if (distance < 2) "Less than kilometer away" else "${distance}km away"
 
                 if (distance != 0){
@@ -173,7 +172,7 @@ fun MatchCardItem(
                 }
 
                 Text(
-                    text = profileData.jobTitle ?: "",
+                    text = boberData.jobTitle ?: "",
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,

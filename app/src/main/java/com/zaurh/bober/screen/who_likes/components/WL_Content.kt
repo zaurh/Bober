@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.home.components.SearchBar
 import com.zaurh.bober.screen.who_likes.WhoLikesUserItem
@@ -33,8 +32,7 @@ fun WL_Content(
     navController: NavController,
     paddingValues: PaddingValues
 ) {
-    val userData = whoLikesViewModel.userDataState.collectAsState()
-    val userList = whoLikesViewModel.userListDataState.collectAsState()
+    val whoLikesState = whoLikesViewModel.whoLikesState.collectAsState()
     val searchQuery = whoLikesViewModel.searchText.value
 
     BackHandler(
@@ -57,19 +55,11 @@ fun WL_Content(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val matchedUserIdList = userData.value?.matchList?.map { it.matchUserId } ?: listOf()
-            val whoLikesUserId = userData.value?.gotLiked ?: listOf()
 
-            val filteredWhoLikesUserId = whoLikesUserId.filterNot { it in matchedUserIdList }
-
-            val whoLikesUserList = userList.value.filter {
-                it?.id in filteredWhoLikesUserId
-            }
-            val filteredWhoLikes = whoLikesUserList.filter {
-                it?.username?.contains(searchQuery) == true
-            }
-
-            if (whoLikesUserList.isNotEmpty()){
+            if (whoLikesState.value.isNotEmpty()){
+                val filteredWhoLikes = whoLikesState.value.filter {
+                    it?.username?.contains(searchQuery) == true
+                }
                 SearchBar(
                     value = searchQuery,
                     onValueChange = whoLikesViewModel::onSearch,
@@ -79,11 +69,14 @@ fun WL_Content(
 
                 if (filteredWhoLikes.isNotEmpty()){
                     LazyVerticalGrid(columns = GridCells.Fixed(3)) {
-                        items(filteredWhoLikes) { userData ->
-                            WhoLikesUserItem(userData = userData ?: UserData()) {
-                                val whoLikedUsername = userData?.username ?: ""
-                                navController.navigate(Screen.ProfileScreen.passUsername(whoLikedUsername))
+                        items(filteredWhoLikes) { whoLikesData ->
+                            whoLikesData?.let {
+                                WhoLikesUserItem(whoLikesData = it) {
+                                    val whoLikedUsername = it.username
+                                    navController.navigate(Screen.ProfileScreen.passUsername(whoLikedUsername))
+                                }
                             }
+
                         }
                     }
                 }else{

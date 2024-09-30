@@ -20,11 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.responses.BlockedUserData
 
 @Composable
 fun BlockedUserItem(
-    userData: UserData,
+    blockedUserData: BlockedUserData,
     onItemClick: () -> Unit,
     onUnblockClick: () -> Unit
 ) {
@@ -39,19 +39,18 @@ fun BlockedUserItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row {
-            val profilePic = userData.imageUrl?.firstOrNull() ?: ""
             AsyncImage(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape),
-                model = profilePic,
+                model = blockedUserData.image,
                 contentDescription = "",
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(text = "@${userData.username}", color = MaterialTheme.colorScheme.primary)
-                Text(text = "${userData.name}", color = MaterialTheme.colorScheme.primary)
+                Text(text = "@${blockedUserData.username}", color = MaterialTheme.colorScheme.primary)
+                Text(text = "${blockedUserData.name}", color = MaterialTheme.colorScheme.primary)
             }
         }
 

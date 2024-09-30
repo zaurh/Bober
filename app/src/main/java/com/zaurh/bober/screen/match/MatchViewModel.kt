@@ -6,6 +6,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,11 +21,18 @@ class MatchViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
-    val userListDataState: StateFlow<List<UserData?>> = userRepository.userListData
+    val matchListState: StateFlow<List<BoberData?>> = userRepository.boberDataList
 
     private val _distance: MutableState<Int> = mutableIntStateOf(0)
     val distance: State<Int> = _distance
 
+
+    fun getBobers(){
+        viewModelScope.launch(Dispatchers.IO) {
+            val a = userRepository.getBobers()
+            Log.d("getBobers", "${a.boberDataList}")
+        }
+    }
 
     fun sendLike(recipientId: String){
         viewModelScope.launch(Dispatchers.IO) {

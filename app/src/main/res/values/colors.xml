@@ -16,4 +16,8 @@
     <color name="darkBlue">#1C274C</color>
     <color name="fadedWhite">#1AFFFFFF</color>
     <color name="gray">#FF272727</color>
+
+    //likeColor
+    <color name="likeColor1">#EF9A9A</color>
+    <color name="likeColor2">#A5D6A7</color>
 </resources>

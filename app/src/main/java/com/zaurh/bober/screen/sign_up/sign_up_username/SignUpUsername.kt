@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,6 +54,7 @@ fun SignUpUsername(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .background(
                 brush = Brush.linearGradient(
                     listOf(
@@ -60,24 +62,19 @@ fun SignUpUsername(
                         colorResource(id = R.color.backgroundBottom)
                     )
                 )
-            ), horizontalAlignment = Alignment.CenterHorizontally
+            ), horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceAround
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(top = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(text = "Hi there!", color = Color.White, fontSize = 32.sp)
-        }
+        Text(
+            text = "Hi there!",
+            color = Color.White,
+            fontSize = 32.sp
+        )
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .weight(8f),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
-
         ) {
             Box {
                 Icon(
@@ -156,9 +153,9 @@ fun SignUpUsername(
                 }
             }
         }
+
         Column(
             Modifier
-                .weight(1f)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -176,5 +173,7 @@ fun SignUpUsername(
             )
 
         }
+
+
     }
 }

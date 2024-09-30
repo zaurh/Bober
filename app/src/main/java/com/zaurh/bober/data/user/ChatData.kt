@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChatData(
-    val userId: String,
-    val username: String,
+    val recipientId: String,
+    val recipientImage: String,
+    val recipientUsername: String,
     val lastUpdated: Long
 )

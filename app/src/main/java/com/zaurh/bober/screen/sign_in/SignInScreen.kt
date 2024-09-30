@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,13 +55,14 @@ fun SignInScreen(
     val context = LocalContext.current
     val signedIn = signInViewModel.signedInState.collectAsState()
 
-    if (signedIn.value){
+    if (signedIn.value) {
         navController.navigate(Screen.PagerScreen.route)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .background(
                 brush = Brush.linearGradient(
                     listOf(
@@ -68,14 +71,12 @@ fun SignInScreen(
                     )
                 )
             )
-            .padding(start = 24.dp, end = 24.dp), horizontalAlignment = Alignment.CenterHorizontally
+            .padding(start = 24.dp, end = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(9f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "BOBER", color = Color.White, fontSize = 32.sp)
             Spacer(modifier = Modifier.size(16.dp))
@@ -85,7 +86,8 @@ fun SignInScreen(
                 contentDescription = "",
                 tint = Color.White
             )
-            Spacer(modifier = Modifier.size(16.dp))
+            Spacer(Modifier.size(16.dp))
+
             SignIn_TextField(
                 label = "Username",
                 value = signInViewModel.usernameState.value,
@@ -115,82 +117,84 @@ fun SignInScreen(
             )
             Spacer(modifier = Modifier.size(16.dp))
 
-            Button(enabled = !signInViewModel.signInLoading.value,colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                disabledContainerColor = Color.White
-            ), onClick = {
-                signInViewModel.signIn(context)
-            }) {
-                if (signInViewModel.signInLoading.value || signedIn.value){
+            Button(enabled = !signInViewModel.signInLoading.value,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    disabledContainerColor = Color.White
+                ),
+                onClick = {
+                    signInViewModel.signIn(context)
+                }) {
+                if (signInViewModel.signInLoading.value || signedIn.value) {
                     Text(text = "Loading...", color = colorResource(id = R.color.darkBlue))
                     Spacer(modifier = Modifier.size(8.dp))
-                    CircularProgressIndicator(modifier = Modifier.size(12.dp),color = colorResource(id = R.color.backgroundTop), strokeWidth = 2.dp)
-                }else{
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        color = colorResource(id = R.color.backgroundTop),
+                        strokeWidth = 2.dp
+                    )
+                } else {
                     Text(text = "Sign in", color = colorResource(id = R.color.darkBlue))
                 }
             }
-            Spacer(modifier = Modifier.size(16.dp))
+        }
+        Spacer(modifier = Modifier.size(16.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            HorizontalDivider(
+                modifier = Modifier
+                    .width(80.dp)
+                    .alpha(0.5f), color = Color.White
+            )
+            Text(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                text = "OR",
+                color = Color.White
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .width(80.dp)
+                    .alpha(0.5f), color = Color.White
+            )
+        }
+        Spacer(modifier = Modifier.size(16.dp))
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(20))
+                .background(Color.White)
+                .clickable {
+                    Toast
+                        .makeText(
+                            context,
+                            "Not available yet",
+                            Toast.LENGTH_SHORT
+                        )
+                        .show()
+                }
+        ) {
             Row(
-                Modifier.fillMaxWidth(),
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .width(80.dp)
-                        .alpha(0.5f), color = Color.White
+                Image(
+                    modifier = Modifier.size(30.dp),
+                    painter = painterResource(id = R.drawable.google_logo),
+                    contentDescription = ""
                 )
+                Spacer(modifier = Modifier.size(12.dp))
                 Text(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-                    text = "OR",
-                    color = Color.White
-                )
-                HorizontalDivider(
-                    modifier = Modifier
-                        .width(80.dp)
-                        .alpha(0.5f), color = Color.White
+                    text = "Continue with Google",
+                    color = colorResource(id = R.color.darkBlue)
                 )
             }
-            Spacer(modifier = Modifier.size(16.dp))
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(20))
-                    .background(Color.White)
-                    .clickable {
-                        Toast
-                            .makeText(
-                                context,
-                                "Not available yet",
-                                Toast.LENGTH_SHORT
-                            )
-                            .show()
-                    }
-            ) {
-                Row(
-                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier.size(30.dp),
-                        painter = painterResource(id = R.drawable.google_logo),
-                        contentDescription = ""
-                    )
-                    Spacer(modifier = Modifier.size(12.dp))
-                    Text(
-                        text = "Continue with Google",
-                        color = colorResource(id = R.color.darkBlue)
-                    )
-                }
 
-            }
         }
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Spacer(Modifier.size(16.dp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "Don't have an account?", color = Color.White)
             Text(
                 modifier = Modifier.clickable {
@@ -201,7 +205,8 @@ fun SignInScreen(
                 fontWeight = FontWeight.Bold,
                 textDecoration = TextDecoration.Underline
             )
-
         }
+
     }
+
 }

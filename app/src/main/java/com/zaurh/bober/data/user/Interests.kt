@@ -15,5 +15,6 @@ enum class Interests(val displayName: String) {
     SWIMMING("\uD83C\uDFCA\uD83C\uDFFB\u200D♂\uFE0F Swimming"),
     HIKING("\uD83E\uDD7E Hiking"),
     CYCLING("\uD83D\uDEB2 Cycling"),
-    DANCING("\uD83D\uDD7A\uD83C\uDFFB Dancing")
+    DANCING("\uD83D\uDD7A\uD83C\uDFFB Dancing"),
+    GYM("\uD83D\uDCAA Gym")
 }

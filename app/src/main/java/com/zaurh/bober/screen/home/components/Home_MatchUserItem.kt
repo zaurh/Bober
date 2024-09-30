@@ -19,20 +19,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
-import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.home.HomeViewModel
 
 @Composable
 fun Home_MatchUserItem(
-    userData: UserData,
+    matchedUserData: MatchedUserData,
     new: Boolean,
     navController: NavController,
     homeViewModel: HomeViewModel,
 ) {
 
     Box {
-        val profilePic = userData.imageUrl?.firstOrNull() ?: ""
+        val profilePic = matchedUserData.image
 
             AsyncImage(
                 modifier = Modifier
@@ -43,8 +43,9 @@ fun Home_MatchUserItem(
                         RoundedCornerShape(20)
                     )
                     .clickable {
-                        navController.navigate(Screen.ChatScreen.createRoute(username = userData.username))
-                        homeViewModel.newMatchToOld(userData.id ?: "")
+                        navController.navigate(Screen.ChatScreen.createRoute(username = matchedUserData.username))
+                        homeViewModel.switchRecipient(matchedUserData.id)
+                        homeViewModel.newMatchToOld(matchedUserData.id)
                     },
                 model = profilePic,
                 contentDescription = "",

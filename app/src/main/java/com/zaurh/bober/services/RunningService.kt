@@ -144,7 +144,7 @@ class RunningService : Service() {
 
         val notification = NotificationCompat.Builder(this, "foreground")
             .setContentTitle("Bober")
-            .setContentText("You will still get message notifications")
+            .setContentText("You will still get notifications")
             .setSmallIcon(applicationIcon)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)

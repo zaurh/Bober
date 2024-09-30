@@ -17,28 +17,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.zaurh.bober.data.user.UserData
-import com.zaurh.bober.util.calculateAge
+import com.zaurh.bober.data.responses.WhoLikesData
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WhoLikesUserItem(
-    userData: UserData,
+    whoLikesData: WhoLikesData,
     onClick: () -> Unit
 ) {
     Box(modifier = Modifier.padding(8.dp).clip(RoundedCornerShape(10)).clickable {
         onClick()
     }) {
-        val profilePic = userData.imageUrl?.firstOrNull() ?: ""
+
         AsyncImage(
             modifier = Modifier.height(200.dp).fillMaxWidth(),
-            model = profilePic,
+            model = whoLikesData.image,
             contentDescription = "",
             contentScale = ContentScale.Crop
         )
         Text(
             modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
-            text = "${userData.username}, ${calculateAge(userData.birthDate ?: "")}",
+            text = "${whoLikesData.username}, ${whoLikesData.age}",
             color = Color.White
         )
     }

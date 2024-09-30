@@ -33,11 +33,11 @@ fun GotMatchAlert(
     val userDataState = chatScreenViewModel.userDataState.collectAsState()
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.bober_match))
 
+
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
-
         Image(
             modifier = Modifier.fillMaxSize(),
             painter = painterResource(id = R.drawable.bober_background),

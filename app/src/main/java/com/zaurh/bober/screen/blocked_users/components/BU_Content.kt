@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.blocked_users.BlockedUserItem
 import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
@@ -30,8 +29,9 @@ fun BU_Content(
     paddingValues: PaddingValues
 ) {
     val userDataState = blockedUsersViewModel.userDataState.collectAsState()
-    val userList = blockedUsersViewModel.userListDataState.collectAsState()
+    val blockedUserList = blockedUsersViewModel.blockedUserList.collectAsState()
     val searchQuery = blockedUsersViewModel.searchText.value
+
 
 
     BackHandler(
@@ -55,41 +55,49 @@ fun BU_Content(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val blockedUsersId = userDataState.value?.blockList ?: listOf()
-            val blockList = userList.value.filter { it?.id in blockedUsersId }
-            val searchedBlockedUsers = blockList.filter {
-                it?.username?.contains(searchQuery) == true
-            }
-            if (blockList.isNotEmpty()){
+            val blockList = blockedUserList.value
+
+
+            if (blockList.isNotEmpty()) {
+                val searchedBlockedUsers = blockList.filter {
+                    it?.username?.contains(searchQuery) == true
+                }
                 SearchBar(
                     value = searchQuery,
                     onValueChange = blockedUsersViewModel::onSearch,
                     placeHolder = "Search for blocked users"
                 )
                 Spacer(modifier = Modifier.size(16.dp))
-                if (searchedBlockedUsers.isNotEmpty()){
+                if (searchedBlockedUsers.isNotEmpty()) {
                     LazyColumn {
                         items(searchedBlockedUsers) { profileData ->
-                            val username = profileData?.username ?: ""
-                            val profileId = profileData?.id ?: ""
+                            profileData?.let {
+                                val username = profileData.username
+                                val profileId = profileData.id ?: ""
 
-                            BlockedUserItem(
-                                userData = profileData ?: UserData(),
-                                onItemClick = {
-                                    navController.navigate(Screen.ProfileScreen.passUsername(username))
-                                }) {
-                                blockedUsersViewModel.unBlockUser(recipientId = profileId)
+                                BlockedUserItem(
+                                    blockedUserData = profileData,
+                                    onItemClick = {
+                                        navController.navigate(
+                                            Screen.ProfileScreen.passUsername(
+                                                username
+                                            )
+                                        )
+                                    }) {
+                                    blockedUsersViewModel.unBlockUser(recipientId = profileId)
+                                }
                             }
+
                         }
                     }
-                }else{
+                } else {
                     Text(text = "No one is found.")
                 }
 
-            }else{
+            } else {
                 Text(text = "Your block list is empty.")
             }
-            
+
         }
     }
 

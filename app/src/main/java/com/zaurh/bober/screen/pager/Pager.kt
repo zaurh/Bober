@@ -3,7 +3,9 @@ package com.zaurh.bober.screen.pager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,7 +46,11 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
@@ -57,7 +63,8 @@ import com.zaurh.bober.screen.home.HomeScreen
 import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
-import com.zaurh.bober.screen.pager.components.LocationPermission
+import com.zaurh.bober.screen.pager.components.LikeTokenItem
+import com.zaurh.bober.screen.pager.viewmodel.PagerViewModel
 import com.zaurh.bober.services.RunningService
 import kotlinx.coroutines.DelicateCoroutinesApi
 
@@ -68,7 +75,8 @@ fun PagerScreen(
     navController: NavController,
     chatScreenViewModel: ChatScreenViewModel,
     matchViewModel: MatchViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    pagerViewModel: PagerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val currentUser = chatScreenViewModel.userDataState.collectAsState()
@@ -106,8 +114,7 @@ fun PagerScreen(
 
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_START) {
-        if (currentUser.value == null){
-            homeViewModel.getAllUsers()
+        if (currentUser.value == null) {
             homeViewModel.getUserData()
         }
 
@@ -132,12 +139,17 @@ fun PagerScreen(
     }
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-        if (!chatState.socketIsObserving){
+        if (!chatState.socketIsObserving) {
             stopForegroundService(context)
             chatScreenViewModel.connectToChat(context)
+            Log.d("websocketBober", "connected to chat")
+        } else {
+            Log.d("websocketBober", "socket is observing already")
         }
-
     }
+
+
+
 
 
 
@@ -145,17 +157,43 @@ fun PagerScreen(
         topBar = {
             TopAppBar(title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (chatState.isLoading){
-                        Text("Loading...")
+                    if (chatState.isLoading) {
+                        Text(
+                            "Loading...", color = MaterialTheme.colorScheme.onSecondary
+                        )
                         Spacer(Modifier.size(8.dp))
-                        CircularProgressIndicator(modifier = Modifier.size(14.dp),color = MaterialTheme.colorScheme.secondary, strokeWidth = 2.dp)
-                    }else{
-                        Text(text = "Bober")
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            painterResource(R.drawable.bober_ic),
+                            modifier = Modifier.size(26.dp),
+                            contentDescription = "bober",
+                            tint = MaterialTheme.colorScheme.onSecondary
+                        )
+                        Spacer(Modifier.size(4.dp))
+                        Text(
+                            text = "Bober",
+                            fontSize = 20.sp,
+                            fontFamily = FontFamily(Font(R.font.bober_font)),
+                            color = MaterialTheme.colorScheme.onSecondary
+                        )
                     }
 
                 }
 
             }, actions = {
+                AnimatedVisibility(selectedTabIndex == 0) {
+                    LaunchedEffect(true) {
+                        pagerViewModel.expandLikeToken()
+                    }
+                    LikeTokenItem(tokenCount = currentUser.value?.likeToken ?: 0, expanded = pagerViewModel.likeTokenExpanded.value)
+                    Spacer(Modifier.size(8.dp))
+                }
+
                 IconButton(onClick = {
                     navController.navigate(Screen.SettingsScreen.route)
                 }) {
@@ -208,9 +246,11 @@ fun PagerScreen(
                             },
                             text = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = tabItem.title, color = if (tabItem.indicator != 0) colorResource(
-                                        R.color.backgroundTop
-                                    ) else colorResource(R.color.darkBlue)
+                                    Text(
+                                        text = tabItem.title,
+                                        color = if (tabItem.indicator != 0) colorResource(
+                                            R.color.backgroundTop
+                                        ) else MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(Modifier.size(4.dp))
                                     if (tabItem.indicator != 0) {
@@ -249,9 +289,9 @@ fun PagerScreen(
         }
     )
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        LocationPermission()
-    }
+//    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//        LocationPermission()
+//    }
 
 }
 

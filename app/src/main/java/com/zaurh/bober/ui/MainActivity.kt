@@ -7,6 +7,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,7 +31,9 @@ import androidx.navigation.compose.rememberNavController
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.navigation.SetupNavGraph
-import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
+import com.zaurh.bober.screen.match.MatchViewModel
+import com.zaurh.bober.screen.match.components.GotMatchAlert
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
 import com.zaurh.bober.screen.sign_in.SignInViewModel
 import com.zaurh.bober.services.RunningService
@@ -65,7 +71,8 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val navController = rememberNavController()
             val signInViewModel = hiltViewModel<SignInViewModel>()
-            val profileViewModel = hiltViewModel<ProfileViewModel>()
+            val chatScreenViewModel = hiltViewModel<ChatScreenViewModel>()
+            val matchViewModel = hiltViewModel<MatchViewModel>()
             val signedIn = signInViewModel.signedInState.collectAsState()
             val loading = signInViewModel.loading.collectAsState()
 
@@ -80,10 +87,12 @@ class MainActivity : ComponentActivity() {
 
             LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
                 startForegroundService(context)
-                profileViewModel.clearProfileData()
+//                profileViewModel.clearProfileData()
             }
 
             BoberTheme(darkTheme = savedTheme.value ?: false) {
+
+
                 LaunchedEffect(key1 = loading.value) {
                     if (!loading.value){
                         delay(500)
@@ -106,7 +115,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                   
                     SetupNavGraph(
                         navController = navController,
                         startDestination = if (signedIn.value) Screen.PagerScreen.route else Screen.SignInScreen.route,
@@ -118,7 +126,20 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     )
+                    val gotMatchState = chatScreenViewModel.gotMatch.value
+                    AnimatedVisibility(
+                        visible = gotMatchState.gotMatch,
+                        enter = fadeIn(animationSpec = tween(2000)),
+                        exit = fadeOut(animationSpec = tween(2000))
+                    ) {
+                        val matchListState = matchViewModel.matchListState.collectAsState()
+
+                        val recipientUser = matchListState.value.find { it?.userId == gotMatchState.recipientId}
+                        val recipientImage = recipientUser?.image?.first().orEmpty()
+                        GotMatchAlert(recipientImage = recipientImage)
+                    }
                 }
+
 
             }
         }

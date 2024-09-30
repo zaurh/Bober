@@ -70,11 +70,13 @@ class ChatScreenViewModel @Inject constructor(
     private var searchGifJob: Job? = null
 
 
-
     fun connectToChat(context: Context) {
         val dataStore = NotificationPreferences(context)
 
         viewModelScope.launch {
+            if (_state.value.socketIsObserving) {
+                webSocketRepository.closeSession() // Close the existing session first
+            }
             _state.value = state.value.copy(
                 socketIsObserving = true
             )
@@ -88,6 +90,7 @@ class ChatScreenViewModel @Inject constructor(
                         "typing:" -> {
                             typingCommand(message)
                         }
+
                         "no_longer_matched:" -> {
                             noLongerMatchedCommand(context)
                         }
@@ -118,6 +121,12 @@ class ChatScreenViewModel @Inject constructor(
                     }
                 }.launchIn(viewModelScope)
 
+        }
+    }
+
+    fun closeWebsocket() {
+        viewModelScope.launch(Dispatchers.IO) {
+            webSocketRepository.closeSession()
         }
     }
 
@@ -159,65 +168,75 @@ class ChatScreenViewModel @Inject constructor(
     //Commands
 
     private fun deliveredCommand(messageData: MessageData) {
-        val recipientId = messageData.recipientUserId
+        viewModelScope.launch(Dispatchers.IO) {
+            val recipientId = messageData.recipientUserId
 
-        val messageList = state.value.messages
+            val messageList = state.value.messages
 
-        val unDeliveredMessages = messageList.filter {
-            it.status == MessageStatus.SENT && it.recipientUserId == recipientId
-        }
-
-        if (unDeliveredMessages.isNotEmpty()) {
-            // Update the status of undelivered messages
-            val updatedMessages = state.value.messages.map { message ->
-                if (message.recipientUserId == recipientId && message.status == MessageStatus.SENT) {
-                    message.copy(status = MessageStatus.DELIVERED)
-                } else {
-                    message
-                }
+            val unDeliveredMessages = messageList.filter {
+                it.status == MessageStatus.SENT && it.recipientUserId == recipientId
             }
 
-            _state.value = state.value.copy(
-                messages = updatedMessages
-            )
+            if (unDeliveredMessages.isNotEmpty()) {
+                // Update the status of undelivered messages
+                val updatedMessages = state.value.messages.map { message ->
+                    if (message.recipientUserId == recipientId && message.status == MessageStatus.SENT) {
+                        message.copy(status = MessageStatus.DELIVERED)
+                    } else {
+                        message
+                    }
+                }
+
+                _state.value = state.value.copy(
+                    messages = updatedMessages
+                )
+            }
         }
+
     }
 
     private fun readMessagesCommand(messageData: MessageData) {
-        val recipientId = messageData.recipientUserId
+        viewModelScope.launch(Dispatchers.IO) {
+            val senderId = messageData.senderUserId
+            val recipientId = messageData.recipientUserId
 
-        val messageListofRecipient =
-            state.value.messages.filter { it.recipientUserId == recipientId }
+            val messageListofRecipient =
+                state.value.messages.filter { it.recipientUserId == recipientId }
 
-        val unReadMessages = messageListofRecipient.filter {
-            it.status != MessageStatus.READ && it.recipientUserId == recipientId
-        }
-
-        if (unReadMessages.isNotEmpty()) {
-            // Update the status of undelivered messages
-            val updatedMessages = state.value.messages.map { message ->
-                if (message.recipientUserId == recipientId && message.status == MessageStatus.DELIVERED) {
-                    message.copy(status = MessageStatus.READ)
-                } else {
-                    message
-                }
+            val unReadMessages = messageListofRecipient.filter {
+                it.status != MessageStatus.READ && it.recipientUserId == recipientId && it.senderUserId == senderId
             }
-            _state.value = state.value.copy(
-                messages = updatedMessages
-            )
+
+            if (unReadMessages.isNotEmpty()) {
+                // Update the status of undelivered messages
+                val updatedMessages = state.value.messages.map { message ->
+                    if (message.recipientUserId == recipientId && message.senderUserId == senderId && message.status == MessageStatus.DELIVERED) {
+                        message.copy(status = MessageStatus.READ)
+                    } else {
+                        message
+                    }
+                }
+                _state.value = state.value.copy(
+                    messages = updatedMessages
+                )
+            }
         }
+
     }
 
     private fun triggerOnlineCommand(messageData: MessageData) {
-        val recipientLastSeen =
-            messageData.recipientLastSeen ?: profileDataState.value?.lastSeen
-        val recipientUserId = messageData.recipientUserId
+        viewModelScope.launch(Dispatchers.IO) {
+            val recipientLastSeen =
+                messageData.recipientLastSeen ?: profileDataState.value?.lastSeen
+            val recipientUserId = messageData.recipientUserId
 
-        _state.value = state.value.copy(
-            recipientUserId = recipientUserId,
-            recipientOnlineStatus = messageData.recipientOnlineStatus,
-            recipientLastSeen = recipientLastSeen
-        )
+            _state.value = state.value.copy(
+                recipientUserId = recipientUserId,
+                recipientOnlineStatus = messageData.recipientOnlineStatus,
+                recipientLastSeen = recipientLastSeen
+            )
+        }
+
     }
 
     private fun sendMessageCommand(messageData: MessageData, context: Context) {
@@ -228,7 +247,7 @@ class ChatScreenViewModel @Inject constructor(
             (recipientId == messageData.senderUserId || recipientId == messageData.recipientUserId) && getNotificationState.value.onChatScreen == true
 
         if (!messageSenderIsCurrent && !chatScreenWithRecipient) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 val text =
                     if (messageData.text?.endsWith(".gif") == true) "Sent GIF" else messageData.text
                         ?: ""
@@ -259,7 +278,7 @@ class ChatScreenViewModel @Inject constructor(
         val recipientId = messageData.senderUserId
 
         typingJob?.cancel()
-        typingJob = viewModelScope.launch {
+        typingJob = viewModelScope.launch(Dispatchers.IO) {
             Log.d("typingBober", "${_state.value.recipientIsTyping}")
             _state.value = state.value.copy(
                 recipientUserId = recipientId,
@@ -279,17 +298,20 @@ class ChatScreenViewModel @Inject constructor(
         dataStore: NotificationPreferences,
         context: Context
     ) {
-        dataStore.getLikesStatus.collect {
-            if (it) {
-                showNotification(
-                    channelId = "like",
-                    context = context,
-                    title = "Bober",
-                    text = "Someone liked you!",
-                    notificationType = NotificationType.LIKE
-                )
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.getLikesStatus.collect {
+                if (it) {
+                    showNotification(
+                        channelId = "like",
+                        context = context,
+                        title = "Bober",
+                        text = "Someone liked you!",
+                        notificationType = NotificationType.LIKE
+                    )
+                }
             }
         }
+
     }
 
     private suspend fun gotMatchCommand(
@@ -297,35 +319,37 @@ class ChatScreenViewModel @Inject constructor(
         dataStore: NotificationPreferences,
         context: Context
     ) {
-        val recipientId = messageData.recipientUserId ?: ""
-        if (recipientId != userDataState.value?.id) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val recipientId = messageData.recipientUserId ?: ""
+            if (recipientId != userDataState.value?.id) {
+                _gotMatch.value = gotMatch.value.copy(
+                    gotMatch = true,
+                    recipientId = recipientId
+                )
+                delay(3000)
+                _gotMatch.value = gotMatch.value.copy(
+                    gotMatch = false
+                )
 
-            _gotMatch.value = gotMatch.value.copy(
-                gotMatch = true,
-                recipientId = recipientId
-            )
 
-            delay(3000)
-            _gotMatch.value = gotMatch.value.copy(
-                gotMatch = false
-            )
-
-        } else {
-            dataStore.getMatchStatus.collect {
-                if (it) {
-                    showNotification(
-                        channelId = "match",
-                        context = context,
-                        title = "Bober",
-                        text = "You've got a new match!",
-                        notificationType = NotificationType.MATCH
-                    )
+            } else {
+                dataStore.getMatchStatus.collect {
+                    if (it) {
+                        showNotification(
+                            channelId = "match",
+                            context = context,
+                            title = "Bober",
+                            text = "You've got a new match!",
+                            notificationType = NotificationType.MATCH
+                        )
+                    }
                 }
             }
         }
+
     }
 
-    private fun noLongerMatchedCommand(context: Context){
+    private fun noLongerMatchedCommand(context: Context) {
         viewModelScope.launch(Dispatchers.Main) {
             Toast.makeText(context, "You are no longer matched.", Toast.LENGTH_SHORT).show()
         }
@@ -333,7 +357,7 @@ class ChatScreenViewModel @Inject constructor(
 
 
     fun sendMessage() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (messageText.value.isNotBlank()) {
                 webSocketRepository.sendMessage(messageText.value)
                 _messageText.value = ""
@@ -342,13 +366,7 @@ class ChatScreenViewModel @Inject constructor(
         }
     }
 
-    fun switchRecipient(recipientUserId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            webSocketRepository.switchRecipient(
-                newRecipientUserId = recipientUserId
-            )
-        }
-    }
+
 
 
     fun onMessageChange(message: String) {
@@ -369,7 +387,7 @@ class ChatScreenViewModel @Inject constructor(
 
 
     private fun getAllMessages() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _state.value = state.value.copy(isLoading = true)
             val result = messageRepository.getPrivateMessages()
             _state.value = state.value.copy(
@@ -398,8 +416,6 @@ class ChatScreenViewModel @Inject constructor(
     }
 
 
-
-
     fun openModalSheet() {
         _modalSheetState.value = true
     }
@@ -418,7 +434,7 @@ class ChatScreenViewModel @Inject constructor(
         recipientUserId: String,
         recipientOnlineStatus: Boolean,
         recipientLastSeen: Long
-    ){
+    ) {
         _state.value = state.value.copy(
             recipientUserId = recipientUserId,
             recipientOnlineStatus = recipientOnlineStatus,

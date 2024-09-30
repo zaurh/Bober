@@ -5,13 +5,17 @@ import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
 import com.zaurh.bober.data.responses.AddMediaResponse
 import com.zaurh.bober.data.responses.AuthenticateResponse
-import com.zaurh.bober.data.responses.GetAllUsersResponse
+import com.zaurh.bober.data.responses.BlockedUsersResponse
+import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
+import com.zaurh.bober.data.responses.LikedUsersResponse
+import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.SignInResponse
 import com.zaurh.bober.data.responses.SignUpResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
+import com.zaurh.bober.data.responses.WhoLikesResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -62,11 +66,32 @@ interface UserApi {
         @Body userUpdate: UserUpdate
     ): UpdateUserResponse
 
-
-    @GET("/get_all_users_data")
-    suspend fun getAllUsersData(
+    @GET("/bobers")
+    suspend fun getBobers(
         @Header("Authorization") token: String
-    ): GetAllUsersResponse
+    ): GetBobersResponse
+
+    @GET("/liked_users")
+    suspend fun getLikedUsers(
+        @Header("Authorization") token: String
+    ): LikedUsersResponse
+
+    @GET("/blocked_users")
+    suspend fun getBlockedUsers(
+        @Header("Authorization") token: String
+    ): BlockedUsersResponse
+
+    @GET("/who_likes")
+    suspend fun getWhoLikes(
+        @Header("Authorization") token: String
+    ): WhoLikesResponse
+
+    @GET("/matched_users")
+    suspend fun getMatchedUsers(
+        @Header("Authorization") token: String
+    ): MatchedUserResponse
+
+
 
     @GET("/authenticate")
     suspend fun authenticate(
@@ -136,5 +161,9 @@ interface UserApi {
         @Path("recipientLocation") recipientLocation: String
     ): GetLocationResponse
 
+    @PUT("/premium")
+    suspend fun boberium(
+        @Header("Authorization") token: String,
+    ): UpdateUserResponse
 
 }

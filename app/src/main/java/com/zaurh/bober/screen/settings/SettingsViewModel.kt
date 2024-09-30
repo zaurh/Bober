@@ -129,17 +129,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-//    fun updateOnlineStatus(online: Boolean) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            userRepository.updateUserData(
-//                userUpdate = UserUpdate(
-//                    online = online,
-//                    lastSeen = System.currentTimeMillis()
-//                )
-//            )
-//        }
-//
-//    }
 
     fun logout(onSuccess: () -> Unit){
         viewModelScope.launch(Dispatchers.IO){

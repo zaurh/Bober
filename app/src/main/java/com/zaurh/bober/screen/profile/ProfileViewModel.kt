@@ -60,9 +60,15 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun like(recipientId: String) {
+    fun like(recipientId: String, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            userRepository.like(recipientId)
+            val response = userRepository.like(recipientId)
+            if (response.success){
+                clearProfileData()
+                viewModelScope.launch(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
         }
     }
 
@@ -70,6 +76,18 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val response = userRepository.unlike(recipientId)
             if (response.success) {
+                clearProfileData()
+                viewModelScope.launch(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
+        }
+    }
+
+    fun pass(recipientId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = userRepository.pass(recipientId)
+            if (response.success){
                 clearProfileData()
                 viewModelScope.launch(Dispatchers.Main) {
                     onSuccess()

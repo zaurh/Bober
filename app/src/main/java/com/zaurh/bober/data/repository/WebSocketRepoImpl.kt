@@ -37,7 +37,6 @@ class WebSocketRepoImpl @Inject constructor(
         return socket?.isActive ?: false
     }
 
-
     override suspend fun initSession(): Resource<Unit> {
         return try {
             socket = client.webSocketSession {
@@ -66,9 +65,11 @@ class WebSocketRepoImpl @Inject constructor(
                 if (it.isActive) {
                     it.send("switchRecipient:$newRecipientUserId")
                 }
+                Log.d("switchRecipient", "$newRecipientUserId")
+
             }
         } catch (e: Exception) {
-            Log.d("Error", "Switch recipient: ${e.message}")
+            Log.d("websocketBober", "switcherror: ${e.message}...")
         }
     }
 
@@ -131,11 +132,17 @@ class WebSocketRepoImpl @Inject constructor(
         return try {
             if (socket?.isActive == true) {
                 socket?.send(Frame.Text(message))
+                Log.d("websocketBober", "sendMessage socket is active")
                 Resource.Success(Unit)
+
             } else {
+                Log.d("websocketBober", "sendmessage socket is not active...")
+
                 Resource.Error("Socket is not active")
             }
         } catch (e: Exception) {
+            Log.d("websocketBober", "sendmessage: ${e.message}...")
+
             Resource.Error("Error: ${e.message}")
         }
     }
@@ -160,7 +167,11 @@ class WebSocketRepoImpl @Inject constructor(
                 ?.receiveAsFlow()
                 ?.filter { it is Frame.Text }
                 ?.map {
+                    Log.d("websocketBober", "observing...")
+
                     val json = (it as? Frame.Text)?.readText() ?: ""
+                    Log.d("websocketBober", "observing Json: $json")
+
 
                     if (json.startsWith("Switched recipient to")) {
                         MessageData(text = "switched to:")
@@ -183,9 +194,12 @@ class WebSocketRepoImpl @Inject constructor(
                             text = "deliveredMessage:"
                         )
                     } else if (json.startsWith("readMessages:")) {
-                        val recipientId = json.removePrefix("readMessages:")
+                        val recipientAndSenderId = json.removePrefix("readMessages:")
+                        val recipientId = recipientAndSenderId.take(36)
+                        val senderId = recipientAndSenderId.takeLast(36)
 
                         MessageData(
+                            senderUserId = senderId,
                             recipientUserId = recipientId,
                             text = "readMessages:"
                         )
@@ -219,6 +233,7 @@ class WebSocketRepoImpl @Inject constructor(
                     }
                 } ?: flow { }
         } catch (e: Exception) {
+            Log.d("websocketBober", "error: ${e.message}")
             e.printStackTrace()
             flow { }
         }

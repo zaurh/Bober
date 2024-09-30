@@ -40,9 +40,10 @@ fun NotificationItem(
             checked = checked,
             onCheckedChange = { onChange(it) },
             colors = SwitchDefaults.colors(
-                checkedBorderColor = Color.DarkGray,
-                checkedThumbColor = MaterialTheme.colorScheme.tertiary,
-                checkedTrackColor = MaterialTheme.colorScheme.onSecondary,
+                checkedBorderColor = Color.White.copy(alpha = 0.3f),
+                uncheckedBorderColor = Color.Gray,
+                checkedThumbColor = Color.White,
+                checkedTrackColor = MaterialTheme.colorScheme.secondary,
                 uncheckedTrackColor = Color.White
             )
         )

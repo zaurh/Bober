@@ -59,9 +59,9 @@ fun ChatScreen(
         )
     }
 
-    LaunchedEffect(key1 = profileId) {
-        chatScreenViewModel.switchRecipient(profileId ?: "")
-    }
+//    LaunchedEffect(key1 = profileId) {
+//        chatScreenViewModel.switchRecipient(profileId ?: "")
+//    }
 
     LaunchedEffect(messageList, profileId) {
         val unreadMessages = messageList.filter {

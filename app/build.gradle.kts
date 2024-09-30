@@ -15,8 +15,8 @@ android {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 6
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -127,5 +127,9 @@ dependencies {
 
     //lazyscrollbar
     implementation ("com.github.nanihadesuka:LazyColumnScrollbar:2.2.0")
+
+    //
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
 
 }

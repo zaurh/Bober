@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.home.components.SearchBar
 import com.zaurh.bober.screen.liked_users.LikedUserItem
@@ -34,7 +33,7 @@ fun LU_Content(
     paddingValues: PaddingValues
 ) {
     val userData = likedUsersViewModel.userDataState.collectAsState()
-    val userList = likedUsersViewModel.userListDataState.collectAsState()
+    val likedUserList = likedUsersViewModel.likedUserList.collectAsState()
     val searchQuery = likedUsersViewModel.searchText.value
 
     BackHandler(
@@ -57,19 +56,11 @@ fun LU_Content(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val matchedUserIdList = userData.value?.matchList?.map { it.matchUserId } ?: listOf()
-            val likedUsersId = userData.value?.likedUsers ?: listOf()
 
-            val filteredLikedUsersId = likedUsersId.filterNot { it in matchedUserIdList }
-
-
-            val likedUsersList = userList.value.filter {
-                it?.id in filteredLikedUsersId
-            }
-            val filteredLikedUsers = likedUsersList.filter {
-                it?.username?.contains(searchQuery) == true
-            }
-            if (likedUsersList.isNotEmpty()){
+            if (likedUserList.value.isNotEmpty()){
+                val filteredLikedUsers = likedUserList.value.filter {
+                    it?.username?.contains(searchQuery) == true
+                }
                 SearchBar(
                     value = searchQuery,
                     onValueChange = likedUsersViewModel::onSearch,
@@ -78,21 +69,23 @@ fun LU_Content(
                 Spacer(modifier = Modifier.size(16.dp))
                 if (filteredLikedUsers.isNotEmpty()){
                     LazyVerticalGrid(columns = GridCells.Fixed(3)) {
-                        items(filteredLikedUsers) { userData ->
-                            LikedUserItem(userData = userData ?: UserData()) {
-                                val likedUsername = userData?.username ?: ""
-                                navController.navigate(Screen.ProfileScreen.passUsername(likedUsername))
+                        items(filteredLikedUsers) { likedUserData ->
+                            likedUserData?.let {
+                                LikedUserItem(likedUserData = it) {
+                                    navController.navigate(Screen.ProfileScreen.passUsername(it.username))
+                                }
                             }
+
                         }
                     }
                 }else{
                     Text(text = "No one is found.")
                 }
-                
+
             }else{
                 Text(text = "You've not liked anyone.")
             }
-            
+
         }
     }
 

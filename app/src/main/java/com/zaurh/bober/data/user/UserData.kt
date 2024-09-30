@@ -1,10 +1,12 @@
 package com.zaurh.bober.data.user
 
+import com.zaurh.bober.data.responses.MatchedUserData
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserData(
     val id: String? = "",
+    val isPremium: Boolean? = false,
     val name: String? = "",
     val gender: Gender? = Gender.PREFER_NOT_TO_SAY,
     val username: String? = "",
@@ -22,7 +24,7 @@ data class UserData(
     val gotLiked: List<String>? = listOf(),
     val blockList: List<String>? = listOf(),
     val chatList: List<ChatData>? = listOf(),
-    val matchList: List<MatchData>? = listOf(),
+    val matchList: List<MatchedUserData>? = listOf(),
     val ageRangeStart: Float? = 18f,
     val ageRangeEnd: Float? = 100f,
     val maximumDistance: Float? = 200f,
@@ -30,6 +32,7 @@ data class UserData(
     val showMe: ShowMe? = ShowMe.EVERYONE,
     val salt: String? = "",
     val online: Boolean? = false,
-    val lastSeen: Long? = 0
+    val lastSeen: Long? = 0,
+    val likeToken: Int? = 0
 )
 
