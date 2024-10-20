@@ -1,21 +1,16 @@
 package com.zaurh.bober.screen.sign_in
 
-import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,12 +24,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -78,7 +74,12 @@ fun SignInScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "BOBER", color = Color.White, fontSize = 32.sp)
+            Text(
+                text = "BOBER", color = Color.White, fontSize = 32.sp,
+                fontFamily = FontFamily(
+                    Font(R.font.bober_font)
+                ),
+            )
             Spacer(modifier = Modifier.size(16.dp))
             Icon(
                 modifier = Modifier.size(120.dp),
@@ -111,10 +112,22 @@ fun SignInScreen(
                         modifier = Modifier.size(24.dp),
                         onClick = signInViewModel::onPasswordVisibilityChange
                     ) {
-                        Icon(painter = image, contentDescription = "")
+                        Icon(painter = image, contentDescription = "", tint = Color.Gray)
                     }
                 }
             )
+            Spacer(modifier = Modifier.size(8.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd){
+                Text(
+                    "Forgot password?",
+                    modifier = Modifier.clickable {
+                        navController.navigate(Screen.ForgotPasswordScreen.route)
+                    },
+                    color = Color.White,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Button(enabled = !signInViewModel.signInLoading.value,
@@ -139,60 +152,63 @@ fun SignInScreen(
             }
         }
         Spacer(modifier = Modifier.size(16.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            HorizontalDivider(
-                modifier = Modifier
-                    .width(80.dp)
-                    .alpha(0.5f), color = Color.White
-            )
-            Text(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-                text = "OR",
-                color = Color.White
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .width(80.dp)
-                    .alpha(0.5f), color = Color.White
-            )
-        }
-        Spacer(modifier = Modifier.size(16.dp))
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(20))
-                .background(Color.White)
-                .clickable {
-                    Toast
-                        .makeText(
-                            context,
-                            "Not available yet",
-                            Toast.LENGTH_SHORT
-                        )
-                        .show()
-                }
-        ) {
-            Row(
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    modifier = Modifier.size(30.dp),
-                    painter = painterResource(id = R.drawable.google_logo),
-                    contentDescription = ""
-                )
-                Spacer(modifier = Modifier.size(12.dp))
-                Text(
-                    text = "Continue with Google",
-                    color = colorResource(id = R.color.darkBlue)
-                )
-            }
-
-        }
+        HorizontalDivider(
+            modifier = Modifier
+                .alpha(0.5f), color = Color.White
+        )//        Row(
+//            Modifier.fillMaxWidth(),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.Center
+//        ) {
+//            HorizontalDivider(
+//                modifier = Modifier
+//                    .width(80.dp)
+//                    .alpha(0.5f), color = Color.White
+//            )
+//            Text(
+//                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+//                text = "OR",
+//                color = Color.White
+//            )
+//            HorizontalDivider(
+//                modifier = Modifier
+//                    .width(80.dp)
+//                    .alpha(0.5f), color = Color.White
+//            )
+//        }
+//        Spacer(modifier = Modifier.size(16.dp))
+//        Box(
+//            Modifier
+//                .clip(RoundedCornerShape(20))
+//                .background(Color.White)
+//                .clickable {
+//                    Toast
+//                        .makeText(
+//                            context,
+//                            "Not available yet",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                        .show()
+//                }
+//        ) {
+//            Row(
+//                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.Center
+//            ) {
+//                Image(
+//                    modifier = Modifier.size(30.dp),
+//                    painter = painterResource(id = R.drawable.google_logo),
+//                    contentDescription = ""
+//                )
+//                Spacer(modifier = Modifier.size(12.dp))
+//                Text(
+//                    text = "Continue with Google",
+//                    color = colorResource(id = R.color.darkBlue)
+//                )
+//            }
+//
+//        }
         Spacer(Modifier.size(16.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "Don't have an account?", color = Color.White)

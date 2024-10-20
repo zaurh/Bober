@@ -217,8 +217,7 @@ fun PagerScreen(
                     when (index) {
                         0 -> MatchScreen(
                             navController = navController,
-                            matchViewModel = matchViewModel,
-                            chatScreenViewModel = chatScreenViewModel
+                            matchViewModel = matchViewModel
                         )
 
                         1 -> HomeScreen(

@@ -1,17 +1,23 @@
 package com.zaurh.bober.data.repository
 
 import android.content.SharedPreferences
+import android.util.Log
+import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
-import com.zaurh.bober.data.user.UserApi
+import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
+import com.zaurh.bober.data.requests.UpdatePasswordRequest
+import com.zaurh.bober.data.requests.ValidateTokenRequest
 import com.zaurh.bober.data.responses.AuthenticateResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.SignInResponse
 import com.zaurh.bober.data.responses.SignUpResponse
+import com.zaurh.bober.data.responses.ValidateEmailResponse
 import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.data.user.ShowMe
+import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.domain.repository.AuthRepo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,7 +91,10 @@ class AuthRepoImpl @Inject constructor(
             )
 
             if (response.success) {
-                signIn(username,password)
+                signIn(
+                    username = username,
+                    password = password
+                )
             }
 
             SignUpResponse(
@@ -93,7 +102,7 @@ class AuthRepoImpl @Inject constructor(
                 message = response.message,
                 user = response.user,
                 passwordError = response.passwordError,
-                imageError =response.imageError
+                imageError = response.imageError
             )
 
         } catch (e: Exception) {
@@ -104,10 +113,11 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun signIn(username: String, password: String): SignInResponse {
+    override suspend fun signIn(userId: String?,username: String, password: String): SignInResponse {
         return try {
             val response = api.signIn(
                 apiRequest = SignInRequest(
+                    userId = userId,
                     username = username,
                     password = password
                 )
@@ -135,6 +145,155 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
+    override suspend fun resetPassword(email: String): MessageResponse {
+        return try {
+            val response = api.resetPassword(
+                sendEmailRequest = SendEmailRequest(
+                    email = email
+                )
+            )
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            MessageResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
+    override suspend fun checkPassword(password: String): MessageResponse {
+        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+            success = false,
+            message = "Token retrieve failed."
+        )
+        Log.d("asdkjalsdk", "token: $token")
+        return try {
+            val response = api.checkPassword(
+                token = "Bearer $token",
+                checkCurrentPasswordRequest = CheckCurrentPasswordRequest(
+                    password = password
+                )
+            )
+            Log.d("asdkjalsdk", "success response: $response")
+
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            Log.d("asdkjalsdk", "error response: ${e.message}")
+
+            MessageResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
+    override suspend fun updatePassword(userId: String, password: String, confirmPassword: String): MessageResponse {
+        return try {
+            val response = api.updatePassword(
+                updatePasswordRequest = UpdatePasswordRequest(
+                    userId = userId,
+                    password = password,
+                    confirmPassword = confirmPassword
+                )
+            )
+            if (response.success){
+                signIn(
+                    userId = userId,
+                    username = "",
+                    password = password
+                )
+            }
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            MessageResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
+    override suspend fun validatePasswordToken(token: String): MessageResponse {
+        return try {
+            val response = api.validatePasswordToken(
+                validateTokenRequest = ValidateTokenRequest(
+                    token = token
+                )
+            )
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            MessageResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
+    override suspend fun sendEmailVerification(email: String): MessageResponse {
+        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+            success = false,
+            message = "Token retrieve failed."
+        )
+
+        return try {
+            val response = api.sendEmailVerification(
+                token = "Bearer $token",
+                sendEmailRequest = SendEmailRequest(
+                    email = email
+                )
+            )
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            MessageResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
+    override suspend fun validateEmailToken(emailToken: String): ValidateEmailResponse {
+        val token = prefs.getString("jwt", null) ?: return ValidateEmailResponse(
+            success = false,
+            message = "Token retrieve failed."
+        )
+
+        return try {
+            val response = api.validateEmailToken(
+                token = "Bearer $token",
+                validateTokenRequest = ValidateTokenRequest(
+                    token = emailToken
+                )
+            )
+            Log.d("dalkjdsakl", "repo:$response")
+            ValidateEmailResponse(
+                success = response.success,
+                message = response.message,
+                email = response.email
+            )
+        } catch (e: Exception) {
+            Log.d("dalkjdsakl", "${e.message}")
+
+            ValidateEmailResponse(
+                success = false,
+                message = e.localizedMessage ?: ""
+            )
+        }
+    }
+
     override suspend fun authenticate(): AuthenticateResponse {
         return try {
             _loading.value = true
@@ -144,7 +303,7 @@ class AuthRepoImpl @Inject constructor(
             if (response.success) {
                 _signedIn.value = true
                 _loading.value = false
-            }else{
+            } else {
                 _loading.value = false
             }
 

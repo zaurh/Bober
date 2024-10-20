@@ -15,8 +15,8 @@ android {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.0.5"
+        versionCode = 9
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -130,6 +130,9 @@ dependencies {
 
     //
     implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    //Stevdza san message bar
+    implementation("com.github.stevdza-san:MessageBarCompose:1.0.8")
 
 
 }

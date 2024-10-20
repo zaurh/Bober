@@ -10,6 +10,8 @@ data class UserData(
     val name: String? = "",
     val gender: Gender? = Gender.PREFER_NOT_TO_SAY,
     val username: String? = "",
+    val email: String? = "",
+    val emailIsVerified: Boolean? = false,
     val password: String? = "",
     val encryptedLocation: String? = "",
     val aboutMe: String? = "",

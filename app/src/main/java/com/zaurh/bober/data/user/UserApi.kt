@@ -1,8 +1,12 @@
 package com.zaurh.bober.data.user
 
+import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
+import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
+import com.zaurh.bober.data.requests.UpdatePasswordRequest
+import com.zaurh.bober.data.requests.ValidateTokenRequest
 import com.zaurh.bober.data.responses.AddMediaResponse
 import com.zaurh.bober.data.responses.AuthenticateResponse
 import com.zaurh.bober.data.responses.BlockedUsersResponse
@@ -15,6 +19,7 @@ import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.SignInResponse
 import com.zaurh.bober.data.responses.SignUpResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
+import com.zaurh.bober.data.responses.ValidateEmailResponse
 import com.zaurh.bober.data.responses.WhoLikesResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -44,6 +49,39 @@ interface UserApi {
     suspend fun signIn(
         @Body apiRequest: SignInRequest
     ): SignInResponse
+
+    @POST("/reset-password")
+    suspend fun resetPassword(
+        @Body sendEmailRequest: SendEmailRequest
+    ): MessageResponse
+
+    @POST("/update_password")
+    suspend fun updatePassword(
+        @Body updatePasswordRequest: UpdatePasswordRequest
+    ): MessageResponse
+
+    @POST("/check_current_password")
+    suspend fun checkPassword(
+        @Header("Authorization") token: String,
+        @Body checkCurrentPasswordRequest: CheckCurrentPasswordRequest
+    ): MessageResponse
+
+    @POST("/send_email_verification")
+    suspend fun sendEmailVerification(
+        @Header("Authorization") token: String,
+        @Body sendEmailRequest: SendEmailRequest
+    ): MessageResponse
+
+    @POST("/validate_email_token")
+    suspend fun validateEmailToken(
+        @Header("Authorization") token: String,
+        @Body validateTokenRequest: ValidateTokenRequest
+    ): ValidateEmailResponse
+
+    @POST("/validate_password_token")
+    suspend fun validatePasswordToken(
+        @Body validateTokenRequest: ValidateTokenRequest
+    ): MessageResponse
 
     @GET("/get_user_data")
     suspend fun getUserData(

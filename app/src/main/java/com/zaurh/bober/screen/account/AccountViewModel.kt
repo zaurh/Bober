@@ -19,6 +19,8 @@ class AccountViewModel @Inject constructor(
     val userDataState: StateFlow<UserData?> = userRepository.userData
     val whoLikesState: StateFlow<List<WhoLikesData>> = userRepository.whoLikesList
 
+
+
     fun boberium(){
         viewModelScope.launch(Dispatchers.IO){
             userRepository.boberium()
@@ -30,4 +32,5 @@ class AccountViewModel @Inject constructor(
             userRepository.getWhoLikes()
         }
     }
+
 }

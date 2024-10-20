@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SignInViewModel @Inject constructor(
     private val authRepo: AuthRepo
-): ViewModel() {
+) : ViewModel() {
 
     val signedInState: StateFlow<Boolean> = authRepo.signedIn
     val loading: StateFlow<Boolean> = authRepo.loading
@@ -49,7 +49,22 @@ class SignInViewModel @Inject constructor(
     fun signIn(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             _signInLoading.value = true
-            val response = authRepo.signIn(usernameState.value, passwordState.value)
+
+            val isUserId = usernameState.value.count() == 36
+            val response =
+                if (isUserId)
+                    authRepo.signIn(
+                        userId = usernameState.value,
+                        username = "",
+                        password = passwordState.value
+                    )
+                else {
+                    authRepo.signIn(
+                        username = usernameState.value,
+                        password = passwordState.value
+                    )
+
+                }
             if (response.success) {
                 _signInLoading.value = false
             } else {

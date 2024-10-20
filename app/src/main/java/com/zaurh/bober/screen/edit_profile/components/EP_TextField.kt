@@ -15,34 +15,39 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 fun EP_TextField(
+    modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     title: String,
     placeholder: String,
     value: String,
     onValueChange: (String) -> Unit,
     singleLine: Boolean = false
 ) {
-    Column {
-        Text(text = title, color = MaterialTheme.colorScheme.primary)
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20)),
-            placeholder = { Text(text = placeholder) },
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
-                focusedContainerColor = MaterialTheme.colorScheme.tertiary,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                cursorColor = MaterialTheme.colorScheme.onSecondary,
-                selectionColors = TextSelectionColors(
-                    handleColor = MaterialTheme.colorScheme.onSecondary,
-                    backgroundColor = MaterialTheme.colorScheme.onSecondary
+    Column(modifier = modifier) {
+        Column(modifier = innerModifier) {
+            Text(text = title, color = MaterialTheme.colorScheme.primary)
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20)),
+                placeholder = { Text(text = placeholder) },
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
+                    focusedContainerColor = MaterialTheme.colorScheme.tertiary,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.onSecondary,
+                    selectionColors = TextSelectionColors(
+                        handleColor = MaterialTheme.colorScheme.onSecondary,
+                        backgroundColor = MaterialTheme.colorScheme.onSecondary
+                    ),
                 ),
-            ),
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = singleLine
-        )
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = singleLine
+            )
+        }
+
     }
 
 }

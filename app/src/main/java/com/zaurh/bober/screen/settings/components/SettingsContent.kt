@@ -131,6 +131,17 @@ fun SettingsContent(
                 icon = R.drawable.contact_ic
             )
             SettingsDivider()
+            TitleItem(title = "Security")
+            SettingsItem(
+                title = "Account center",
+                description = "Change password/email",
+                onClick = {
+                    navController.navigate(Screen.AccountCenterScreen.route)
+                },
+                icon = R.drawable.lock_ic
+            )
+
+            SettingsDivider()
 
             TitleItem(title = "Account")
             SettingsItem(
@@ -141,7 +152,6 @@ fun SettingsContent(
                         navController.navigate(Screen.SignInScreen.route) {
                             popUpTo(0)
                         }
-//                        settingsViewModel.updateOnlineStatus(online = false)
                     }
                 },
                 icon = R.drawable.logout_ic

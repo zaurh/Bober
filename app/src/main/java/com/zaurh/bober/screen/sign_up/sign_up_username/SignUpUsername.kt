@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -101,7 +102,7 @@ fun SignUpUsername(
             Spacer(modifier = Modifier.size(16.dp))
             TextField(
                 modifier = Modifier.clip(RoundedCornerShape(40)),
-                leadingIcon = { Text(text = "@", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Text(text = "@", fontWeight = FontWeight.Bold, color = Color.Gray) },
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
@@ -109,7 +110,11 @@ fun SignUpUsername(
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = colorResource(id = R.color.darkBlue),
                     unfocusedTextColor = colorResource(id = R.color.darkBlue),
-                    focusedTextColor = colorResource(id = R.color.darkBlue)
+                    focusedTextColor = colorResource(id = R.color.darkBlue),
+                    selectionColors = TextSelectionColors(
+                        handleColor = colorResource(R.color.backgroundTop),
+                        backgroundColor = colorResource(R.color.backgroundTop)
+                    )
                 ),
                 value = signUpViewModel.usernameState.value.username,
                 onValueChange = signUpViewModel::onUsernameChange,

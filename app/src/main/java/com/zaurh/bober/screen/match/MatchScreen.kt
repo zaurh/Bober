@@ -42,7 +42,6 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.zaurh.bober.R
 import com.zaurh.bober.data.location.isLocationEnabled
 import com.zaurh.bober.navigation.Screen
-import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.match.components.EmptyAlert
 import com.zaurh.bober.screen.pager.components.AskForDeniedLocation
 import com.zaurh.bober.screen.pager.components.AskForEnableGPS
@@ -58,11 +57,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun MatchScreen(
     matchViewModel: MatchViewModel,
-    chatScreenViewModel: ChatScreenViewModel,
     profileViewModel: ProfileViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    val currentUser = matchViewModel.userDataState.collectAsState()
     val matchListState = matchViewModel.matchListState.collectAsState()
     val scope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -185,9 +182,6 @@ fun MatchScreen(
                                 }
 
                                 LaunchedEffect(matchProfile, state.swipedDirection) {
-//                        chatScreenViewModel.switchRecipient(
-//                            recipientUserId = matchProfile?.userId ?: ""
-//                        )
                                     if (state.swipedDirection != null) {
                                         when (state.swipedDirection) {
                                             Direction.Right -> {
