@@ -271,7 +271,7 @@ class UserRepoImpl @Inject constructor(
             if (response.success) {
                 _whoLikesList.value = response.whoLikesList
                 _userData.value = userData.value?.copy(
-                    gotLiked = response.whoLikesList.map { it.id }
+                    gotLiked = response.whoLikesList
                 )
             }
 

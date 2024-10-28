@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
+import com.zaurh.bober.data.requests.FCMTokenRequest
 import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
@@ -18,6 +19,7 @@ import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.data.user.ShowMe
 import com.zaurh.bober.data.user.UserApi
+import com.zaurh.bober.data.user.UserUpdate
 import com.zaurh.bober.domain.repository.AuthRepo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +40,33 @@ class AuthRepoImpl @Inject constructor(
     private val _loading = MutableStateFlow(false)
     override val loading: StateFlow<Boolean>
         get() = _loading
+
+    override suspend fun storeFCMToken(fcmToken: String): MessageResponse {
+        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+            success = false,
+            message = "Token retrieve failed."
+        )
+        return try {
+            val response = api.storeFCMToken(
+                token = "Bearer $token",
+                fcmTokenRequest = FCMTokenRequest(
+                    fcmToken = fcmToken
+                )
+            )
+            Log.d("dfsksdkf", "$response")
+            MessageResponse(
+                success = response.success,
+                message = response.message
+            )
+        } catch (e: Exception) {
+            Log.d("dfsksdkf", "${e.message}")
+
+            MessageResponse(
+                success = false,
+                message = e.cause?.message ?: ""
+            )
+        }
+    }
 
 
     override suspend fun checkUsername(username: String): MessageResponse {
@@ -113,7 +142,11 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun signIn(userId: String?,username: String, password: String): SignInResponse {
+    override suspend fun signIn(
+        userId: String?,
+        username: String,
+        password: String
+    ): SignInResponse {
         return try {
             val response = api.signIn(
                 apiRequest = SignInRequest(
@@ -193,7 +226,11 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun updatePassword(userId: String, password: String, confirmPassword: String): MessageResponse {
+    override suspend fun updatePassword(
+        userId: String,
+        password: String,
+        confirmPassword: String
+    ): MessageResponse {
         return try {
             val response = api.updatePassword(
                 updatePasswordRequest = UpdatePasswordRequest(
@@ -202,7 +239,7 @@ class AuthRepoImpl @Inject constructor(
                     confirmPassword = confirmPassword
                 )
             )
-            if (response.success){
+            if (response.success) {
                 signIn(
                     userId = userId,
                     username = "",
@@ -324,6 +361,13 @@ class AuthRepoImpl @Inject constructor(
 
     override suspend fun logout(): AuthenticateResponse {
         return try {
+            val token = prefs.getString("jwt", null)
+            api.updateUserData(
+                token = "Bearer $token",
+                userUpdate = UserUpdate(
+                    fcmToken = ""
+                )
+            )
             prefs.edit().clear().apply()
 
             _signedIn.value = false

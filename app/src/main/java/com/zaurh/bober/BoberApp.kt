@@ -25,15 +25,8 @@ class BoberApp : Application() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channel1 = NotificationChannel(
-            "foreground",
-            "Foreground notifications",
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            description = "Get notifications everywhere."
-        }
 
-        val channel2 = NotificationChannel(
+        val channel1 = NotificationChannel(
             "chat",
             "Chat notifications",
             NotificationManager.IMPORTANCE_HIGH
@@ -41,7 +34,7 @@ class BoberApp : Application() {
             description = "Receiving message notifications."
         }
 
-        val channel3 = NotificationChannel(
+        val channel2 = NotificationChannel(
             "like",
             "Like notifications",
             NotificationManager.IMPORTANCE_HIGH
@@ -49,7 +42,7 @@ class BoberApp : Application() {
             description = "Receiving like notifications."
         }
 
-        val channel4 = NotificationChannel(
+        val channel3 = NotificationChannel(
             "match",
             "Match notifications",
             NotificationManager.IMPORTANCE_HIGH
@@ -57,7 +50,7 @@ class BoberApp : Application() {
             description = "Receiving match notifications."
         }
 
-        notificationManager.createNotificationChannels(listOf(channel1, channel2, channel3, channel4))
+        notificationManager.createNotificationChannels(listOf(channel1, channel2, channel3))
     }
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.user.ChatData
 import com.zaurh.bober.data.user.UserData
@@ -35,6 +36,19 @@ class HomeViewModel @Inject constructor(
     private val _searchQuery = mutableStateOf("")
     val searchQuery: State<String> = _searchQuery
 
+    fun storeFCMToken(){
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val fcmToken = task.result
+                viewModelScope.launch(Dispatchers.IO){
+                    val response = authRepo.storeFCMToken(fcmToken)
+                    Log.d("fcmTokenRequest", "tokenResponse: $response")
+                }
+            }else{
+                Log.d("fcmTokenRequest", "task not successfull")
+            }
+        }
+    }
 
     fun getMatchedUsers(){
         viewModelScope.launch(Dispatchers.IO) {

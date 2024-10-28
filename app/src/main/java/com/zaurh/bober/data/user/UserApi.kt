@@ -2,6 +2,7 @@ package com.zaurh.bober.data.user
 
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
+import com.zaurh.bober.data.requests.FCMTokenRequest
 import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
@@ -34,6 +35,12 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface UserApi {
+
+    @PUT("store_fcm_token")
+    suspend fun storeFCMToken(
+        @Header("Authorization") token: String,
+        @Body fcmTokenRequest: FCMTokenRequest
+    ): MessageResponse
 
     @POST("/check_username")
     suspend fun checkUsername(
@@ -203,5 +210,6 @@ interface UserApi {
     suspend fun boberium(
         @Header("Authorization") token: String,
     ): UpdateUserResponse
+
 
 }

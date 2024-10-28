@@ -1,6 +1,7 @@
 package com.zaurh.bober.screen.sign_in
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +70,7 @@ class SignInViewModel @Inject constructor(
                 _signInLoading.value = false
             } else {
                 _signInLoading.value = false
+                Log.d("ddfjklsd", "${response.message}")
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                 }

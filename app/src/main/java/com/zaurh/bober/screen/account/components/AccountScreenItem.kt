@@ -48,7 +48,7 @@ fun AccountScreenItem(
             Spacer(modifier = Modifier.size(6.dp))
             Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
         }
-        if (count != ""){
+        if (count != "0" && count != ""){
             Box(modifier = Modifier
                 .size(30.dp)
                 .align(Alignment.TopEnd)

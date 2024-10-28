@@ -1,6 +1,7 @@
 package com.zaurh.bober.screen.chat
 
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -40,18 +42,14 @@ fun ChatScreen(
 
     val userId = currentUserState.value?.id ?: ""
     val profileId = profileDataState.value?.id
-    val messageList = chatScreenViewModel.state.value.messages
+    val messageList = chatScreenViewModel.chatState.value.messages
+    val currentUser = chatScreenViewModel.userDataState.collectAsState()
+
+    val chatState = chatScreenViewModel.chatState.value
+    val context = LocalContext.current
 
 
-    LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
-        chatScreenViewModel.clearProfileData()
-        chatScreenViewModel.onRouteChange(
-            onChatScreen = false,
-            recipientId = ""
-        )
-    }
-
-    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+    LaunchedEffect(true) {
         chatScreenViewModel.getProfileData(username)
         chatScreenViewModel.onRouteChange(
             onChatScreen = true,
@@ -59,9 +57,13 @@ fun ChatScreen(
         )
     }
 
-//    LaunchedEffect(key1 = profileId) {
-//        chatScreenViewModel.switchRecipient(profileId ?: "")
-//    }
+    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+        if (!chatState.socketIsObserving) {
+            chatScreenViewModel.connectToChat(context)
+        } else {
+            Log.d("websocketBober", "socket is observing already")
+        }
+    }
 
     LaunchedEffect(messageList, profileId) {
         val unreadMessages = messageList.filter {
@@ -72,6 +74,7 @@ fun ChatScreen(
         }
 
     }
+
 
 
     BackHandler(

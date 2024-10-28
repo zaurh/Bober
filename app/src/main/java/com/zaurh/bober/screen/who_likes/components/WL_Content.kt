@@ -74,6 +74,7 @@ fun WL_Content(
                                 WhoLikesUserItem(whoLikesData = it) {
                                     val whoLikedUsername = it.username
                                     navController.navigate(Screen.ProfileScreen.passUsername(whoLikedUsername))
+                                    whoLikesViewModel.newGotLikedToOld(it.id)
                                 }
                             }
 

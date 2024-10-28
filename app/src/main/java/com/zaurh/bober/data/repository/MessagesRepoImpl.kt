@@ -1,6 +1,7 @@
 package com.zaurh.bober.data.repository
 
 import android.content.SharedPreferences
+import android.util.Log
 import com.zaurh.bober.data.message.MessageApi
 import com.zaurh.bober.data.responses.ChatListResponse
 import com.zaurh.bober.data.responses.GetAllMessagesResponse
@@ -36,6 +37,34 @@ class MessagesRepoImpl @Inject constructor(
 
 
         } catch (e: Exception) {
+            GetAllMessagesResponse(
+                success = false,
+                message = e.message.toString()
+            )
+        }
+    }
+
+    override suspend fun getRecipientMessages(recipientUserId: String): GetAllMessagesResponse {
+        return try {
+            val token = prefs.getString("jwt", null) ?: ""
+
+            val response = api.getRecipientMessages(
+                token = "Bearer $token",
+                recipientUserId = recipientUserId
+            )
+
+            Log.d("sadjdlaksda", "$response")
+
+            GetAllMessagesResponse(
+                success = response.success,
+                messageList = response.messageList,
+                message = response.message
+            )
+
+
+        } catch (e: Exception) {
+            Log.d("sadjdlaksda", "response: ${e.message}")
+
             GetAllMessagesResponse(
                 success = false,
                 message = e.message.toString()

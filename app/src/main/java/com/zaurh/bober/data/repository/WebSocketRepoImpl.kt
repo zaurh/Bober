@@ -178,7 +178,8 @@ class WebSocketRepoImpl @Inject constructor(
                     } else if (json.startsWith("typing:")) {
                         val senderUserId = json.removePrefix("typing:")
                         MessageData(text = "typing:", senderUserId = senderUserId)
-                    } else if (json == "like_sent:") {
+                    }
+                    else if (json == "like_sent:") {
                         MessageData(text = "like_sent:")
                     }
                     else if (json.startsWith("got_match:")) {

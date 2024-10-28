@@ -105,8 +105,10 @@ fun AccountScreen(
 
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+
+                        val whoLikesNew = whoLikesState.value.filter { it.new }
                         val whoLikesCount =
-                            if (whoLikesState.value.count() < 100) whoLikesState.value.count() else "99+"
+                            if (whoLikesNew.count() < 100) whoLikesNew.count() else "99+"
 
                         AccountScreenItem(
                             icon = R.drawable.who_likes_me_ic,

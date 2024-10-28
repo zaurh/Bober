@@ -15,6 +15,8 @@ import com.zaurh.bober.domain.repository.TenorRepo
 import com.zaurh.bober.domain.repository.UserRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.model.MessageData
+import com.zaurh.bober.screen.chat.state.ChatState
+import com.zaurh.bober.screen.chat.state.EmptyGifState
 import com.zaurh.bober.screen.match.GotMatchState
 import com.zaurh.bober.screen.settings.notifications.NotificationType
 import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
@@ -46,14 +48,18 @@ class ChatScreenViewModel @Inject constructor(
     private val _gifState = mutableStateOf(false)
     val gifState: State<Boolean> = _gifState
 
+    private val _gifUrls = MutableStateFlow<List<String>>(emptyList())
+    val gifUrls: StateFlow<List<String>> get() = _gifUrls
+
+    private val _emptyChatGif = mutableStateOf(EmptyGifState())
+    val emptyChatGif: State<EmptyGifState> = _emptyChatGif
+
     private val _gotMatch = mutableStateOf(GotMatchState())
     val gotMatch: State<GotMatchState> = _gotMatch
 
     private val _modalSheetState: MutableState<Boolean> = mutableStateOf(false)
     val modalSheetState: State<Boolean> = _modalSheetState
 
-    private val _gifUrls = MutableStateFlow<List<String>>(emptyList())
-    val gifUrls: StateFlow<List<String>> get() = _gifUrls
 
     val profileDataState: StateFlow<UserData?> = userRepository.profileData
 
@@ -63,8 +69,8 @@ class ChatScreenViewModel @Inject constructor(
     private val _tenorQuery = mutableStateOf("")
     val tenorQuery: State<String> = _tenorQuery
 
-    private val _state = mutableStateOf(ChatState())
-    val state: State<ChatState> = _state
+    private val _chatState = mutableStateOf(ChatState())
+    val chatState: State<ChatState> = _chatState
 
     private var typingJob: Job? = null
     private var searchGifJob: Job? = null
@@ -74,10 +80,10 @@ class ChatScreenViewModel @Inject constructor(
         val dataStore = NotificationPreferences(context)
 
         viewModelScope.launch {
-            if (_state.value.socketIsObserving) {
+            if (_chatState.value.socketIsObserving) {
                 webSocketRepository.closeSession() // Close the existing session first
             }
-            _state.value = state.value.copy(
+            _chatState.value = chatState.value.copy(
                 socketIsObserving = true
             )
             webSocketRepository.initSession()
@@ -124,7 +130,8 @@ class ChatScreenViewModel @Inject constructor(
         }
     }
 
-    fun closeWebsocket() {
+    override fun onCleared() {
+        super.onCleared()
         viewModelScope.launch(Dispatchers.IO) {
             webSocketRepository.closeSession()
         }
@@ -146,7 +153,7 @@ class ChatScreenViewModel @Inject constructor(
     }
 
 
-    private fun trendingGifs() {
+    fun trendingGifs() {
         viewModelScope.launch(Dispatchers.IO) {
             _gifUrls.value = tenorRepo.trendingGifs()
         }
@@ -171,7 +178,7 @@ class ChatScreenViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val recipientId = messageData.recipientUserId
 
-            val messageList = state.value.messages
+            val messageList = chatState.value.messages
 
             val unDeliveredMessages = messageList.filter {
                 it.status == MessageStatus.SENT && it.recipientUserId == recipientId
@@ -179,7 +186,7 @@ class ChatScreenViewModel @Inject constructor(
 
             if (unDeliveredMessages.isNotEmpty()) {
                 // Update the status of undelivered messages
-                val updatedMessages = state.value.messages.map { message ->
+                val updatedMessages = chatState.value.messages.map { message ->
                     if (message.recipientUserId == recipientId && message.status == MessageStatus.SENT) {
                         message.copy(status = MessageStatus.DELIVERED)
                     } else {
@@ -187,7 +194,7 @@ class ChatScreenViewModel @Inject constructor(
                     }
                 }
 
-                _state.value = state.value.copy(
+                _chatState.value = chatState.value.copy(
                     messages = updatedMessages
                 )
             }
@@ -201,7 +208,7 @@ class ChatScreenViewModel @Inject constructor(
             val recipientId = messageData.recipientUserId
 
             val messageListofRecipient =
-                state.value.messages.filter { it.recipientUserId == recipientId }
+                chatState.value.messages.filter { it.recipientUserId == recipientId }
 
             val unReadMessages = messageListofRecipient.filter {
                 it.status != MessageStatus.READ && it.recipientUserId == recipientId && it.senderUserId == senderId
@@ -209,14 +216,14 @@ class ChatScreenViewModel @Inject constructor(
 
             if (unReadMessages.isNotEmpty()) {
                 // Update the status of undelivered messages
-                val updatedMessages = state.value.messages.map { message ->
+                val updatedMessages = chatState.value.messages.map { message ->
                     if (message.recipientUserId == recipientId && message.senderUserId == senderId && message.status == MessageStatus.DELIVERED) {
                         message.copy(status = MessageStatus.READ)
                     } else {
                         message
                     }
                 }
-                _state.value = state.value.copy(
+                _chatState.value = chatState.value.copy(
                     messages = updatedMessages
                 )
             }
@@ -230,7 +237,7 @@ class ChatScreenViewModel @Inject constructor(
                 messageData.recipientLastSeen ?: profileDataState.value?.lastSeen
             val recipientUserId = messageData.recipientUserId
 
-            _state.value = state.value.copy(
+            _chatState.value = chatState.value.copy(
                 recipientUserId = recipientUserId,
                 recipientOnlineStatus = messageData.recipientOnlineStatus,
                 recipientLastSeen = recipientLastSeen
@@ -266,10 +273,10 @@ class ChatScreenViewModel @Inject constructor(
             }
         }
 
-        val newList = state.value.messages.toMutableList().apply {
+        val newList = chatState.value.messages.toMutableList().apply {
             add(0, messageData)
         }
-        _state.value = state.value.copy(
+        _chatState.value = chatState.value.copy(
             messages = newList
         )
     }
@@ -279,18 +286,18 @@ class ChatScreenViewModel @Inject constructor(
 
         typingJob?.cancel()
         typingJob = viewModelScope.launch(Dispatchers.IO) {
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
-            _state.value = state.value.copy(
+            Log.d("typingBober", "${_chatState.value.recipientIsTyping}")
+            _chatState.value = chatState.value.copy(
                 recipientUserId = recipientId,
                 recipientIsTyping = true
             )
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
+            Log.d("typingBober", "${_chatState.value.recipientIsTyping}")
             delay(2000)
-            _state.value = state.value.copy(
+            _chatState.value = chatState.value.copy(
                 recipientUserId = recipientId,
                 recipientIsTyping = false
             )
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
+            Log.d("typingBober", "${_chatState.value.recipientIsTyping}")
         }
     }
 
@@ -357,6 +364,9 @@ class ChatScreenViewModel @Inject constructor(
 
 
     fun sendMessage() {
+        _emptyChatGif.value = emptyChatGif.value.copy(
+            enabled = false
+        )
         viewModelScope.launch(Dispatchers.IO) {
             if (messageText.value.isNotBlank()) {
                 webSocketRepository.sendMessage(messageText.value)
@@ -365,8 +375,6 @@ class ChatScreenViewModel @Inject constructor(
             }
         }
     }
-
-
 
 
     fun onMessageChange(message: String) {
@@ -385,15 +393,54 @@ class ChatScreenViewModel @Inject constructor(
         }
     }
 
+    fun onEmptyMessageGif() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _emptyChatGif.value = emptyChatGif.value.copy(
+                gifUrl = tenorRepo.emptyChatGif()
+            )
+        }
+    }
+
 
     private fun getAllMessages() {
         viewModelScope.launch(Dispatchers.IO) {
-            _state.value = state.value.copy(isLoading = true)
+            _chatState.value = chatState.value.copy(isLoading = true)
             val result = messageRepository.getPrivateMessages()
-            _state.value = state.value.copy(
-                messages = result.messageList?.map { it.toMessageData() } ?: listOf(),
-                isLoading = false
-            )
+            if (result.success) {
+                _chatState.value = chatState.value.copy(
+                    messages = result.messageList?.map { it.toMessageData() } ?: listOf(),
+                    isLoading = false
+                )
+            } else {
+                _chatState.value = chatState.value.copy(
+                    messages = listOf(),
+                    isLoading = false
+                )
+            }
+
+        }
+    }
+
+    fun getRecipientMessages(
+        recipientUserId: String
+    ) {
+        _chatState.value = chatState.value.copy(
+            recipientMessagesLoading = true
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = messageRepository.getRecipientMessages(recipientUserId)
+            if (result.success) {
+                _chatState.value = chatState.value.copy(
+                    recipientMessages = result.messageList?.map { it.toMessageData() } ?: listOf(),
+                    recipientMessagesLoading = false
+                )
+            } else {
+                _chatState.value = chatState.value.copy(
+                    recipientMessages = listOf(),
+                    recipientMessagesLoading = false
+                )
+            }
+
         }
     }
 
@@ -435,7 +482,7 @@ class ChatScreenViewModel @Inject constructor(
         recipientOnlineStatus: Boolean,
         recipientLastSeen: Long
     ) {
-        _state.value = state.value.copy(
+        _chatState.value = chatState.value.copy(
             recipientUserId = recipientUserId,
             recipientOnlineStatus = recipientOnlineStatus,
             recipientLastSeen = recipientLastSeen

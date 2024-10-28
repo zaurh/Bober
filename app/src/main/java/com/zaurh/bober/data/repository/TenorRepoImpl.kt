@@ -21,6 +21,14 @@ class TenorRepoImpl @Inject constructor(
         }
     }
 
+    override suspend fun emptyChatGif(): String {
+        return try {
+            searchGifs("hello").randomOrNull() ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
     override suspend fun trendingGifs(): List<String> {
         return try {
             val response = api.trendingGifs()

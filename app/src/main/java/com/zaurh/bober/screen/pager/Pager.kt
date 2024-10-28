@@ -1,7 +1,5 @@
 package com.zaurh.bober.screen.pager
 
-import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -65,7 +63,6 @@ import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.pager.components.LikeTokenItem
 import com.zaurh.bober.screen.pager.viewmodel.PagerViewModel
-import com.zaurh.bober.services.RunningService
 import kotlinx.coroutines.DelicateCoroutinesApi
 
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
@@ -76,15 +73,20 @@ fun PagerScreen(
     chatScreenViewModel: ChatScreenViewModel,
     matchViewModel: MatchViewModel,
     homeViewModel: HomeViewModel,
-    pagerViewModel: PagerViewModel = hiltViewModel()
+    pagerViewModel: PagerViewModel = hiltViewModel(),
 ) {
+
+
     val context = LocalContext.current
     val currentUser = chatScreenViewModel.userDataState.collectAsState()
 
-    val chatState = chatScreenViewModel.state.value
+    val chatState = chatScreenViewModel.chatState.value
 
     val newMessageCount =
         chatState.messages.count { it.status != MessageStatus.READ && it.recipientUserId == currentUser.value?.id }
+
+    val newWhoLikesCount =
+        currentUser.value?.gotLiked?.count { it.new } ?: 0
 
     val tabItems = listOf(
         TabItem(
@@ -102,6 +104,7 @@ fun PagerScreen(
             title = "Profile",
             selectedIcon = painterResource(id = R.drawable.profile_ic),
             unselectedIcon = painterResource(id = R.drawable.profile_ic),
+            indicator = newWhoLikesCount
         )
     )
     val pagerState = rememberPagerState {
@@ -133,16 +136,9 @@ fun PagerScreen(
     }
 
 
-    fun stopForegroundService(context: Context) {
-        val intent = Intent(context, RunningService::class.java)
-        context.stopService(intent)
-    }
-
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
         if (!chatState.socketIsObserving) {
-            stopForegroundService(context)
             chatScreenViewModel.connectToChat(context)
-            Log.d("websocketBober", "connected to chat")
         } else {
             Log.d("websocketBober", "socket is observing already")
         }

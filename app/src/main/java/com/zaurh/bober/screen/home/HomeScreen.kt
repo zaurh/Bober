@@ -33,7 +33,7 @@ fun HomeScreen(
     homeViewModel: HomeViewModel,
     chatScreenViewModel: ChatScreenViewModel
 ) {
-    val messageList = chatScreenViewModel.state.value.messages
+    val messageList = chatScreenViewModel.chatState.value.messages
     val chatList = homeViewModel.chatList.collectAsState()
     val currentUser = homeViewModel.userDataState.collectAsState()
     val currentUserId = currentUser.value?.id ?: ""
@@ -42,14 +42,22 @@ fun HomeScreen(
 
     val searchValue = homeViewModel.searchQuery.value
     val context = LocalContext.current
-    val chatState = chatScreenViewModel.state.value
+    val chatState = chatScreenViewModel.chatState.value
 
+    
+    LaunchedEffect(true) {
+        homeViewModel.storeFCMToken()
+        chatScreenViewModel.clearProfileData()
+        chatScreenViewModel.onRouteChange(
+            onChatScreen = false,
+            recipientId = ""
+        )
+    }
 
     LaunchedEffect(messageList) {
         homeViewModel.getChatList()
         homeViewModel.getMatchedUsers()
     }
-
 
     BackHandler(
         onBack = {

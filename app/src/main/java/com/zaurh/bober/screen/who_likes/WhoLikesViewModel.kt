@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zaurh.bober.data.responses.WhoLikesData
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.user.UserUpdate
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,25 @@ class WhoLikesViewModel @Inject constructor(
 
     fun onSearch(value: String) {
         _searchText.value = value
+    }
+
+    fun newGotLikedToOld(matchUserId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val whoLikes = whoLikesState.value
+            val updatedGotLiked = whoLikes.map { whoLikesData ->
+                if (whoLikesData?.id == matchUserId) {
+                    whoLikesData.copy(new = false)
+                } else {
+                    whoLikesData
+                }
+            }
+            userRepository.updateUserData(
+                userUpdate = UserUpdate(
+                    gotLiked = updatedGotLiked
+                )
+            )
+
+        }
     }
 
 

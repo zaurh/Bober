@@ -47,7 +47,7 @@ fun Chat_TopBar(
     chatScreenViewModel: ChatScreenViewModel
 ) {
     val profileData = chatScreenViewModel.profileDataState.collectAsState()
-    val chatState = chatScreenViewModel.state.value
+    val chatState = chatScreenViewModel.chatState.value
 
     val recipientOnline =
         if (chatState.recipientUserId == profileData.value?.id) chatState.recipientOnlineStatus

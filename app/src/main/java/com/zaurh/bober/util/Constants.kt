@@ -6,12 +6,16 @@ object Constants {
 //    const val BASE_URL = "https://ktor-jwt-c18f0ca5b73c.herokuapp.com"
 //    const val BASE_URL = "http://192.168.0.46:8080" //ev
 //    const val BASE_URL = "http://192.168.1.78:8080" //kazimierz
+    //    const val BASE_URL = "http://192.168.141.238:8080" //hotspot
+
 
     //Websocket
     const val WEBSOCKET_URL = "ws://jwttest-4f945ca4f70a.herokuapp.com/chat-socket"
 //    const val WEBSOCKET_URL = "ws://ktor-jwt-c18f0ca5b73c.herokuapp.com/chat-socket"
-//    const val WEBSOCKET_URL = "ws://192.168.1.78:8080/chat-socket" //kazimierz
 //    const val WEBSOCKET_URL = "ws://192.168.0.46:8080/chat-socket" //ev
+//    const val WEBSOCKET_URL = "ws://192.168.141.238:8080/chat-socket" //hotspot
+    //    const val WEBSOCKET_URL = "ws://192.168.1.78:8080/chat-socket" //kazimierz
+
 
 //    const val WEBSOCKET_URL = "ws://ktor-jwt-c18f0ca5b73c.herokuapp.com/chat-socket"
 

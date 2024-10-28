@@ -14,6 +14,7 @@ interface AuthRepo {
     val signedIn: StateFlow<Boolean>
     val loading: StateFlow<Boolean>
 
+    suspend fun storeFCMToken(fcmToken: String): MessageResponse
     suspend fun checkUsername(username: String): MessageResponse
 
     suspend fun signUp(

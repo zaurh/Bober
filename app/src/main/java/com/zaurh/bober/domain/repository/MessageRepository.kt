@@ -10,6 +10,7 @@ interface MessageRepository {
     val chatList: StateFlow<List<ChatData?>>
 
     suspend fun getPrivateMessages(): GetAllMessagesResponse
+    suspend fun getRecipientMessages(recipientUserId: String): GetAllMessagesResponse
     suspend fun getChatList(): ChatListResponse
 
 }

@@ -15,8 +15,8 @@ android {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.1.0"
+        versionCode = 18
+        versionName = "1.1.09"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.storage)
     implementation(libs.play.services.location)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -133,6 +134,10 @@ dependencies {
 
     //Stevdza san message bar
     implementation("com.github.stevdza-san:MessageBarCompose:1.0.8")
+
+    //inApp updates
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 
 
 }

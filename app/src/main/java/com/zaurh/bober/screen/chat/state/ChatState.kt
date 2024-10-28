@@ -1,9 +1,11 @@
-package com.zaurh.bober.screen.chat
+package com.zaurh.bober.screen.chat.state
 
 import com.zaurh.bober.model.MessageData
 
 data class ChatState(
     val messages: List<MessageData> = emptyList(),
+    val recipientMessages: List<MessageData> = emptyList(),
+    val recipientMessagesLoading: Boolean = false,
     val recipientUserId: String? = null,
     val recipientOnlineStatus: Boolean? = null,
     val recipientLastSeen: Long? = null,

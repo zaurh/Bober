@@ -14,5 +14,6 @@ data class WhoLikesData(
     val id: String,
     val image: String,
     val username: String,
-    val age: String
+    val age: String,
+    val new: Boolean
 )

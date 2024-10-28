@@ -1,11 +1,13 @@
 package com.zaurh.bober.data.user
 
 import com.zaurh.bober.data.responses.MatchedUserData
+import com.zaurh.bober.data.responses.WhoLikesData
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserData(
     val id: String? = "",
+    val fcmToken: String? = "",
     val isPremium: Boolean? = false,
     val name: String? = "",
     val gender: Gender? = Gender.PREFER_NOT_TO_SAY,
@@ -23,7 +25,7 @@ data class UserData(
     val imageUrl: List<String>? = listOf(),
     val likedUsers: List<String>? = listOf(),
     val passedUsers: List<PassedUserData>? = listOf(),
-    val gotLiked: List<String>? = listOf(),
+    val gotLiked: List<WhoLikesData>? = listOf(),
     val blockList: List<String>? = listOf(),
     val chatList: List<ChatData>? = listOf(),
     val matchList: List<MatchedUserData>? = listOf(),

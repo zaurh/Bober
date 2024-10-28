@@ -93,7 +93,7 @@ fun Context.sendMail() {
     try {
         val intent = Intent(Intent.ACTION_SEND)
         intent.type = "vnd.android.cursor.item/email"
-        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf("zaurway@gmail.com"))
+        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf("zaurhasanov666@gmail.com"))
         intent.putExtra(Intent.EXTRA_SUBJECT, "Bober")
         startActivity(intent)
     } catch (e: ActivityNotFoundException) {

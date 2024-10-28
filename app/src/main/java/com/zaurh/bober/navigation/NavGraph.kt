@@ -63,6 +63,7 @@ fun SetupNavGraph(
     val resetPasswordViewModel = hiltViewModel<ResetPasswordViewModel>()
 
 
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable(route = Screen.PagerScreen.route) {
             PagerScreen(
@@ -222,6 +223,7 @@ fun SetupNavGraph(
             )
         }
     }
+
 
 
 }
