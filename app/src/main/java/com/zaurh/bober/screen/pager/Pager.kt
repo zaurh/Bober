@@ -52,8 +52,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.zaurh.bober.R
-import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.account.AccountScreen
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
@@ -76,17 +77,25 @@ fun PagerScreen(
     pagerViewModel: PagerViewModel = hiltViewModel(),
 ) {
 
-
     val context = LocalContext.current
     val currentUser = chatScreenViewModel.userDataState.collectAsState()
 
     val chatState = chatScreenViewModel.chatState.value
+    val newLikesState = chatScreenViewModel.newLikesState.value
+    val unreadMessagesState = chatScreenViewModel.unreadMessagesState.value
 
-    val newMessageCount =
-        chatState.messages.count { it.status != MessageStatus.READ && it.recipientUserId == currentUser.value?.id }
+    LaunchedEffect(true) {
+        chatScreenViewModel.getUnreadMessagesSize()
+        if (newLikesState.newLikes.isEmpty()){
+            chatScreenViewModel.getWhoLikes()
+        }
+
+        Log.d("sdaslkdj", "${currentUser.value}")
+    }
+
 
     val newWhoLikesCount =
-        currentUser.value?.gotLiked?.count { it.new } ?: 0
+        newLikesState.newLikes.count {it.new}
 
     val tabItems = listOf(
         TabItem(
@@ -98,7 +107,7 @@ fun PagerScreen(
             title = "Chat",
             selectedIcon = painterResource(id = R.drawable.chat_ic),
             unselectedIcon = painterResource(id = R.drawable.chat_ic),
-            indicator = newMessageCount
+            indicator = unreadMessagesState.size
         ),
         TabItem(
             title = "Profile",
@@ -116,13 +125,17 @@ fun PagerScreen(
     }
 
 
-    LifecycleEventEffect(event = Lifecycle.Event.ON_START) {
-        if (currentUser.value == null) {
-            homeViewModel.getUserData()
+    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+
+        Log.d("adskljdasl", "resuming")
+        homeViewModel.getUserData()
+
+        if (!chatState.socketIsObserving && !chatState.internetClosed && !chatState.initialized) {
+            chatScreenViewModel.connectToChat()
+            chatScreenViewModel.webSocketInitialized()
+            Log.d("websocketbober", "11111")
         }
-
     }
-
 
 
     LaunchedEffect(selectedTabIndex) {
@@ -136,153 +149,160 @@ fun PagerScreen(
     }
 
 
-    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-        if (!chatState.socketIsObserving) {
-            chatScreenViewModel.connectToChat(context)
-        } else {
-            Log.d("websocketBober", "socket is observing already")
-        }
-    }
+//    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+//        if (!chatState.socketIsObserving) {
+//            chatScreenViewModel.connectToChat(context)
+//        } else {
+//            Log.d("websocketBober", "socket is observing already")
+//        }
+//    }
+    val swipeRefreshState = rememberSwipeRefreshState(
+        isRefreshing = homeViewModel.isRefreshing.value
+    )
 
 
+    SwipeRefresh(state = swipeRefreshState, onRefresh = {
+        chatScreenViewModel.connectToChat()
+    }) {
+        Scaffold(
+            topBar = {
+                TopAppBar(title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (chatState.isLoading) {
+                            Text(
+                                "Loading...", color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(Modifier.size(8.dp))
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                color = MaterialTheme.colorScheme.onSecondary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                painterResource(R.drawable.bober_ic),
+                                modifier = Modifier.size(26.dp),
+                                contentDescription = "bober",
+                                tint = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(Modifier.size(4.dp))
+                            Text(
+                                text = "Bober",
+                                fontSize = 20.sp,
+                                fontFamily = FontFamily(Font(R.font.bober_font)),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                        }
 
+                    }
 
-
-
-    Scaffold(
-        topBar = {
-            TopAppBar(title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (chatState.isLoading) {
-                        Text(
-                            "Loading...", color = MaterialTheme.colorScheme.onSecondary
+                }, actions = {
+                    AnimatedVisibility(selectedTabIndex == 0) {
+                        LaunchedEffect(true) {
+                            pagerViewModel.expandLikeToken()
+                        }
+                        LikeTokenItem(
+                            tokenCount = currentUser.value?.likeToken ?: 0,
+                            expanded = pagerViewModel.likeTokenExpanded.value
                         )
                         Spacer(Modifier.size(8.dp))
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            color = MaterialTheme.colorScheme.onSecondary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            painterResource(R.drawable.bober_ic),
-                            modifier = Modifier.size(26.dp),
-                            contentDescription = "bober",
-                            tint = MaterialTheme.colorScheme.onSecondary
-                        )
-                        Spacer(Modifier.size(4.dp))
-                        Text(
-                            text = "Bober",
-                            fontSize = 20.sp,
-                            fontFamily = FontFamily(Font(R.font.bober_font)),
-                            color = MaterialTheme.colorScheme.onSecondary
-                        )
                     }
 
-                }
-
-            }, actions = {
-                AnimatedVisibility(selectedTabIndex == 0) {
-                    LaunchedEffect(true) {
-                        pagerViewModel.expandLikeToken()
+                    IconButton(onClick = {
+                        navController.navigate(Screen.SettingsScreen.route)
+                    }) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = "")
                     }
-                    LikeTokenItem(tokenCount = currentUser.value?.likeToken ?: 0, expanded = pagerViewModel.likeTokenExpanded.value)
-                    Spacer(Modifier.size(8.dp))
-                }
+                })
+            },
+            content = {
 
-                IconButton(onClick = {
-                    navController.navigate(Screen.SettingsScreen.route)
-                }) {
-                    Icon(imageVector = Icons.Default.Settings, contentDescription = "")
-                }
-            })
-        },
-        content = {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(it)
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) { index ->
+                        when (index) {
+                            0 -> MatchScreen(
+                                navController = navController,
+                                matchViewModel = matchViewModel
+                            )
 
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(it)
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) { index ->
-                    when (index) {
-                        0 -> MatchScreen(
-                            navController = navController,
-                            matchViewModel = matchViewModel
-                        )
+                            1 -> HomeScreen(
+                                navController = navController,
+                                chatScreenViewModel = chatScreenViewModel,
+//                                homeViewModel = homeViewModel
+                            )
 
-                        1 -> HomeScreen(
-                            navController = navController,
-                            chatScreenViewModel = chatScreenViewModel,
-                            homeViewModel = homeViewModel
-                        )
-
-                        2 -> AccountScreen(navController = navController)
+                            2 -> AccountScreen(navController = navController, chatScreenViewModel = chatScreenViewModel)
+                        }
                     }
+
+
                 }
+            },
+            bottomBar = {
+                BottomAppBar {
 
-
-            }
-        },
-        bottomBar = {
-            BottomAppBar {
-
-                TabRow(selectedTabIndex = selectedTabIndex) {
-                    tabItems.onEachIndexed { index, tabItem ->
-                        Tab(
-                            selected = index == selectedTabIndex,
-                            onClick = {
-                                selectedTabIndex = index
-                            },
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = tabItem.title,
-                                        color = if (tabItem.indicator != 0) colorResource(
-                                            R.color.backgroundTop
-                                        ) else MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(Modifier.size(4.dp))
-                                    if (tabItem.indicator != 0) {
+                    TabRow(selectedTabIndex = selectedTabIndex) {
+                        tabItems.onEachIndexed { index, tabItem ->
+                            Tab(
+                                selected = index == selectedTabIndex,
+                                onClick = {
+                                    selectedTabIndex = index
+                                },
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .background(colorResource(R.color.backgroundTop)),
-                                            text = " ${tabItem.indicator} ",
-                                            color = Color.White
+                                            text = tabItem.title,
+                                            color = if (tabItem.indicator != 0) colorResource(
+                                                R.color.backgroundTop
+                                            ) else MaterialTheme.colorScheme.primary
                                         )
+                                        Spacer(Modifier.size(4.dp))
+                                        if (tabItem.indicator != 0) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(colorResource(R.color.backgroundTop)),
+                                                text = " ${tabItem.indicator} ",
+                                                color = Color.White
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            icon = {
-                                Box {
-                                    Icon(
-                                        modifier = Modifier.size(24.dp),
-                                        painter = if (index == selectedTabIndex) {
-                                            tabItem.selectedIcon
-                                        } else tabItem.unselectedIcon,
-                                        contentDescription = tabItem.title,
-                                        tint = if (index == selectedTabIndex && tabItem.indicator == 0) MaterialTheme.colorScheme.primary else if (tabItem.indicator != 0) colorResource(
-                                            R.color.backgroundTop
-                                        ) else Color.Gray
-                                    )
+                                },
+                                icon = {
+                                    Box {
+                                        Icon(
+                                            modifier = Modifier.size(24.dp),
+                                            painter = if (index == selectedTabIndex) {
+                                                tabItem.selectedIcon
+                                            } else tabItem.unselectedIcon,
+                                            contentDescription = tabItem.title,
+                                            tint = if (index == selectedTabIndex && tabItem.indicator == 0) MaterialTheme.colorScheme.primary else if (tabItem.indicator != 0) colorResource(
+                                                R.color.backgroundTop
+                                            ) else Color.Gray
+                                        )
+
+                                    }
+
 
                                 }
-
-
-                            }
-                        )
+                            )
+                        }
                     }
-                }
 
+                }
             }
-        }
-    )
+        )
+
+    }
 
 //    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 //        LocationPermission()

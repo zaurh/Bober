@@ -38,9 +38,8 @@ import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.navigation.SetupNavGraph
-import com.zaurh.bober.screen.chat.ChatScreenViewModel
+import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.match.MatchViewModel
-import com.zaurh.bober.screen.match.components.GotMatchAlert
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
 import com.zaurh.bober.screen.sign_in.SignInViewModel
 import com.zaurh.bober.ui.theme.BoberTheme
@@ -52,12 +51,12 @@ import kotlin.time.Duration.Companion.seconds
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+//    private lateinit var connectivityObserver: ConnectivityObserver
+
     private lateinit var appUpdateManager: AppUpdateManager
     private val updateType = AppUpdateType.FLEXIBLE
 
-
     private var appReady = false
-
 
     @Inject
     lateinit var webSocketRepository: WebSocketRepository
@@ -70,6 +69,8 @@ class MainActivity : ComponentActivity() {
             appUpdateManager.registerListener(installStateUpdatedListener)
         }
         checkForAppUpdates()
+
+
 
         installSplashScreen().apply {
             setKeepOnScreenCondition { !appReady }
@@ -86,7 +87,7 @@ class MainActivity : ComponentActivity() {
             val savedTheme = dataStore.getDarkMode.collectAsState(initial = false)
             val scope = rememberCoroutineScope()
             val signInViewModel = hiltViewModel<SignInViewModel>()
-            val chatScreenViewModel = hiltViewModel<ChatScreenViewModel>()
+            val homeScreenViewModel = hiltViewModel<HomeViewModel>()
             val matchViewModel = hiltViewModel<MatchViewModel>()
             val signedIn = signInViewModel.signedInState.collectAsState()
             val loading = signInViewModel.loading.collectAsState()
@@ -99,19 +100,30 @@ class MainActivity : ComponentActivity() {
                         appReady = true
                     }
                 }
-                LaunchedEffect(key1 = signedIn.value) {
-                    if (!signedIn.value) {
-                        webSocketRepository.closeSession()
-                    }
-                }
+
+//                LaunchedEffect(signedIn.value && appReady ) {
+//                    chatScreenViewModel.initSession(context)
+//                }
+
 
                 val navigateTo = intent.getStringExtra("navigate_to")
+
 
                 LaunchedEffect(navigateTo) {
                     if (navigateTo != null) {
                         navController.navigate(navigateTo)
                     }
                 }
+
+//                LaunchedEffect(homeScreenViewModel.connectionEnabled.value) {
+//                    if(homeScreenViewModel.connectionEnabled.value){
+//                        if (!webSocketRepository.isConnected()){
+//                            chatScreenViewModel.initSession(context)
+//                        }
+//                    }
+//                }
+
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
@@ -131,18 +143,18 @@ class MainActivity : ComponentActivity() {
                     )
 
 
-                    val gotMatchState = chatScreenViewModel.gotMatch.value
+//                    val gotMatchState = chatScreenViewModel.gotMatch.value
                     AnimatedVisibility(
-                        visible = gotMatchState.gotMatch,
+                        visible = false,
                         enter = fadeIn(animationSpec = tween(2000)),
                         exit = fadeOut(animationSpec = tween(2000))
                     ) {
                         val matchListState = matchViewModel.matchListState.collectAsState()
 
-                        val recipientUser =
-                            matchListState.value.find { it?.userId == gotMatchState.recipientId }
-                        val recipientImage = recipientUser?.image?.first().orEmpty()
-                        GotMatchAlert(recipientImage = recipientImage)
+//                        val recipientUser =
+//                            matchListState.value.find { it?.userId == gotMatchState.recipientId }
+//                        val recipientImage = recipientUser?.image?.first().orEmpty()
+//                        GotMatchAlert(recipientImage = "")
                     }
                 }
 

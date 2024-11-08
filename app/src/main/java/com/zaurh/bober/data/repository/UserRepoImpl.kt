@@ -1,15 +1,13 @@
 package com.zaurh.bober.data.repository
 
-import android.content.SharedPreferences
+import android.util.Log
 import com.zaurh.bober.data.responses.AddMediaResponse
 import com.zaurh.bober.data.responses.BlockedUserData
 import com.zaurh.bober.data.responses.BlockedUsersResponse
 import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
-import com.zaurh.bober.data.responses.LikedUserData
 import com.zaurh.bober.data.responses.LikedUsersResponse
-import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
@@ -19,9 +17,15 @@ import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.user.UserUpdate
+import com.zaurh.bober.data.user.room.UserDao
+import com.zaurh.bober.data.user.room.UserEntity
+import com.zaurh.bober.data.user.room.toUserData
+import com.zaurh.bober.data.user.toUserEntity
 import com.zaurh.bober.domain.repository.UserRepository
+import com.zaurh.bober.preferences.BoberPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -30,7 +34,8 @@ import javax.inject.Inject
 
 class UserRepoImpl @Inject constructor(
     private val api: UserApi,
-    private val prefs: SharedPreferences
+    private val boberPreferences: BoberPreferences,
+    private val userDao: UserDao
 ) : UserRepository {
 
     private val _userData = MutableStateFlow<UserData?>(null)
@@ -43,9 +48,9 @@ class UserRepoImpl @Inject constructor(
     override val boberDataList: StateFlow<List<BoberData?>>
         get() = _boberDataList
 
-    private val _likedUserList = MutableStateFlow<List<LikedUserData?>>(listOf())
-    override val likedUserList: StateFlow<List<LikedUserData?>>
-        get() = _likedUserList
+//    private val _likedUserList = MutableStateFlow<List<LikedUserData?>>(listOf())
+//    override val likedUserList: StateFlow<List<LikedUserData?>>
+//        get() = _likedUserList
 
     private val _blockedUserList = MutableStateFlow<List<BlockedUserData?>>(listOf())
     override val blockedUserList: StateFlow<List<BlockedUserData?>>
@@ -55,26 +60,41 @@ class UserRepoImpl @Inject constructor(
     override val whoLikesList: StateFlow<List<WhoLikesData>>
         get() = _whoLikesList
 
-    private val _matchedUserList = MutableStateFlow<List<MatchedUserData>>(listOf())
-    override val matchedUserList: StateFlow<List<MatchedUserData>>
-        get() = _matchedUserList
+//    private val _matchedUserList = MutableStateFlow<List<MatchedUserData>>(listOf())
+//    override val matchedUserList: StateFlow<List<MatchedUserData>>
+//        get() = _matchedUserList
 
 
+    suspend fun getToken(): String? {
+        return boberPreferences.getJwtKey.first()
+    }
+
+    suspend fun getCurrentUserId(): String? {
+        return boberPreferences.getCurrentUserId.first()
+    }
+
+    suspend fun insertUserData(userEntity: UserEntity){
+        userDao.insertUser(userEntity)
+    }
+    suspend fun deleteUserDataFromLocal(userId: String){
+        userDao.deleteUser(userId)
+    }
 
     override suspend fun getUserData(): GetUserDataResponse {
         return try {
-
-            val token = prefs.getString("jwt", null) ?: return GetUserDataResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
-
+            val token = getToken()
             val response = api.getUserData("Bearer $token")
 
             if (response.success) {
                 _userData.value = response.user
+                if (response.user != null){
+                    deleteUserDataFromLocal(response.user.id ?: "")
+                    insertUserData(response.user.toUserEntity())
+                }
             }
-
+            else{
+                Log.d("GetUserData", "Error Getting User data")
+            }
             GetUserDataResponse(
                 success = response.success,
                 user = response.user,
@@ -82,16 +102,17 @@ class UserRepoImpl @Inject constructor(
             )
 
         } catch (e: Exception) {
+            val currentUserId = getCurrentUserId()
+            _userData.value = userDao.getUserById(currentUserId ?: "")?.toUserData()
+            Log.d("dfklsdjkldsfj", "${userData.value}")
             GetUserDataResponse(success = false, message = e.message ?: "")
         }
     }
 
     override suspend fun deleteUserData(): MessageResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return MessageResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.deleteUserData("Bearer $token")
             MessageResponse(
                 success = response.success,
@@ -104,9 +125,9 @@ class UserRepoImpl @Inject constructor(
     }
 
 
-    override suspend fun getProfileID(username: String): GetUserDataResponse {
+    override suspend fun getProfileID(recipientId: String): GetUserDataResponse {
         return try {
-            val response = api.getProfileID(username)
+            val response = api.getProfileID(recipientId)
 
             if (response.success) {
                 _profileData.value = response.user
@@ -139,10 +160,8 @@ class UserRepoImpl @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: () -> Unit
     ): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.updateUserData(
                 token = "Bearer $token",
@@ -169,10 +188,8 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getBobers(): GetBobersResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return GetBobersResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.getBobers("Bearer $token")
             if (response.success) {
                 _boberDataList.value = response.boberDataList
@@ -190,18 +207,9 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getMatchedUsers(): MatchedUserResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return MatchedUserResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
-            val response = api.getMatchedUsers("Bearer $token")
+            val token = getToken()
 
-            if (response.success) {
-                _matchedUserList.value = response.matchedUserList
-                _userData.value = userData.value?.copy(
-                    matchList = response.matchedUserList
-                )
-            }
+            val response = api.getMatchedUsers("Bearer $token")
 
             MatchedUserResponse(
                 success = response.success,
@@ -215,17 +223,15 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getLikedUsers(): LikedUsersResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return LikedUsersResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.getLikedUsers("Bearer $token")
-            if (response.success) {
-                _likedUserList.value = response.likedUserList
-                _userData.value = userData.value?.copy(
-                    likedUsers = response.likedUserList.map { it.id ?: "" }
-                )
-            }
+//            if (response.success) {
+//                _likedUserList.value = response.likedUserList
+//                _userData.value = userData.value?.copy(
+//                    likedUsers = response.likedUserList.map { it.id ?: "" }
+//                )
+//            }
 
             LikedUsersResponse(
                 success = response.success,
@@ -239,17 +245,16 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getBlockedUsers(): BlockedUsersResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return BlockedUsersResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.getBlockedUsers("Bearer $token")
-            if (response.success) {
-                _blockedUserList.value = response.blockList
-                _userData.value = userData.value?.copy(
-                    blockList = response.blockList.map { it.id ?: "" }
-                )
-            }
+
+//            if (response.success) {
+//                _blockedUserList.value = response.blockList
+//                _userData.value = userData.value?.copy(
+//                    blockList = response.blockList.map { it.id ?: "" }
+//                )
+//            }
 
             BlockedUsersResponse(
                 success = response.success,
@@ -263,17 +268,15 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getWhoLikes(): WhoLikesResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return WhoLikesResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.getWhoLikes("Bearer $token")
-            if (response.success) {
-                _whoLikesList.value = response.whoLikesList
-                _userData.value = userData.value?.copy(
-                    gotLiked = response.whoLikesList
-                )
-            }
+//            if (response.success) {
+//                _whoLikesList.value = response.whoLikesList
+//                _userData.value = userData.value?.copy(
+//                    gotLiked = response.whoLikesList
+//                )
+//            }
 
             WhoLikesResponse(
                 success = response.success,
@@ -310,10 +313,8 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun like(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.like(
                 token = "Bearer $token",
@@ -334,10 +335,8 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun pass(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.pass(
                 token = "Bearer $token",
@@ -358,10 +357,8 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun unlike(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.unlike(
                 token = "Bearer $token",
@@ -382,19 +379,17 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun unmatch(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.unMatch(
                 token = "Bearer $token",
                 recipientId = recipientId
             )
 
-            if (response.success) {
-                _userData.value = response.user
-            }
+//            if (response.success) {
+//                _userData.value = response.user
+//            }
             UpdateUserResponse(
                 success = response.success,
                 user = response.user,
@@ -406,25 +401,22 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun block(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.block(
                 token = "Bearer $token",
                 recipientId = recipientId
             )
-
-            if (response.success) {
-                _userData.value = response.user
-            }
+            Log.d("sdajkdla", "$response")
             UpdateUserResponse(
                 success = response.success,
                 user = response.user,
                 message = response.message
             )
         } catch (e: Exception) {
+            Log.d("sdajkdla", "${e.message}")
+
             UpdateUserResponse(success = false, message = e.message ?: "")
         }
     }
@@ -434,10 +426,8 @@ class UserRepoImpl @Inject constructor(
         reason: String,
         optional: String
     ): MessageResponse {
-        val token = prefs.getString("jwt", null) ?: return MessageResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.report(
                 token = "Bearer $token",
@@ -456,10 +446,8 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun unblock(recipientId: String): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.unblock(
                 token = "Bearer $token",
@@ -480,10 +468,8 @@ class UserRepoImpl @Inject constructor(
     }
 
     override suspend fun boberium(): UpdateUserResponse {
-        val token = prefs.getString("jwt", null) ?: return UpdateUserResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
+
         return try {
             val response = api.boberium(
                 token = "Bearer $token"
@@ -504,10 +490,8 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun encryptLocation(location: String): GetLocationResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return GetLocationResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response = api.encryptLocation(token = "Bearer $token", location = location)
 
             if (response.success) {
@@ -528,10 +512,8 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun decryptLocation(recipientLocation: String): GetLocationResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: return GetLocationResponse(
-                success = false,
-                message = "Token retrieve failed."
-            )
+            val token = getToken()
+
             val response =
                 api.decryptLocation(token = "Bearer $token", recipientLocation = recipientLocation)
 

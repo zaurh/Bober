@@ -1,7 +1,9 @@
 package com.zaurh.bober.data.user
 
+import com.zaurh.bober.data.message.LastMessageData
 import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.WhoLikesData
+import com.zaurh.bober.data.user.room.UserEntity
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,6 +16,7 @@ data class UserData(
     val username: String? = "",
     val email: String? = "",
     val emailIsVerified: Boolean? = false,
+    val lastMessages: List<LastMessageData>? = listOf(),
     val password: String? = "",
     val encryptedLocation: String? = "",
     val aboutMe: String? = "",
@@ -40,3 +43,35 @@ data class UserData(
     val likeToken: Int? = 0
 )
 
+fun UserData.toUserEntity() = UserEntity(
+    userId = id,
+    isPremium = isPremium,
+    name = name,
+    gender = gender,
+    username = username,
+    email = email,
+    emailIsVerified = emailIsVerified,
+    lastMessages = lastMessages,
+    password = password,
+    encryptedLocation = encryptedLocation,
+    aboutMe = aboutMe,
+    interests = interests,
+    languages = languages,
+    jobTitle = jobTitle,
+    height = height,
+    birthDate = birthDate,
+    imageUrl = imageUrl,
+    likedUsers = likedUsers,
+    passedUsers = passedUsers,
+    gotLiked = gotLiked,
+    blockList = blockList,
+    chatList = chatList,
+    matchList = matchList,
+    ageRangeStart = ageRangeStart,
+    ageRangeEnd = ageRangeEnd,
+    maximumDistance = maximumDistance,
+    showFullDistance = showFullDistance,
+    showMe = showMe,
+    online = online,
+    likeToken = likeToken
+)

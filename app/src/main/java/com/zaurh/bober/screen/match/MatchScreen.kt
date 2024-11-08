@@ -28,8 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.alexstyl.swipeablecard.Direction
 import com.alexstyl.swipeablecard.ExperimentalSwipeableCardApi
@@ -65,7 +63,7 @@ fun MatchScreen(
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val context = LocalContext.current
 
-    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+    LaunchedEffect(true) {
         matchViewModel.getBobers()
     }
     GetCurrentLocation()
@@ -115,8 +113,8 @@ fun MatchScreen(
                                             matchViewModel = matchViewModel,
                                             onClick = {
                                                 navController.navigate(
-                                                    Screen.ProfileScreen.passUsername(
-                                                        username = matchProfile.username,
+                                                    Screen.ProfileScreen.createRoute(
+                                                        recipientId = matchProfile.userId,
                                                     )
                                                 ) {
                                                     popUpTo(route = Screen.MatchScreen.route)
@@ -194,8 +192,8 @@ fun MatchScreen(
 
                                             Direction.Up -> {
                                                 navController.navigate(
-                                                    Screen.ProfileScreen.passUsername(
-                                                        username = matchProfile?.username,
+                                                    Screen.ProfileScreen.createRoute(
+                                                        recipientId = matchProfile?.userId ?: "",
                                                     )
                                                 )
                                             }

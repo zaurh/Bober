@@ -53,7 +53,7 @@ fun SetupNavGraph(
     startDestination: String = Screen.SignInScreen.route
 ) {
     val chatScreenViewModel = hiltViewModel<ChatScreenViewModel>()
-    val matchViewModel = hiltViewModel<MatchViewModel>()
+    val matchViewModel  = hiltViewModel<MatchViewModel>()
     val signUpViewModel = hiltViewModel<SignUpViewModel>()
     val signInViewModel = hiltViewModel<SignInViewModel>()
     val blockedUsersViewModel = hiltViewModel<BlockedUsersViewModel>()
@@ -150,33 +150,37 @@ fun SetupNavGraph(
         }
         composable(route = Screen.AccountScreen.route) {
             AccountScreen(
-                navController = navController
+                navController = navController,
+                chatScreenViewModel = chatScreenViewModel
             )
         }
         composable(
-            route = Screen.ProfileScreen.route, arguments = listOf(
-                navArgument("username") { type = NavType.StringType },
-            )
+            route = Screen.ProfileScreen.route,
+            arguments = listOf(navArgument("recipientId") { type = NavType.StringType })
         ) { backStackEntry ->
             val arguments = requireNotNull(backStackEntry.arguments)
-            val username = arguments.getString("username")
+            val recipientId = arguments.getString("recipientId")
             ProfileScreen(
-                username = username ?: "",
+                recipientId = recipientId ?: "",
                 navController = navController,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                chatScreenViewModel = chatScreenViewModel,
+                blockedUsersViewModel = blockedUsersViewModel
             )
         }
         composable(
             route = Screen.ChatScreen.route,
-            arguments = listOf(navArgument("username") { type = NavType.StringType })
+            arguments = listOf(navArgument("recipientId") { type = NavType.StringType })
         )
         { backStackEntry ->
             val arguments = requireNotNull(backStackEntry.arguments)
-            val username = arguments.getString("username")
+            val recipientId = arguments.getString("recipientId")
             ChatScreen(
-                username = username ?: "",
+                recipientId = recipientId ?: "",
                 navController = navController,
-                chatScreenViewModel = chatScreenViewModel
+                chatScreenViewModel = chatScreenViewModel,
+                profileViewModel = profileViewModel,
+                blockedUsersViewModel = blockedUsersViewModel
             )
         }
         composable(route = Screen.BlockedUsersScreen.route) {
@@ -193,7 +197,8 @@ fun SetupNavGraph(
         composable(route = Screen.WhoLikesScreen.route) {
             WhoLikesScreen(
                 navController = navController,
-                whoLikesViewModel = whoLikesViewModel
+                whoLikesViewModel = whoLikesViewModel,
+                chatScreenViewModel = chatScreenViewModel
             )
         }
         composable(route = Screen.SettingsScreen.route) {
@@ -219,7 +224,7 @@ fun SetupNavGraph(
             HomeScreen(
                 navController = navController,
                 chatScreenViewModel = chatScreenViewModel,
-                homeViewModel = homeViewModel
+//                homeViewModel = homeViewModel
             )
         }
     }

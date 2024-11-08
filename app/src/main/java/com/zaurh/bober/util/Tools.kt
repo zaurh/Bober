@@ -43,6 +43,28 @@ fun lastSeenDay(timestamp: Long?): String{
     }
 }
 
+fun lastSeenDayForMessage(timestamp: Long?): String{
+    val millisecondsInOneDay = 24 * 60 * 60 * 1000
+
+    val currentDate = System.currentTimeMillis()
+    val yesterdayDate = currentDate.minus(millisecondsInOneDay)
+
+    val date = Date(timestamp ?: 0)
+    val dateDay = SimpleDateFormat("MMMM d", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    if (date != Date(0)){
+        val day = when (dateDay.format(date)){
+            dateDay.format(currentDate) -> "today"
+            dateDay.format(yesterdayDate) -> "Yesterday"
+            else -> dateDay.format(date)
+        }
+        return if (day == "today") dateFormat.format(date) else day
+    }else{
+        return ""
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun localDateToString(localDate: LocalDate): String {
     val formatter = DateTimeFormatter.ISO_LOCAL_DATE

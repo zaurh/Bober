@@ -15,8 +15,8 @@ android {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 18
-        versionName = "1.1.09"
+        versionCode = 20
+        versionName = "1.1.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -140,4 +140,13 @@ dependencies {
     implementation("com.google.android.play:app-update-ktx:2.1.0")
 
 
+    //Room
+    implementation ("androidx.room:room-ktx:2.6.1")
+    kapt ("androidx.room:room-compiler:2.6.1")
+
+    //Swipe refresh
+    implementation ("com.google.accompanist:accompanist-swiperefresh:0.27.0")
+
+    //Preferences datastore
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
 }

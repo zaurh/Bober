@@ -6,9 +6,7 @@ import com.zaurh.bober.data.responses.BlockedUsersResponse
 import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
-import com.zaurh.bober.data.responses.LikedUserData
 import com.zaurh.bober.data.responses.LikedUsersResponse
-import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
@@ -26,14 +24,14 @@ interface UserRepository {
     val profileData: StateFlow<UserData?>
 
     val boberDataList: StateFlow<List<BoberData?>>
-    val likedUserList: StateFlow<List<LikedUserData?>>
+//    val likedUserList: StateFlow<List<LikedUserData?>>
     val blockedUserList: StateFlow<List<BlockedUserData?>>
     val whoLikesList: StateFlow<List<WhoLikesData>>
-    val matchedUserList: StateFlow<List<MatchedUserData>>
+//    val matchedUserList: StateFlow<List<MatchedUserData>>
 
     suspend fun getUserData(): GetUserDataResponse
     suspend fun deleteUserData(): MessageResponse
-    suspend fun getProfileID(username: String): GetUserDataResponse
+    suspend fun getProfileID(recipientId: String): GetUserDataResponse
     suspend fun clearProfileData()
     suspend fun clearUserData()
     suspend fun updateUserData(userUpdate: UserUpdate, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}): UpdateUserResponse

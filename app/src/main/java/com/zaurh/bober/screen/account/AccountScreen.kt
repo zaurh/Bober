@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.account
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,18 +38,20 @@ import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.account.components.AccountScreenItem
 import com.zaurh.bober.screen.account.components.ImageCard
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
 
 @Composable
 fun AccountScreen(
     navController: NavController,
+    chatScreenViewModel: ChatScreenViewModel,
     accountViewModel: AccountViewModel = hiltViewModel()
 ) {
     val state = rememberMessageBarState()
     val currentUser = accountViewModel.userDataState.collectAsState()
-    val whoLikesState = accountViewModel.whoLikesState.collectAsState()
+    val whoLikesState = chatScreenViewModel.newLikesState.value
 
     LaunchedEffect(true) {
-        accountViewModel.getWhoLikes()
+        Log.d("sdkjladfs", "${currentUser.value}")
         if (currentUser.value?.emailIsVerified == false){
             state.addError(exception = Exception("Your email address has not been verified"))
         }
@@ -77,7 +80,8 @@ fun AccountScreen(
                                 .size(200.dp)
                                 .clip(CircleShape)
                                 .clickable {
-                                    navController.navigate(Screen.ProfileScreen.passUsername(user.username))
+                                    navController.navigate(Screen.ProfileScreen.createRoute(recipientId = user.id ?: ""))
+                                    Log.d("sdaljdlsadksd", "${user.id}")
                                 },
                             model = profilePic,
                             contentDescription = "",
@@ -106,13 +110,13 @@ fun AccountScreen(
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
 
-                        val whoLikesNew = whoLikesState.value.filter { it.new }
+                        val whoLikesNew = whoLikesState.newLikes.filter { it.new }
                         val whoLikesCount =
                             if (whoLikesNew.count() < 100) whoLikesNew.count() else "99+"
 
                         AccountScreenItem(
                             icon = R.drawable.who_likes_me_ic,
-                            title = "Who likes me?",
+                            title = "New likes",
                             count = "$whoLikesCount"
                         ) {
                             navController.navigate(Screen.WhoLikesScreen.route)

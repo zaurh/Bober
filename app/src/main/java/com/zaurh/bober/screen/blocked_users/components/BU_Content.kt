@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,10 +27,8 @@ fun BU_Content(
     navController: NavController,
     paddingValues: PaddingValues
 ) {
-    val userDataState = blockedUsersViewModel.userDataState.collectAsState()
-    val blockedUserList = blockedUsersViewModel.blockedUserList.collectAsState()
+    val blockedUsersState = blockedUsersViewModel.blockedUsersState.value
     val searchQuery = blockedUsersViewModel.searchText.value
-
 
 
     BackHandler(
@@ -44,7 +41,6 @@ fun BU_Content(
         }
     )
 
-
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -55,32 +51,29 @@ fun BU_Content(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val blockList = blockedUserList.value
-
-
-            if (blockList.isNotEmpty()) {
-                val searchedBlockedUsers = blockList.filter {
-                    it?.username?.contains(searchQuery) == true
-                }
+            if (blockedUsersState.blockList.isNotEmpty()) {
                 SearchBar(
                     value = searchQuery,
                     onValueChange = blockedUsersViewModel::onSearch,
                     placeHolder = "Search for blocked users"
                 )
                 Spacer(modifier = Modifier.size(16.dp))
-                if (searchedBlockedUsers.isNotEmpty()) {
-                    LazyColumn {
-                        items(searchedBlockedUsers) { profileData ->
-                            profileData?.let {
-                                val username = profileData.username
-                                val profileId = profileData.id ?: ""
 
+                val filteredBlockedUsers = blockedUsersState.blockList.filter {
+                    it.username?.contains(searchQuery) == true
+                }
+
+                if (filteredBlockedUsers.isNotEmpty()) {
+                    LazyColumn {
+                        items(filteredBlockedUsers) { profileData ->
+                            profileData.let {
+                                val profileId = profileData.id ?: ""
                                 BlockedUserItem(
                                     blockedUserData = profileData,
                                     onItemClick = {
                                         navController.navigate(
-                                            Screen.ProfileScreen.passUsername(
-                                                username
+                                            Screen.ProfileScreen.createRoute(
+                                                recipientId = profileId
                                             )
                                         )
                                     }) {
@@ -91,7 +84,9 @@ fun BU_Content(
                         }
                     }
                 } else {
-                    Text(text = "No one is found.")
+                    if (searchQuery != ""){
+                        Text(text = "No one is found.")
+                    }
                 }
 
             } else {

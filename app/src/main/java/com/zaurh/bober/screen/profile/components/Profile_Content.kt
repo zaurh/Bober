@@ -77,6 +77,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.profile.ProfileViewModel
 import kotlinx.coroutines.launch
 
@@ -85,26 +87,39 @@ import kotlinx.coroutines.launch
 fun ProfileContent(
     paddingValues: PaddingValues,
     profileViewModel: ProfileViewModel,
+    chatScreenViewModel: ChatScreenViewModel,
+    blockedUsersViewModel: BlockedUsersViewModel,
     user: UserData,
     navController: NavController
 ) {
     val currentUser = profileViewModel.currentUserDataState.collectAsState()
+    val matchListState = chatScreenViewModel.matchListState.value
+    val blockListState = blockedUsersViewModel.blockedUsersState.value
     val profileData = profileViewModel.profileDataState.collectAsState()
     val imageIndex by profileViewModel.imageIndex
     val context = LocalContext.current
 
     Profile_ReportAlert(profileViewModel = profileViewModel)
-    BlockAlert(profileViewModel = profileViewModel, navController = navController)
-    UnMatchAlert(profileViewModel = profileViewModel, navController = navController)
+    BlockAlert(
+        profileViewModel = profileViewModel,
+        navController = navController,
+        blockedUsersViewModel = blockedUsersViewModel
+    )
+    UnMatchAlert(
+        profileViewModel = profileViewModel,
+        navController = navController,
+    )
 
     Surface(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surface)
             .padding(paddingValues)
     ) {
 
         Column(
             modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.surface)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 48.dp)
         ) {
@@ -182,13 +197,20 @@ fun ProfileContent(
             Column(Modifier.padding(16.dp)) {
                 val userId = profileData.value?.id ?: ""
 
-                val inBlockList =
-                    currentUser.value?.blockList?.contains(userId) == true
+//                val inBlockList =
+//                    currentUser.value?.blockList?.contains(userId) == true
+
+                val inBlockList = blockListState.blockList.any { it.id == userId }
+
+
                 val inLikedList =
                     currentUser.value?.likedUsers?.contains(userId) == true
 
+//                val inMatchList =
+//                    currentUser.value?.matchList?.any { it.id == userId } == true
+
                 val inMatchList =
-                    currentUser.value?.matchList?.any { it.id == userId } == true
+                    matchListState.matchList.any { it.id == userId }
 
                 val currentUserItself = currentUser.value?.id == userId
 
@@ -392,13 +414,11 @@ fun ProfileContent(
                         title = if (inBlockList) "Unblock $nameText" else "Block $nameText"
                     ) {
                         if (inBlockList) {
-                            profileViewModel.unblock(
+                            blockedUsersViewModel.unBlockUser(
                                 recipientId = profileData.value?.id ?: ""
-                            ) {
-
-                            }
+                            )
                         } else {
-                            profileViewModel.onBlockStateChange()
+                            blockedUsersViewModel.onBlockStateChange()
                         }
 
                     }
@@ -409,11 +429,13 @@ fun ProfileContent(
 
         }
 
+        Log.d("asdjkljsdajl", "${blockListState.blockList.any { it.id != profileData.value?.id }}")
+        Log.d("asdjkljsdajl", "${blockListState.blockList}")
         AnimatedVisibility(
-            visible = currentUser.value?.blockList?.contains(profileData.value?.id) == false &&
+            visible =
+            (profileData.value?.id !in blockListState.blockList.map { it.id }) &&
                     currentUser.value?.likedUsers?.contains(profileData.value?.id) == false &&
-            currentUser.value?.passedUsers?.any { it.userId == profileData.value?.id } == false &&
-            currentUser.value?.id != profileData.value?.id,
+                    currentUser.value?.id != profileData.value?.id,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it })
         )

@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,7 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -46,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSettings
@@ -53,26 +53,15 @@ import my.nanihadesuka.compose.ScrollbarSettings
 @Composable
 fun Chat_Content(
     chatScreenViewModel: ChatScreenViewModel,
-    userData: UserData,
     currentUser: UserData,
-    paddingValues: PaddingValues
 ) {
-    val messageList = chatScreenViewModel.chatState.value.messages
-
-    val filteredList = messageList.filter {
-        it.senderUserId == currentUser.id && it.recipientUserId == userData.id
-                || it.senderUserId == userData.id && it.recipientUserId == currentUser.id
-    }
-
     val profileData = chatScreenViewModel.profileDataState.collectAsState()
-
-    var limit by remember { mutableIntStateOf(20) }
-    val limitedList = filteredList.take(limit)
 
     val emptyChatGif = chatScreenViewModel.emptyChatGif.value
     val lazyState = rememberLazyListState()
     val context = LocalContext.current
     val chatState = chatScreenViewModel.chatState.value
+    var recipientMessages by remember { mutableStateOf<List<MessageData>>(listOf()) }
     val gifState = chatScreenViewModel.gifState.value
     val gifs = chatScreenViewModel.gifUrls.collectAsState()
 
@@ -82,15 +71,23 @@ fun Chat_Content(
                 val totalItems = lazyState.layoutInfo.totalItemsCount
 
                 if (lastVisibleItemIndex != null && lastVisibleItemIndex == totalItems - 1) {
-                    limit += 20
+                    if (recipientMessages.size > 15){
+                        chatScreenViewModel.getRecipientMessages(profileData.value?.id ?: "")
+                    }
                 }
             }
+    }
+
+    LaunchedEffect(chatState.recipientMessages) {
+        chatState.recipientMessages?.let {
+            recipientMessages = it
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
+//            .padding(paddingValues)
             .background(MaterialTheme.colorScheme.surface)
     ) {
         Image(
@@ -109,16 +106,17 @@ fun Chat_Content(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (chatState.recipientMessagesLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onSecondary)
-                } else if (filteredList.isEmpty() && profileData.value != null) {
+                if (chatState.recipientMessagesEmpty && profileData.value != null && emptyChatGif.enabled) {
                     LaunchedEffect(true) {
                         chatScreenViewModel.onEmptyMessageGif()
                     }
                     Text(
-                        modifier = Modifier.clip(
-                            RoundedCornerShape(20)
-                        ).background(MaterialTheme.colorScheme.background).padding(4.dp),
+                        modifier = Modifier
+                            .clip(
+                                RoundedCornerShape(20)
+                            )
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(4.dp),
                         text = "Tap to send",
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 16.sp,
@@ -133,18 +131,18 @@ fun Chat_Content(
                         circularSize = 40,
                         clipPercentage = 20
                     ) {
-                        if (emptyChatGif.enabled){
-                            chatScreenViewModel.onMessageChange(it)
-                            chatScreenViewModel.sendMessage()
-                        }
-
+                        chatScreenViewModel.onMessageChange(it)
+                        chatScreenViewModel.sendMessage()
                     }
 
                     IconButton(onClick = {
                         chatScreenViewModel.onEmptyMessageGif()
                     }) {
                         Icon(
-                            modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(4.dp).size(30.dp),
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(4.dp)
+                                .size(30.dp),
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "",
                             tint = MaterialTheme.colorScheme.primary
@@ -159,18 +157,24 @@ fun Chat_Content(
                             thumbUnselectedColor = Color.Gray
                         )
                     ) {
-                        LazyColumn(
-                            modifier = Modifier.padding(8.dp),
-                            state = lazyState,
-                            reverseLayout = true
-                        ) {
-                            items(limitedList) {
-                                Chat_MessageItem(
-                                    messageData = it,
-                                    currentUserId = currentUser.id ?: ""
-                                )
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                            if (chatState.recipientDataIsLoading || chatState.recipientMessagesLoading ) {
+                                CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp),color = MaterialTheme.colorScheme.onSecondary)
+                            }
+                            LazyColumn(
+                                modifier = Modifier.padding(8.dp),
+                                state = lazyState,
+                                reverseLayout = true
+                            ) {
+                                items(recipientMessages) {
+                                    Chat_MessageItem(
+                                        messageData = it,
+                                        currentUserId = currentUser.id ?: ""
+                                    )
+                                }
                             }
                         }
+
                     }
 
                 }

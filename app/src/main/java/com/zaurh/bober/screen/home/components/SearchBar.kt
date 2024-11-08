@@ -29,6 +29,7 @@ fun SearchBar(
             unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent
-        )
+        ),
+        singleLine = true
     )
 }

@@ -16,8 +16,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.profile.ProfileViewModel
 
@@ -25,7 +25,8 @@ import com.zaurh.bober.screen.profile.ProfileViewModel
 @Composable
 fun Chat_ModalSheet(
     chatScreenViewModel: ChatScreenViewModel,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel,
+    blockedUsersViewModel: BlockedUsersViewModel,
     navController: NavController,
     profileId: String
 ) {
@@ -52,7 +53,7 @@ fun Chat_ModalSheet(
                 Spacer(modifier = Modifier.size(8.dp))
                 Chat_ModalSheetItem(icon = Icons.Default.Lock, title = "BLOCK") {
                     chatScreenViewModel.closeModalSheet()
-                    profileViewModel.onBlockStateChange()
+                    blockedUsersViewModel.onBlockStateChange()
 //                    chatScreenViewModel.block(profileId) {
 //                        chatScreenViewModel.closeModalSheet()
 //                        navController.popBackStack()

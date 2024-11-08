@@ -4,9 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.who_likes.components.WL_Content
 import com.zaurh.bober.screen.who_likes.components.WL_TopBar
 
@@ -14,11 +14,19 @@ import com.zaurh.bober.screen.who_likes.components.WL_TopBar
 @Composable
 fun WhoLikesScreen(
     navController: NavController,
+    chatScreenViewModel: ChatScreenViewModel,
     whoLikesViewModel: WhoLikesViewModel
 ) {
-    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-        whoLikesViewModel.getWhoLikesList()
+    val newLikesState = chatScreenViewModel.newLikesState.value
+
+    LaunchedEffect(true) {
+        if (newLikesState.newLikes.isEmpty()){
+            chatScreenViewModel.getWhoLikes()
+        }
     }
+//    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+//        whoLikesViewModel.getWhoLikesList()
+//    }
 
     Scaffold(
         topBar = {
@@ -27,6 +35,7 @@ fun WhoLikesScreen(
         content = { paddingValues ->
             WL_Content(
                 whoLikesViewModel = whoLikesViewModel,
+                chatScreenViewModel = chatScreenViewModel,
                 navController = navController,
                 paddingValues = paddingValues
             )

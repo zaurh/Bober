@@ -2,7 +2,6 @@ package com.zaurh.bober.screen.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zaurh.bober.data.responses.WhoLikesData
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +16,7 @@ class AccountViewModel @Inject constructor(
 ): ViewModel() {
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
-    val whoLikesState: StateFlow<List<WhoLikesData>> = userRepository.whoLikesList
+//    val whoLikesState: StateFlow<List<WhoLikesData>> = userRepository.whoLikesList
 
 
 

@@ -20,12 +20,10 @@ import javax.inject.Inject
 class PagerViewModel @Inject constructor(
     private val locationTracker: LocationTracker
 ) : ViewModel() {
-
     var currentLocation by mutableStateOf<LocationData?>(null)
 
     private val _likeTokenExpanded = mutableStateOf(false)
     val likeTokenExpanded: State<Boolean> = _likeTokenExpanded
-
 
 
     fun expandLikeToken(){

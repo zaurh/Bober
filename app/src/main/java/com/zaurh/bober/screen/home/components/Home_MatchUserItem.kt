@@ -21,6 +21,7 @@ import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.navigation.Screen
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.home.HomeViewModel
 
 @Composable
@@ -29,6 +30,7 @@ fun Home_MatchUserItem(
     new: Boolean,
     navController: NavController,
     homeViewModel: HomeViewModel,
+    chatScreenViewModel: ChatScreenViewModel
 ) {
 
     Box {
@@ -43,9 +45,10 @@ fun Home_MatchUserItem(
                         RoundedCornerShape(20)
                     )
                     .clickable {
-                        navController.navigate(Screen.ChatScreen.createRoute(username = matchedUserData.username))
+                        navController.navigate(Screen.ChatScreen.createRoute(recipientId = matchedUserData.id))
                         homeViewModel.switchRecipient(matchedUserData.id)
-                        homeViewModel.newMatchToOld(matchedUserData.id)
+                        chatScreenViewModel.newMatchToOld(matchedUserData.id)
+                        chatScreenViewModel.switchRecipientInState(matchedUserData.id)
                     },
                 model = profilePic,
                 contentDescription = "",

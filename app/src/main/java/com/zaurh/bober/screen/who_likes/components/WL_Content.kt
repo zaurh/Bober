@@ -15,12 +15,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.zaurh.bober.navigation.Screen
+import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.home.components.SearchBar
 import com.zaurh.bober.screen.who_likes.WhoLikesUserItem
 import com.zaurh.bober.screen.who_likes.WhoLikesViewModel
@@ -29,10 +29,11 @@ import com.zaurh.bober.screen.who_likes.WhoLikesViewModel
 @Composable
 fun WL_Content(
     whoLikesViewModel: WhoLikesViewModel,
+    chatScreenViewModel: ChatScreenViewModel,
     navController: NavController,
     paddingValues: PaddingValues
 ) {
-    val whoLikesState = whoLikesViewModel.whoLikesState.collectAsState()
+    val whoLikesState = chatScreenViewModel.newLikesState.value
     val searchQuery = whoLikesViewModel.searchText.value
 
     BackHandler(
@@ -56,9 +57,9 @@ fun WL_Content(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            if (whoLikesState.value.isNotEmpty()){
-                val filteredWhoLikes = whoLikesState.value.filter {
-                    it?.username?.contains(searchQuery) == true
+            if (whoLikesState.newLikes.isNotEmpty()){
+                val filteredWhoLikes = whoLikesState.newLikes.filter {
+                    it.username.contains(searchQuery)
                 }
                 SearchBar(
                     value = searchQuery,
@@ -70,11 +71,10 @@ fun WL_Content(
                 if (filteredWhoLikes.isNotEmpty()){
                     LazyVerticalGrid(columns = GridCells.Fixed(3)) {
                         items(filteredWhoLikes) { whoLikesData ->
-                            whoLikesData?.let {
+                            whoLikesData.let {
                                 WhoLikesUserItem(whoLikesData = it) {
-                                    val whoLikedUsername = it.username
-                                    navController.navigate(Screen.ProfileScreen.passUsername(whoLikedUsername))
-                                    whoLikesViewModel.newGotLikedToOld(it.id)
+                                    navController.navigate(Screen.ProfileScreen.createRoute(it.id))
+                                    chatScreenViewModel.newGotLikedToOld(it.id)
                                 }
                             }
 
@@ -85,7 +85,7 @@ fun WL_Content(
                 }
                 
             }else{
-                Text(text = "No one liked you yet :(")
+                Text(text = "You've no new likes.")
             }
             
         }

@@ -95,7 +95,7 @@ fun ImageCard(
                 }
                 Spacer(Modifier.size(16.dp))
                 Text(
-                    "- Unlimited likes\n- See who likes you\n- Read receipt \n- See online/last seen",
+                    "- Unlimited likes\n- See who liked you\n- Read receipt \n- See online/last seen",
                     color = Color.White
                 )
             }

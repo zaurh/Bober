@@ -1,6 +1,7 @@
 package com.zaurh.bober.screen.profile
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -12,6 +13,7 @@ import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,6 +24,7 @@ class ProfileViewModel @Inject constructor(
 ) : ViewModel() {
 
     val currentUserDataState: StateFlow<UserData?> = userRepository.userData
+
     val profileDataState: StateFlow<UserData?> = userRepository.profileData
 
     private val _unMatchLoading = mutableStateOf(false)
@@ -36,9 +39,6 @@ class ProfileViewModel @Inject constructor(
     private val _imageIndex: MutableState<Int?> = mutableStateOf(null)
     val imageIndex: State<Int?> = _imageIndex
 
-    private val _blockAlertState = mutableStateOf(false)
-    val blockAlertState: State<Boolean> = _blockAlertState
-
     private val _unmatchAlertState = mutableStateOf(false)
     val unmatchAlertState: State<Boolean> = _unmatchAlertState
 
@@ -47,9 +47,15 @@ class ProfileViewModel @Inject constructor(
     }
 
 
-    fun getProfileID(username: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.getProfileID(username)
+    var getProfileJob: Job? = null
+
+    fun cancelGetProfileJob(){
+        getProfileJob?.cancel()
+    }
+
+    fun getProfileID(recipientId: String) {
+        getProfileJob = viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getProfileID(recipientId)
         }
     }
 
@@ -87,8 +93,14 @@ class ProfileViewModel @Inject constructor(
     fun pass(recipientId: String, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val response = userRepository.pass(recipientId)
+            Log.d("dslajkdsk", "$response")
             if (response.success){
                 clearProfileData()
+                viewModelScope.launch(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
+            else if (response.message == "User already passed"){
                 viewModelScope.launch(Dispatchers.Main) {
                     onSuccess()
                 }
@@ -97,6 +109,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun onUnMatchStateChange() {
+        Log.d("dsalkdajklasdklsa", "changed")
         _unmatchAlertState.value = !unmatchAlertState.value
     }
 
@@ -112,21 +125,20 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onBlockStateChange() {
-        _blockAlertState.value = !blockAlertState.value
-    }
 
-    fun block(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.block(recipientId)
-            if (response.success) {
-                _blockAlertState.value = false
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
+
+//    fun block(recipientId: String, onSuccess: () -> Unit) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            val response = userRepository.block(recipientId)
+//            Log.d("sdjakldslajkjklasd", "$response")
+//            if (response.success) {
+//                _blockAlertState.value = false
+//                viewModelScope.launch(Dispatchers.Main) {
+//                    onSuccess()
+//                }
+//            }
+//        }
+//    }
 
     fun report(recipientId: String, context: Context) {
         _reportState.value = reportState.value.copy(

@@ -17,7 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -27,7 +26,7 @@ import com.zaurh.bober.screen.chat.ChatScreenViewModel
 
 @Composable
 fun GotMatchAlert(
-    chatScreenViewModel: ChatScreenViewModel = hiltViewModel(),
+    chatScreenViewModel: ChatScreenViewModel,
     recipientImage: String
 ) {
     val userDataState = chatScreenViewModel.userDataState.collectAsState()

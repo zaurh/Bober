@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,8 +31,7 @@ fun LU_Content(
     navController: NavController,
     paddingValues: PaddingValues
 ) {
-    val userData = likedUsersViewModel.userDataState.collectAsState()
-    val likedUserList = likedUsersViewModel.likedUserList.collectAsState()
+    val likedUserState = likedUsersViewModel.likedUsersState.value
     val searchQuery = likedUsersViewModel.searchText.value
 
     BackHandler(
@@ -56,33 +54,36 @@ fun LU_Content(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            if (likedUserList.value.isNotEmpty()){
-                val filteredLikedUsers = likedUserList.value.filter {
-                    it?.username?.contains(searchQuery) == true
-                }
+            if (likedUserState.likedUsers.isNotEmpty()){
                 SearchBar(
                     value = searchQuery,
                     onValueChange = likedUsersViewModel::onSearch,
                     placeHolder = "Search for liked users"
                 )
-                Spacer(modifier = Modifier.size(16.dp))
+                Spacer(Modifier.size(16.dp))
+
+                val filteredLikedUsers = likedUserState.likedUsers.filter {
+                    it.username?.contains(searchQuery) == true
+                }
+
                 if (filteredLikedUsers.isNotEmpty()){
                     LazyVerticalGrid(columns = GridCells.Fixed(3)) {
                         items(filteredLikedUsers) { likedUserData ->
-                            likedUserData?.let {
+                            likedUserData.let {
                                 LikedUserItem(likedUserData = it) {
-                                    navController.navigate(Screen.ProfileScreen.passUsername(it.username))
+                                    navController.navigate(Screen.ProfileScreen.createRoute(recipientId = it.id ?: ""))
                                 }
                             }
 
                         }
                     }
                 }else{
-                    Text(text = "No one is found.")
+                    if (searchQuery.isNotEmpty()){
+                        Text(text = "No one is found.")
+                    }
                 }
-
-            }else{
+            }
+            else{
                 Text(text = "You've not liked anyone.")
             }
 

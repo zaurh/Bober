@@ -1,6 +1,5 @@
 package com.zaurh.bober.data.repository
 
-import android.content.SharedPreferences
 import android.util.Log
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
@@ -20,17 +19,22 @@ import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.data.user.ShowMe
 import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.data.user.UserUpdate
+import com.zaurh.bober.data.user.room.UserDao
+import com.zaurh.bober.data.user.toUserEntity
 import com.zaurh.bober.domain.repository.AuthRepo
+import com.zaurh.bober.preferences.BoberPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class AuthRepoImpl @Inject constructor(
     private val api: UserApi,
-    private val prefs: SharedPreferences
+    private val boberPreferences: BoberPreferences,
+    private val userDao: UserDao
 ) : AuthRepo {
 
     private val _signedIn = MutableStateFlow(false)
@@ -41,11 +45,33 @@ class AuthRepoImpl @Inject constructor(
     override val loading: StateFlow<Boolean>
         get() = _loading
 
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
+    init {
+        ioScope.launch {
+            val signedIn = getSignedIn()
+            if (signedIn == true){
+                _signedIn.value = true
+            }else{
+                authenticate()
+            }
+        }
+    }
+
+    suspend fun getToken(): String? {
+        return boberPreferences.getJwtKey.first()
+    }
+
+    suspend fun getSignedIn(): Boolean? {
+        return boberPreferences.getSignedIn.first()
+    }
+
     override suspend fun storeFCMToken(fcmToken: String): MessageResponse {
-        val token = prefs.getString("jwt", null) ?: return MessageResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+//        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+//            success = false,
+//            message = "Token retrieve failed."
+//        )
+        val token = getToken()
         return try {
             val response = api.storeFCMToken(
                 token = "Bearer $token",
@@ -88,13 +114,7 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    private val ioScope = CoroutineScope(Dispatchers.IO)
 
-    init {
-        ioScope.launch {
-            authenticate()
-        }
-    }
 
 
     override suspend fun signUp(
@@ -155,13 +175,27 @@ class AuthRepoImpl @Inject constructor(
                     password = password
                 )
             )
-            prefs.edit()
-                .putString("jwt", response.token)
-                .apply()
+
+            if (response.success){
+                Log.d("asdjlasdj", "${response.user?.id}")
+                boberPreferences.saveJwtKey(response.token ?: "")
+                boberPreferences.saveCurrentUserId(response.user?.id ?: "")
+                response.user?.let {
+                    userDao.insertUser(it.toUserEntity())
+                }
+            }
+
+
+
+//            prefs.edit()
+//                .putString("jwt", response.token)
+//                .apply()
 
 
             if (response.success) {
                 _signedIn.value = true
+                boberPreferences.saveSignedIn(true)
+
             }
 
             SignInResponse(
@@ -198,11 +232,11 @@ class AuthRepoImpl @Inject constructor(
     }
 
     override suspend fun checkPassword(password: String): MessageResponse {
-        val token = prefs.getString("jwt", null) ?: return MessageResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
-        Log.d("asdkjalsdk", "token: $token")
+//        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+//            success = false,
+//            message = "Token retrieve failed."
+//        )
+        val token = getToken()
         return try {
             val response = api.checkPassword(
                 token = "Bearer $token",
@@ -211,6 +245,7 @@ class AuthRepoImpl @Inject constructor(
                 )
             )
             Log.d("asdkjalsdk", "success response: $response")
+            Log.d("asdkjalsdk", "token: $token")
 
             MessageResponse(
                 success = response.success,
@@ -278,10 +313,11 @@ class AuthRepoImpl @Inject constructor(
     }
 
     override suspend fun sendEmailVerification(email: String): MessageResponse {
-        val token = prefs.getString("jwt", null) ?: return MessageResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+//        val token = prefs.getString("jwt", null) ?: return MessageResponse(
+//            success = false,
+//            message = "Token retrieve failed."
+//        )
+        val token = getToken()
 
         return try {
             val response = api.sendEmailVerification(
@@ -303,10 +339,7 @@ class AuthRepoImpl @Inject constructor(
     }
 
     override suspend fun validateEmailToken(emailToken: String): ValidateEmailResponse {
-        val token = prefs.getString("jwt", null) ?: return ValidateEmailResponse(
-            success = false,
-            message = "Token retrieve failed."
-        )
+        val token = getToken()
 
         return try {
             val response = api.validateEmailToken(
@@ -334,10 +367,12 @@ class AuthRepoImpl @Inject constructor(
     override suspend fun authenticate(): AuthenticateResponse {
         return try {
             _loading.value = true
-            val token = prefs.getString("jwt", null)
+            val token = getToken()
+
             val response = api.authenticate("Bearer $token")
 
             if (response.success) {
+//                boberPreferences.saveSignedIn(true)
                 _signedIn.value = true
                 _loading.value = false
             } else {
@@ -360,17 +395,24 @@ class AuthRepoImpl @Inject constructor(
     }
 
     override suspend fun logout(): AuthenticateResponse {
+        val token = getToken()
+
+        Log.d("sdaldsaklsa", "logout, token: $token")
+
         return try {
-            val token = prefs.getString("jwt", null)
-            api.updateUserData(
+
+            val response = api.updateUserData(
                 token = "Bearer $token",
                 userUpdate = UserUpdate(
                     fcmToken = ""
                 )
             )
-            prefs.edit().clear().apply()
+
+            Log.d("sdaldsaklsa", "$response")
 
             _signedIn.value = false
+            boberPreferences.saveJwtKey("")
+            boberPreferences.saveSignedIn(false)
 
             AuthenticateResponse(
                 success = true,
@@ -378,6 +420,8 @@ class AuthRepoImpl @Inject constructor(
             )
 
         } catch (e: Exception) {
+            Log.d("sdaldsaklsa", "${e.message}")
+
             AuthenticateResponse(
                 success = false,
                 message = "Couldn't log out."

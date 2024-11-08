@@ -32,7 +32,7 @@ interface AuthRepo {
     suspend fun updatePassword(userId: String,password: String, confirmPassword: String): MessageResponse
     suspend fun validatePasswordToken(token: String): MessageResponse
     suspend fun sendEmailVerification(email: String): MessageResponse
-    suspend fun validateEmailToken(token: String): ValidateEmailResponse
+    suspend fun validateEmailToken(emailToken: String): ValidateEmailResponse
     suspend fun authenticate(): AuthenticateResponse
     suspend fun logout(): AuthenticateResponse
 }

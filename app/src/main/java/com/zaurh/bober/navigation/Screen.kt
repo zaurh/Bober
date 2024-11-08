@@ -12,9 +12,9 @@ sealed class Screen(val route: String){
     data object ResetPasswordScreen: Screen(route = "reset_password_screen")
     data object MatchScreen: Screen(route = "match_screen")
     data object HomeScreen: Screen(route = "home_screen")
-    data object ChatScreen: Screen(route = "chat_screen/{username}")
+    data object ChatScreen: Screen(route = "chat_screen/{recipientId}")
     data object AccountScreen: Screen(route = "account_screen")
-    data object ProfileScreen : Screen(route = "profile_screen/{username}/{imageIndex}")
+    data object ProfileScreen : Screen(route = "profile_screen/{recipientId}")
     data object EditProfileScreen: Screen(route = "edit_profile_screen")
     data object SettingsScreen: Screen(route = "settings_screen")
     data object NotificationScreen: Screen(route = "notification_screen")
@@ -26,19 +26,10 @@ sealed class Screen(val route: String){
     data object WhoLikesScreen: Screen(route = "who_likes_screen")
 
 
-    fun createRoute(username: String? = null): String {
-        return when (this) {
-            is ChatScreen -> route.replace("{username}", username.toString())
-            else -> route
-        }
+    fun createRoute(recipientId: String): String {
+        return route.replace("{recipientId}", recipientId)
     }
 
-    fun passUsername(username: String? = null): String {
-        return when (this) {
-            is ProfileScreen -> route.replace("{username}", username.toString())
-            else -> route
-        }
-    }
 
 
 }

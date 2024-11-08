@@ -1,10 +1,13 @@
 package com.zaurh.bober.domain.repository
 
-import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.util.Resource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface WebSocketRepository {
+
+    val switchedRecipient: StateFlow<String>
+
 
     suspend fun isConnected(): Boolean
 
@@ -14,9 +17,9 @@ interface WebSocketRepository {
 
     suspend fun typingMessage(): Resource<Unit>
 
-    suspend fun messageIsDelivered(messageId: String): Resource<Unit>
+//    suspend fun messageIsDelivered(): Resource<Unit>
 
-    suspend fun messageIsRead(messageId: String): Resource<Unit>
+    suspend fun messageIsRead(): Resource<Unit>
 
     suspend fun triggerOnline(): Resource<Unit>
 
@@ -24,7 +27,7 @@ interface WebSocketRepository {
 
     suspend fun sendLike(profileId: String): Resource<Unit>
 
-    fun observeMessages(): Flow<MessageData>
+    fun observeMessages(): Flow<Any>
 
     suspend fun closeSession()
 

@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
-import java.util.UUID
 
 @Serializable
 data class MessageDataDto(
@@ -17,15 +16,15 @@ data class MessageDataDto(
     val timestamp: Long? = null,
     var status: MessageStatus = MessageStatus.SENT,
     var deliveredTimestamp: Long? = null,
-    val id: String? = UUID.randomUUID().toString(),
+    val id: String? = null,
 ){
     fun toMessageData(): MessageData {
-        val formattedDate = formatTimestampToTime(timestamp ?: 0)
+//        val formattedDate = formatTimestampToTime(timestamp ?: 0)
 
         return MessageData(
             id = id,
             text = text,
-            timestamp = formattedDate,
+            timestamp = timestamp.toString(),
             status = status,
             deliveredTimestamp = deliveredTimestamp,
             senderUsername = senderUsername,
@@ -39,7 +38,8 @@ enum class MessageStatus {
     SENT,       // Message was sent from the sender
     DELIVERED,  // Message was delivered to the recipient
     READ,       // Message was read by recipient
-    FAILED      // Message delivery failed
+    FAILED,      // Message delivery failed
+    SENDING
 }
 
 @SuppressLint("SimpleDateFormat")

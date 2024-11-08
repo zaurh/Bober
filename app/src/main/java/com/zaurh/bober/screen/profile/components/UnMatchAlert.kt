@@ -30,7 +30,12 @@ fun UnMatchAlert(
                     route = Screen.ChatScreen.route,
                     inclusive = true
                 )
+                navController.popBackStack(
+                    route = Screen.ProfileScreen.route,
+                    inclusive = true
+                )
             }
         )
+
     }
 }

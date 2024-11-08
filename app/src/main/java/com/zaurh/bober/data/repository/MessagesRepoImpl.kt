@@ -1,19 +1,22 @@
 package com.zaurh.bober.data.repository
 
-import android.content.SharedPreferences
 import android.util.Log
 import com.zaurh.bober.data.message.MessageApi
 import com.zaurh.bober.data.responses.ChatListResponse
 import com.zaurh.bober.data.responses.GetAllMessagesResponse
+import com.zaurh.bober.data.responses.GetLastMessagesResponse
+import com.zaurh.bober.data.responses.UnreadMessagesSizeResponse
 import com.zaurh.bober.data.user.ChatData
 import com.zaurh.bober.domain.repository.MessageRepository
+import com.zaurh.bober.preferences.BoberPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class MessagesRepoImpl @Inject constructor(
     private val api: MessageApi,
-    private val prefs: SharedPreferences
+    private val boberPreferences: BoberPreferences
 ) : MessageRepository {
 
     private val _chatList = MutableStateFlow<List<ChatData?>>(listOf())
@@ -21,36 +24,69 @@ class MessagesRepoImpl @Inject constructor(
         get() = _chatList
 
 
-    override suspend fun getPrivateMessages(): GetAllMessagesResponse {
-        return try {
-            val token = prefs.getString("jwt", null) ?: ""
+    suspend fun getToken(): String? {
+        return boberPreferences.getJwtKey.first()
+    }
 
-            val response = api.getPrivateMessages(
+
+    override suspend fun getLastMessages(): GetLastMessagesResponse {
+        return try {
+            val token = getToken()
+
+            val response = api.getLastMessages(
                 token = "Bearer $token"
             )
 
-            GetAllMessagesResponse(
+            GetLastMessagesResponse(
                 success = response.success,
-                messageList = response.messageList,
+                lastMessages = response.lastMessages,
                 message = response.message
             )
 
 
         } catch (e: Exception) {
-            GetAllMessagesResponse(
+            GetLastMessagesResponse(
                 success = false,
                 message = e.message.toString()
             )
         }
     }
 
-    override suspend fun getRecipientMessages(recipientUserId: String): GetAllMessagesResponse {
+    override suspend fun getUnreadMessagesSize(): UnreadMessagesSizeResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: ""
+            val token = getToken()
+
+            val response = api.getUnreadMessagesSize(
+                token = "Bearer $token"
+            )
+
+            UnreadMessagesSizeResponse(
+                success = response.success,
+                size = response.size
+            )
+
+
+        } catch (e: Exception) {
+            UnreadMessagesSizeResponse(
+                success = false,
+                size = 0
+            )
+        }
+    }
+
+    override suspend fun getRecipientMessages(
+        recipientUserId: String,
+        page: Int,
+        pageSize: Int
+    ): GetAllMessagesResponse {
+        return try {
+            val token = getToken()
 
             val response = api.getRecipientMessages(
                 token = "Bearer $token",
-                recipientUserId = recipientUserId
+                recipientUserId = recipientUserId,
+                page = page,
+                pageSize = pageSize
             )
 
             Log.d("sadjdlaksda", "$response")
@@ -74,15 +110,15 @@ class MessagesRepoImpl @Inject constructor(
 
     override suspend fun getChatList(): ChatListResponse {
         return try {
-            val token = prefs.getString("jwt", null) ?: ""
+            val token = getToken()
 
             val response = api.getChatList(
                 token = "Bearer $token"
             )
 
-            if (response.success) {
-                _chatList.value = response.chatList
-            }
+//            if (response.success) {
+//                _chatList.value = response.chatList
+//            }
 
             ChatListResponse(
                 success = response.success,

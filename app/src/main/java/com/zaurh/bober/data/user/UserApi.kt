@@ -100,9 +100,9 @@ interface UserApi {
         @Header("Authorization") token: String
     ): MessageResponse
 
-    @GET("/users/{username}")
+    @GET("/users/id/{recipientId}")
     suspend fun getProfileID(
-        @Path("username") username: String
+        @Path("recipientId") recipientId: String
     ): GetUserDataResponse
 
     @PUT("/update_user")

@@ -31,19 +31,21 @@ import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.data.user.ChatData
+import com.zaurh.bober.util.lastSeenDayForMessage
 
 @Composable
 fun HomeChatItem(
     chatData: ChatData,
     lastMessage: String,
     lastMessageStatus: MessageStatus,
-    lastMessageTime: String,
+    lastMessageTime: Long,
     lastMessageSenderIsCurrent: Boolean,
     typing: Boolean,
     newMessage: Boolean,
-    newMessagesSize: Int,
+//    newMessagesSize: Int,
     onClick: () -> Unit
 ) {
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -99,6 +101,7 @@ fun HomeChatItem(
                             MessageStatus.DELIVERED -> R.drawable.delivered_ic
                             MessageStatus.READ -> R.drawable.read_ic
                             MessageStatus.FAILED -> R.drawable.sent_ic
+                            MessageStatus.SENDING -> R.drawable.pending_clock
                         }
                         if (lastMessageSenderIsCurrent) {
                             Image(
@@ -125,12 +128,12 @@ fun HomeChatItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = lastMessageTime,
+                    text = lastSeenDayForMessage(lastMessageTime),
                     color = if (newMessage) colorResource(id = R.color.backgroundTop) else Color.Gray,
                     fontSize = 12.sp
                 )
                 Spacer(modifier = Modifier.size(4.dp))
-                if (newMessagesSize > 0) {
+                if (newMessage){
                     Text(
                         modifier = Modifier
                             .clip(
@@ -138,11 +141,24 @@ fun HomeChatItem(
                             )
                             .background(colorResource(id = R.color.backgroundTop))
                             .padding(start = 6.dp, end = 6.dp),
-                        text = "$newMessagesSize",
+                        text = "NEW",
                         color = Color.White,
-                        fontSize = 14.sp
+                        fontSize = 12.sp
                     )
                 }
+//                if (newMessagesSize > 0) {
+//                    Text(
+//                        modifier = Modifier
+//                            .clip(
+//                                CircleShape
+//                            )
+//                            .background(colorResource(id = R.color.backgroundTop))
+//                            .padding(start = 6.dp, end = 6.dp),
+//                        text = "$newMessagesSize",
+//                        color = Color.White,
+//                        fontSize = 14.sp
+//                    )
+//                }
             }
         }
     }
