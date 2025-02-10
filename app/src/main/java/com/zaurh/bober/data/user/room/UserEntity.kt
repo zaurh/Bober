@@ -5,7 +5,6 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.zaurh.bober.data.message.LastMessageData
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.WhoLikesData
@@ -14,6 +13,7 @@ import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.data.user.Languages
 import com.zaurh.bober.data.user.PassedUserData
+import com.zaurh.bober.data.user.PremiumCardData
 import com.zaurh.bober.data.user.ShowMe
 import com.zaurh.bober.data.user.UserData
 
@@ -21,13 +21,12 @@ import com.zaurh.bober.data.user.UserData
 data class UserEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val userId: String?,
-    val isPremium: Boolean?,
+    val premiumCards: List<PremiumCardData>?,
     val name: String?,
     val gender: Gender?,
     val username: String?,
     val email: String?,
     val emailIsVerified: Boolean?,
-    val lastMessages: List<LastMessageData>?,
     val password: String?,
     val encryptedLocation: String?,
     val aboutMe: String?,
@@ -54,13 +53,12 @@ data class UserEntity(
 
 fun UserEntity.toUserData() = UserData(
     id = userId,
-    isPremium = isPremium,
+    premiumCards = premiumCards,
     name = name,
     gender = gender,
     username = username,
     email = email,
     emailIsVerified = emailIsVerified,
-    lastMessages = lastMessages,
     password = password,
     encryptedLocation = encryptedLocation,
     aboutMe = aboutMe,
@@ -100,29 +98,6 @@ class UserDataConverters {
         return gender?.let { Gender.valueOf(it) }
     }
 
-    // LastMessageData converter
-    @TypeConverter
-    fun fromLastMessageData(data: LastMessageData?): String? {
-        return gson.toJson(data)
-    }
-
-    @TypeConverter
-    fun toLastMessageData(data: String?): LastMessageData? {
-        return gson.fromJson(data, LastMessageData::class.java)
-    }
-
-    // List of LastMessageData converter
-    @TypeConverter
-    fun fromLastMessageDataList(data: List<LastMessageData>?): String? {
-        return gson.toJson(data)
-    }
-
-    @TypeConverter
-    fun toLastMessageDataList(data: String?): List<LastMessageData>? {
-        val listType = object : TypeToken<List<LastMessageData>>() {}.type
-        return gson.fromJson(data, listType)
-    }
-
     // List of LastMessageData converter
     @TypeConverter
     fun fromImageUrl(data: List<String>?): String? {
@@ -156,6 +131,17 @@ class UserDataConverters {
     fun toInterestsList(interests: String?): List<Interests>? {
         val listType = object : TypeToken<List<Interests>>() {}.type
         return gson.fromJson(interests, listType)
+    }
+
+    @TypeConverter
+    fun fromCardDataList(cardData: List<PremiumCardData>): String? {
+        return gson.toJson(cardData)
+    }
+
+    @TypeConverter
+    fun toCardDataList(cardData: String?): List<PremiumCardData>? {
+        val listType = object : TypeToken<List<PremiumCardData>>() {}.type
+        return gson.fromJson(cardData, listType)
     }
 
     // Languages converter

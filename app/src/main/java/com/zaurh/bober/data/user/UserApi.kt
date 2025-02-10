@@ -3,6 +3,7 @@ package com.zaurh.bober.data.user
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
 import com.zaurh.bober.data.requests.FCMTokenRequest
+import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
@@ -207,8 +208,9 @@ interface UserApi {
     ): GetLocationResponse
 
     @PUT("/premium")
-    suspend fun boberium(
+    suspend fun takePremiumCard(
         @Header("Authorization") token: String,
+        @Body premiumCardRequest: PremiumCardRequest
     ): UpdateUserResponse
 
 

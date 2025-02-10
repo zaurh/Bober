@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.blocked_users
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -30,6 +31,20 @@ class BlockedUsersViewModel @Inject constructor(
     private val _searchText = mutableStateOf("")
     val searchText: State<String> = _searchText
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "BlockedUsers Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "BlockedUsers Ended")
+
+    }
+
     fun getBlockList(){
         viewModelScope.launch(Dispatchers.IO) {
             _blockedUsersState.value = blockedUsersState.value.copy(
@@ -38,6 +53,8 @@ class BlockedUsersViewModel @Inject constructor(
                 empty = false
             )
             val response = userRepository.getBlockedUsers()
+            Log.d("dsakldjlksa", "${response.blockList}")
+
             if (response.success){
                 if (response.blockList.isNotEmpty()){
                     _blockedUsersState.value = blockedUsersState.value.copy(

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Chat_ModalSheetItem(
@@ -34,8 +36,8 @@ fun Chat_ModalSheetItem(
         Row {
             Icon(imageVector = icon, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.size(8.dp))
-            Text(text = title, color = MaterialTheme.colorScheme.primary)
+            Text(text = title, color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily, fontSize = 16.sp)
         }
-        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
     }
 }

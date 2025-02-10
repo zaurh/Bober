@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,7 +17,7 @@ fun AC_TopBar(
     navController: NavController
 ) {
     TopAppBar(title = {
-        Text(text = "Account center")
+        Text(text = "Account center", fontFamily = outfitFamily)
     }, navigationIcon = {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")

@@ -19,11 +19,17 @@ class LocalMessageRepoImpl @Inject constructor(
     }
 
     override suspend fun deleteMessage(text: String) {
+        Log.d("PendingMessagesDeleted", text)
         dao.deleteMessage(text)
+
     }
 
     override suspend fun deleteSentMessage() {
         dao.deleteSentMessage()
+    }
+
+    override suspend fun clearMessages() {
+        dao.clearMessages()
     }
 
 

@@ -1,8 +1,9 @@
 package com.zaurh.bober.screen.match
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zaurh.bober.data.user.BoberData
+import com.zaurh.bober.data.repository.state.BoberListState
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,12 +18,25 @@ class MatchViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
-    val matchListState: StateFlow<List<BoberData?>> = userRepository.boberDataList
+    val boberListState: StateFlow<BoberListState> = userRepository.boberDataList
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Match Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Match Ended")
+
+    }
 
     fun getBobers(){
         viewModelScope.launch(Dispatchers.IO) {
-            val a = userRepository.getBobers()
+            userRepository.getBobers()
         }
     }
 

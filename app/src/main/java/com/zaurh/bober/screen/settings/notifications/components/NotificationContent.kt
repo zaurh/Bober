@@ -30,7 +30,6 @@ import com.zaurh.bober.screen.settings.notifications.NotificationViewModel
 import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
 import kotlinx.coroutines.launch
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun NotificationContent(
@@ -42,6 +41,7 @@ fun NotificationContent(
     val scope = rememberCoroutineScope()
 
     val messagesStatus = dataStore.getMessagesStatus.collectAsState(initial = false)
+    val emoteStatus = dataStore.getEmoteStatus.collectAsState(initial = false)
     val likesStatus = dataStore.getLikesStatus.collectAsState(initial = false)
     val matchStatus = dataStore.getMatchStatus.collectAsState(initial = false)
 
@@ -67,7 +67,7 @@ fun NotificationContent(
                 NotificationItem(
                     checked = messagesStatus.value,
                     title = "Messages",
-                    description = "Someone send you a new message.",
+                    description = "Someone send you a new message",
                     onChange = {
                         scope.launch {
                             dataStore.controlMessages(it)
@@ -80,6 +80,23 @@ fun NotificationContent(
                     }
                 )
                 Spacer(modifier = Modifier.size(12.dp))
+                NotificationItem(
+                    checked = emoteStatus.value,
+                    title = "Reacts",
+                    description = "Someone reacted ❤\uFE0F to your message",
+                    onChange = {
+                        scope.launch {
+                            dataStore.controlEmote(it)
+                        }
+                        notificationViewModel.onNotificationChange(
+                            change = it,
+                            context = context,
+                            channelId = "react"
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.size(12.dp))
+
                 NotificationItem(
                     checked = likesStatus.value,
                     title = "Likes",
@@ -131,7 +148,6 @@ fun NotificationContent(
 
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun openNotificationSettings(context: Context) {
     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
         putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

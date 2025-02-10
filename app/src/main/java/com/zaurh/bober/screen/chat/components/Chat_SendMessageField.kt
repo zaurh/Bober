@@ -22,8 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Chat_SendMessageField(
@@ -31,6 +36,7 @@ fun Chat_SendMessageField(
     value: String,
     gifState: Boolean,
     enabled: Boolean,
+    focusRequester: FocusRequester,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
     onGif: () -> Unit,
@@ -39,13 +45,14 @@ fun Chat_SendMessageField(
     TextField(
         modifier = Modifier
             .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .padding(8.dp)
             .heightIn(max = 200.dp)
             .background(Color.Transparent)
             .clip(RoundedCornerShape(20))
-            .padding(8.dp)
             .border(1.dp, color = Color.Gray, shape = RoundedCornerShape(20))
             .imePadding(),
-        placeholder = { Text(text = if (enabled) placeholder else "No internet connection") },
+        placeholder = { Text(text = if (enabled) placeholder else "No internet connection", fontFamily = outfitFamily) },
         enabled = enabled,
         colors = TextFieldDefaults.colors(
             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -54,6 +61,7 @@ fun Chat_SendMessageField(
             focusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent
         ),
+
         value = value,
         onValueChange = onValueChange,
         trailingIcon = {
@@ -74,10 +82,14 @@ fun Chat_SendMessageField(
                         .background(MaterialTheme.colorScheme.onSecondary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = if (gifState) "X" else "GIF", color = MaterialTheme.colorScheme.surface)
+                    Text(text = if (gifState) "X" else "GIF", color = MaterialTheme.colorScheme.surface, fontFamily = outfitFamily)
                 }
             }
-        }
+        },
+        textStyle = TextStyle(
+            fontFamily = outfitFamily,
+            fontSize = 16.sp
+        )
     )
 
 }

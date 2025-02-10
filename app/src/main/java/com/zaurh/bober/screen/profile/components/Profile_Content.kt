@@ -80,6 +80,7 @@ import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -197,17 +198,11 @@ fun ProfileContent(
             Column(Modifier.padding(16.dp)) {
                 val userId = profileData.value?.id ?: ""
 
-//                val inBlockList =
-//                    currentUser.value?.blockList?.contains(userId) == true
-
                 val inBlockList = blockListState.blockList.any { it.id == userId }
 
 
                 val inLikedList =
                     currentUser.value?.likedUsers?.contains(userId) == true
-
-//                val inMatchList =
-//                    currentUser.value?.matchList?.any { it.id == userId } == true
 
                 val inMatchList =
                     matchListState.matchList.any { it.id == userId }
@@ -228,7 +223,8 @@ fun ProfileContent(
                             Text(
                                 text = user.name ?: "",
                                 fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = outfitFamily
                             )
                         }
 
@@ -236,7 +232,8 @@ fun ProfileContent(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
                                 text = user.jobTitle ?: "",
-                                color = Color.Gray
+                                color = Color.Gray,
+                                fontFamily = outfitFamily
                             )
                         }
                     }
@@ -254,7 +251,8 @@ fun ProfileContent(
                         Spacer(modifier = Modifier.size(4.dp))
                         Text(
                             text = "${user.gender?.displayName}",
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = outfitFamily
                         )
                     }
                     if (heightExist) {
@@ -270,7 +268,8 @@ fun ProfileContent(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
                                 text = "${user.height}cm",
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = outfitFamily
                             )
                         }
                     }
@@ -283,7 +282,8 @@ fun ProfileContent(
                             text = "• About",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = outfitFamily
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         Column(
@@ -295,7 +295,8 @@ fun ProfileContent(
                             Text(
                                 text = user.aboutMe ?: "",
                                 color = Color.Gray,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                fontFamily = outfitFamily
                             )
                         }
                     }
@@ -309,7 +310,8 @@ fun ProfileContent(
                             text = "• Languages",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = outfitFamily
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         FlowRow(
@@ -318,13 +320,15 @@ fun ProfileContent(
                             languages?.forEachIndexed { index, language ->
                                 Text(
                                     text = language.displayName,
-                                    color = Color.Gray
+                                    color = Color.Gray,
+                                    fontFamily = outfitFamily
                                 )
                                 if (index < languages.size - 1) {
                                     Text(
                                         text = ",",
                                         modifier = Modifier.padding(end = 4.dp),
-                                        color = Color.Gray
+                                        color = Color.Gray,
+                                        fontFamily = outfitFamily
                                     )
                                 }
                             }
@@ -340,7 +344,8 @@ fun ProfileContent(
                             text = "• Interests",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = outfitFamily
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         FlowRow(
@@ -349,13 +354,15 @@ fun ProfileContent(
                             interests?.forEachIndexed { index, interest ->
                                 Text(
                                     text = interest.displayName,
-                                    color = Color.Gray
+                                    color = Color.Gray,
+                                    fontFamily = outfitFamily
                                 )
                                 if (index < interests.size - 1) {
                                     Text(
                                         text = ",",
                                         modifier = Modifier.padding(end = 4.dp),
-                                        color = Color.Gray
+                                        color = Color.Gray,
+                                        fontFamily = outfitFamily
                                     )
                                 }
                             }
@@ -368,7 +375,6 @@ fun ProfileContent(
 
                 val nameText = if (user.name != "") "${user.name}" else "${user.username}"
 
-                Log.d("fsdljdfsljksd", "$currentUser")
 
                 if (inLikedList && !inMatchList && !currentUserItself) {
                     ProfileScreenButtonItem(
@@ -429,8 +435,13 @@ fun ProfileContent(
 
         }
 
-        Log.d("asdjkljsdajl", "${blockListState.blockList.any { it.id != profileData.value?.id }}")
-        Log.d("asdjkljsdajl", "${blockListState.blockList}")
+        LaunchedEffect(true) {
+            Log.d("dsalkjdsalkad", "${profileData.value?.id in blockListState.blockList.map { it.id }}")
+            Log.d("dsalkjdsalkad", "${currentUser.value?.likedUsers?.contains(profileData.value?.id)}")
+            Log.d("dsalkjdsalkad", "${currentUser.value?.id != profileData.value?.id}")
+            Log.d("dsalkjdsalkad", "${profileData.value?.id}")
+            Log.d("dsalkjdsalkad", "${blockListState.blockList.map { it.id }}")
+        }
         AnimatedVisibility(
             visible =
             (profileData.value?.id !in blockListState.blockList.map { it.id }) &&

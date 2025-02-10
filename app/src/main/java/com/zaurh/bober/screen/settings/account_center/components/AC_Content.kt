@@ -22,13 +22,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.settings.components.SettingsItem
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun AC_Content(
@@ -85,12 +88,12 @@ fun AC_TextField(
     trailingIcon: @Composable () -> Unit = {}
 ) {
     Column {
-        Text(text = title, color = MaterialTheme.colorScheme.primary)
+        Text(text = title, color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20)),
-            placeholder = { Text(text = placeholder) },
+            placeholder = { Text(text = placeholder, fontFamily = outfitFamily) },
             enabled = enabled,
             colors = TextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
@@ -109,7 +112,11 @@ fun AC_TextField(
             singleLine = singleLine,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = visualTransformation,
-            trailingIcon = trailingIcon
+            trailingIcon = trailingIcon,
+            textStyle = TextStyle(
+                fontFamily = outfitFamily,
+                fontSize = 16.sp
+            )
         )
     }
 

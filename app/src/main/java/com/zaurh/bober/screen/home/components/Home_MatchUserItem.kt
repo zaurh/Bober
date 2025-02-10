@@ -34,26 +34,24 @@ fun Home_MatchUserItem(
 ) {
 
     Box {
-        val profilePic = matchedUserData.image
-
-            AsyncImage(
-                modifier = Modifier
-                    .height(150.dp)
-                    .width(100.dp)
-                    .padding(8.dp)
-                    .clip(
-                        RoundedCornerShape(20)
-                    )
-                    .clickable {
-                        navController.navigate(Screen.ChatScreen.createRoute(recipientId = matchedUserData.id))
-                        homeViewModel.switchRecipient(matchedUserData.id)
-                        chatScreenViewModel.newMatchToOld(matchedUserData.id)
-                        chatScreenViewModel.switchRecipientInState(matchedUserData.id)
-                    },
-                model = profilePic,
-                contentDescription = "",
-                contentScale = ContentScale.Crop
-            )
+        AsyncImage(
+            modifier = Modifier
+                .height(150.dp)
+                .width(100.dp)
+                .padding(8.dp)
+                .clip(
+                    RoundedCornerShape(20)
+                )
+                .clickable {
+                    navController.navigate(Screen.ChatScreen.createRoute(recipientId = matchedUserData.id))
+                    homeViewModel.switchRecipient(matchedUserData.id)
+                    chatScreenViewModel.newMatchToOld(matchedUserData.id)
+                    chatScreenViewModel.switchRecipientInState(matchedUserData.id)
+                },
+            model = matchedUserData.image,
+            contentDescription = "",
+            contentScale = ContentScale.Crop
+        )
         if (new) {
             Icon(
                 modifier = Modifier

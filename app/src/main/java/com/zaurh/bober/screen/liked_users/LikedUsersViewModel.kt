@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.liked_users
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -24,9 +25,22 @@ class LikedUsersViewModel @Inject constructor(
     private val _likedUsersState = mutableStateOf(LikedUsersState())
     val likedUsersState: State<LikedUsersState> = _likedUsersState
 
-
     private val _searchText = mutableStateOf("")
     val searchText: State<String> = _searchText
+
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "LikedUsers Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "LikedUsers Ended")
+
+    }
 
     fun getLikedUsers(){
         viewModelScope.launch(Dispatchers.IO) {

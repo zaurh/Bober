@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun DeleteAccountAlert(
@@ -21,9 +22,9 @@ fun DeleteAccountAlert(
 ) {
     if (alertState) {
         AlertDialog(title = {
-            Text(text = "Delete account?")
+            Text(text = "Delete account?", fontFamily = outfitFamily)
         }, text = {
-            Text(text = "Are you sure you want to delete your account permanently?")
+            Text(text = "Are you sure you want to delete your account permanently?", fontFamily = outfitFamily)
         }, onDismissRequest = {
             onDismiss()
         }, confirmButton = {
@@ -32,7 +33,7 @@ fun DeleteAccountAlert(
             ), enabled = enabled, onClick = {
                 onDelete()
             }) {
-                Text(text = if (countdown > 0) "$countdown" else if (loading) "Loading..." else "Yes, delete.", color = Color.White)
+                Text(text = if (countdown > 0) "$countdown" else if (loading) "Loading..." else "Yes, delete.", color = Color.White, fontFamily = outfitFamily)
             }
         }, dismissButton = {
             Button(colors = ButtonDefaults.buttonColors(
@@ -40,7 +41,7 @@ fun DeleteAccountAlert(
             ), onClick = {
                 onDismiss()
             }) {
-                Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue))
+                Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
             }
         })
     }

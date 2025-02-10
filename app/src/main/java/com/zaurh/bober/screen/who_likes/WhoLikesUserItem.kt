@@ -18,13 +18,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.responses.WhoLikesData
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -56,7 +55,7 @@ fun WhoLikesUserItem(
                     ),
                     text = "NEW!",
                     textAlign = TextAlign.Center,
-                    fontFamily = FontFamily(Font(R.font.bober_font)),
+                    fontFamily = outfitFamily,
                     color = Color.White
                 )
             }
@@ -67,7 +66,8 @@ fun WhoLikesUserItem(
                 .align(Alignment.BottomStart)
                 .padding(8.dp),
             text = "${whoLikesData.username}, ${whoLikesData.age}",
-            color = Color.White
+            color = Color.White,
+            fontFamily = outfitFamily
         )
     }
 }

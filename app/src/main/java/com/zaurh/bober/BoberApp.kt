@@ -55,7 +55,15 @@ class BoberApp : Application(), ImageLoaderFactory {
             description = "Receiving match notifications."
         }
 
-        notificationManager.createNotificationChannels(listOf(channel1, channel2, channel3))
+        val channel4 = NotificationChannel(
+            "react",
+            "React notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Receiving react notifications."
+        }
+
+        notificationManager.createNotificationChannels(listOf(channel1, channel2, channel3, channel4))
     }
 
     override fun newImageLoader(): ImageLoader {

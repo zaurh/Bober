@@ -42,6 +42,18 @@ class ProfileViewModel @Inject constructor(
     private val _unmatchAlertState = mutableStateOf(false)
     val unmatchAlertState: State<Boolean> = _unmatchAlertState
 
+    init {
+        startedTemp()
+    }
+
+    private fun startedTemp(){
+        Log.d("Viewmodelstates", "Profile Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Profile Ended")
+    }
     fun updateIndex(index: Int) {
         _imageIndex.value = index
     }

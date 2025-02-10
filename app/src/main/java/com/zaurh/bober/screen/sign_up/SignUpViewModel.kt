@@ -1,9 +1,6 @@
 package com.zaurh.bober.screen.sign_up
 
-import android.content.ContentResolver
-import android.content.Context
-import android.net.Uri
-import android.widget.Toast
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -53,9 +50,23 @@ class SignUpViewModel @Inject constructor(
     private val _imageState = mutableStateOf(ImageState())
     val imageState: State<ImageState> = _imageState
 
+
     private val _passwordState = mutableStateOf(PasswordState())
     val passwordState: State<PasswordState> = _passwordState
 
+
+    init {
+        startedTemp()
+    }
+
+    private fun startedTemp(){
+        Log.d("Viewmodelstates", "SignUp Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "SignUp Ended")
+    }
 
     fun onUsernameChange(value: String) {
         _usernameState.value = usernameState.value.copy(
@@ -117,7 +128,7 @@ class SignUpViewModel @Inject constructor(
                 interests = interestsState.value.interests.minus(interests)
             )
         } else {
-            if (interestsState.value.interests.count() < 10){
+            if (interestsState.value.interests.count() < 10) {
                 _interestsState.value = interestsState.value.copy(
                     interests = interestsState.value.interests.plus(interests)
                 )
@@ -144,72 +155,97 @@ class SignUpViewModel @Inject constructor(
         )
     }
 
-
-    fun uploadMedia(
-        description: String,
-        imageUri: Uri,
-        contentResolver: ContentResolver,
-        context: Context,
-        onSuccess: (String) -> Unit
-    ) {
+    fun bottomSheetTrigger() {
         _imageState.value = imageState.value.copy(
-            loading = true
+            bottomSheetEnabled = !imageState.value.bottomSheetEnabled
         )
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                _imageState.value = imageState.value.copy(
-                    pickedImage = ""
-                )
-                val inputStream = contentResolver.openInputStream(imageUri)
-                val fileName = imageUri.lastPathSegment ?: "image.jpg"
+    }
 
-                inputStream?.use {
-                    val response = userRepository.uploadMedia(description, it, fileName)
-                    if (response.success) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                        onSuccess(response.fileLink)
-                        _imageState.value = imageState.value.copy(
-                            pickedImage = response.fileLink
-                        )
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-                _imageState.value = imageState.value.copy(
-                    loading = false
-                )
-
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-                _imageState.value = imageState.value.copy(
-                    loading = false
-                )
-            }
+    fun selectImage(imageUri: String, onSuccess: () -> Unit) {
+        _imageState.value = imageState.value.copy(
+            pickedImage = imageUri
+        )
+        if (imageState.value.pickedImage.isNotEmpty()) {
+            onSuccess()
+            _imageState.value = imageState.value.copy(
+                bottomSheetEnabled = false
+            )
         }
     }
 
 
-    fun signUp() {
+//    fun uploadMedia(
+//        description: String,
+//        imageUri: Uri,
+//        contentResolver: ContentResolver,
+//        context: Context,
+//        onSuccess: (String) -> Unit
+//    ) {
+//        _imageState.value = imageState.value.copy(
+//            loading = true
+//        )
+//        viewModelScope.launch(Dispatchers.IO) {
+//            try {
+//                _imageState.value = imageState.value.copy(
+//                    pickedImage = ""
+//                )
+//                val inputStream = contentResolver.openInputStream(imageUri)
+//                val fileName = imageUri.lastPathSegment ?: "image.jpg"
+//
+//                inputStream?.use {
+//                    val response = userRepository.uploadMedia(description, it, fileName)
+//                    if (response.success) {
+//                        withContext(Dispatchers.Main) {
+//                            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
+//                                .show()
+//                            onSuccess(response.fileLink)
+//
+//                        }
+//                        _imageState.value = imageState.value.copy(
+//                            pickedImage = response.fileLink
+//                        )
+//                    } else {
+//                        withContext(Dispatchers.Main) {
+//                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                }
+//                _imageState.value = imageState.value.copy(
+//                    loading = false
+//                )
+//
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+//                }
+//                _imageState.value = imageState.value.copy(
+//                    loading = false
+//                )
+//            }
+//        }
+//    }
+
+
+    fun signUp(
+        imageUrl: String,
+        onSuccess: () -> Unit
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             _signUpLoading.value = true
+
             val response = authRepo.signUp(
                 username = usernameState.value.username,
                 password = passwordState.value.password,
                 gender = genderState.value.selectedGender,
-                image = imageState.value.pickedImage,
+                image = imageUrl,
                 dateOfBirth = birthDateState.value.birthDate,
                 showMe = showMeState.value.showMe,
                 interests = interestsState.value.interests
             )
+
             if (response.success) {
                 _signUpLoading.value = false
+                onSuccess()
             } else {
                 withContext(Dispatchers.Main) {
                     _signUpLoading.value = false
@@ -222,6 +258,7 @@ class SignUpViewModel @Inject constructor(
                 }
 
             }
+
         }
     }
 

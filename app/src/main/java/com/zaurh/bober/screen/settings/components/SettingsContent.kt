@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.settings.components
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -93,6 +94,16 @@ fun SettingsContent(
                 icon = R.drawable.heart_ic
             )
             SettingsDivider()
+            TitleItem(title = "Premium")
+            SettingsItem(
+                title = "Bober cards",
+                description = "Pick your premium card",
+                onClick = {
+                    Toast.makeText(context, "Not available yet.", Toast.LENGTH_SHORT).show()
+                },
+                icon = R.drawable.bober_card_ic
+            )
+            SettingsDivider()
             TitleItem(title = "Application")
             SettingsItem(
                 title = "Notifications",
@@ -128,7 +139,7 @@ fun SettingsContent(
                 onClick = {
                     context.sendMail()
                 },
-                icon = R.drawable.contact_ic
+                icon = R.drawable.support
             )
             SettingsDivider()
             TitleItem(title = "Security")

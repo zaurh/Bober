@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +46,8 @@ fun EP_GenderMS(
                     Text(
                         text = "Gender",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onGenderStateChange(false)
@@ -58,7 +60,7 @@ fun EP_GenderMS(
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
-                Text(text = "Select your gender", color = Color.Gray)
+                Text(text = "Select your gender", color = Color.Gray, fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(16.dp))
                 Gender.entries.forEach {
                     Text(
@@ -70,7 +72,9 @@ fun EP_GenderMS(
                             .padding(8.dp)
                             .fillMaxWidth(),
                         color = if (editProfileViewModel.gender.value == it) MaterialTheme.colorScheme.onSecondary else Color.Gray,
-                        fontSize = 18.sp)
+                        fontSize = 18.sp,
+                        fontFamily = outfitFamily
+                    )
                 }
                 Spacer(modifier = Modifier.size(48.dp))
 

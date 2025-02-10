@@ -15,8 +15,8 @@ android {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.1.11"
+        versionCode = 25
+        versionName = "1.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -149,4 +149,11 @@ dependencies {
 
     //Preferences datastore
     implementation ("androidx.datastore:datastore-preferences:1.0.0")
+
+    //SwipeAction
+    implementation ("me.saket.swipe:swipe:1.2.0")
+
+    //LeakCanary
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+
 }

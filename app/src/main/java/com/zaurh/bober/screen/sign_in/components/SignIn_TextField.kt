@@ -12,9 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SignIn_TextField(
@@ -29,7 +32,7 @@ fun SignIn_TextField(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(40)),
-        label = { Text(text = label) },
+        label = { Text(text = label, fontFamily = outfitFamily) },
         colors = TextFieldDefaults.colors(
             unfocusedContainerColor = Color.White,
             focusedContainerColor = Color.White,
@@ -50,6 +53,10 @@ fun SignIn_TextField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = visualTransformation,
         trailingIcon = trailingIcon,
-        singleLine = true
+        singleLine = true,
+        textStyle = TextStyle(
+            fontFamily = outfitFamily,
+            fontSize = 16.sp
+        )
     )
 }

@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.settings
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -35,6 +36,19 @@ class SettingsViewModel @Inject constructor(
 
     private var countdownJob: Job? = null
 
+
+    init {
+        startedTemp()
+    }
+
+    private fun startedTemp(){
+        Log.d("Viewmodelstates", "Setting Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Setting Ended")
+    }
 
 
     fun onDeleteAccountAlertChange(){
@@ -90,6 +104,8 @@ class SettingsViewModel @Inject constructor(
                     _showMeState.value = showMeState.value.copy(
                         state = false
                     )
+                    getBobers()
+
                 }
             )
             _showMeState.value = showMeState.value.copy(
@@ -104,7 +120,10 @@ class SettingsViewModel @Inject constructor(
                 userUpdate = UserUpdate(
                     ageRangeStart = ageRangeStart,
                     ageRangeEnd = ageRangeEnd
-                )
+                ),
+                onSuccess = {
+                    getBobers()
+                }
             )
         }
     }
@@ -114,7 +133,10 @@ class SettingsViewModel @Inject constructor(
             userRepository.updateUserData(
                 userUpdate = UserUpdate(
                     maximumDistance = maximumDistance
-                )
+                ),
+                onSuccess = {
+                    getBobers()
+                }
             )
         }
     }
@@ -124,7 +146,10 @@ class SettingsViewModel @Inject constructor(
             userRepository.updateUserData(
                 userUpdate = UserUpdate(
                     showFullDistance = show
-                )
+                ),
+                onSuccess = {
+                    getBobers()
+                }
             )
         }
     }
@@ -136,6 +161,7 @@ class SettingsViewModel @Inject constructor(
             if (response.success){
                 userRepository.clearProfileData()
                 userRepository.clearUserData()
+
                 viewModelScope.launch(Dispatchers.Main) {
                     onSuccess()
                 }
@@ -153,7 +179,7 @@ class SettingsViewModel @Inject constructor(
 
             val response = userRepository.deleteUserData()
             if (response.success){
-                authRepo.logout()
+                logout {}
                 viewModelScope.launch(Dispatchers.Main) {
                     onSuccess()
                 }
@@ -165,6 +191,12 @@ class SettingsViewModel @Inject constructor(
         _deleteAccountState.value = deleteAccountState.value.copy(
             loading = false
         )
+    }
+
+    private fun getBobers(){
+        viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getBobers()
+        }
     }
 
 }

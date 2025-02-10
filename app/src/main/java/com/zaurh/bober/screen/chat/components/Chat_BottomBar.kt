@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import com.zaurh.bober.data.user.BackgroundColor
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 
 @Composable
 fun ChatBottomBar(
-    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester,
     enabled: Boolean,
+    backgroundColor: BackgroundColor,
     chatScreenViewModel: ChatScreenViewModel
 ) {
     val gifState = chatScreenViewModel.gifState.value
@@ -22,10 +25,14 @@ fun ChatBottomBar(
 //    val textLineCount = value.split("\n").size
 //    val textFieldHeight = minOf(200.dp + (textLineCount - 1) * 30.dp, 150.dp)
 
-    Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface),verticalArrangement = Arrangement.Bottom) {
+    Column(
+        modifier = Modifier.background(if (backgroundColor == BackgroundColor.DEFAULT) MaterialTheme.colorScheme.surface else backgroundColor.color),
+        verticalArrangement = Arrangement.Bottom
+    ) {
         Chat_SendMessageField(
             placeholder = placeHolder,
             value = value,
+            focusRequester = focusRequester,
             onValueChange = if (gifState) chatScreenViewModel::onTenorQueryChange else chatScreenViewModel::onMessageChange,
             onGif = chatScreenViewModel::onGifStateChange,
             gifState = gifState,

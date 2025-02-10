@@ -31,6 +31,7 @@ import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.sign_up.SignUpViewModel
 import com.zaurh.bober.screen.sign_up.sign_up_gender.components.SUG_GenderButtonItem
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SignUpGender(
@@ -56,7 +57,7 @@ fun SignUpGender(
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = "Select your gender", color = Color.White, fontSize = 32.sp)
+            Text(text = "Select your gender", color = Color.White, fontSize = 32.sp, fontFamily = outfitFamily)
         }
         Column(
             modifier = Modifier
@@ -89,7 +90,8 @@ fun SignUpGender(
                 Text(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp),
                     text = "OR",
-                    color = Color.White
+                    color = Color.White,
+                    fontFamily = outfitFamily
                 )
                 HorizontalDivider(
                     modifier = Modifier
@@ -122,14 +124,15 @@ fun SignUpGender(
                 text = "Other",
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
+                fontFamily = outfitFamily
             )
             Button(colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White
             ), onClick = {
                 navController.navigate(Screen.SignUpAbout.route)
             }) {
-                Text(text = "Next", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Next", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
             }
         }
     }

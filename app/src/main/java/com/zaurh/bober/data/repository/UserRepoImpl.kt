@@ -1,6 +1,8 @@
 package com.zaurh.bober.data.repository
 
 import android.util.Log
+import com.zaurh.bober.data.repository.state.BoberListState
+import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.responses.AddMediaResponse
 import com.zaurh.bober.data.responses.BlockedUserData
 import com.zaurh.bober.data.responses.BlockedUsersResponse
@@ -8,6 +10,7 @@ import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
 import com.zaurh.bober.data.responses.LikedUsersResponse
+import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
@@ -44,8 +47,8 @@ class UserRepoImpl @Inject constructor(
     private val _profileData = MutableStateFlow<UserData?>(null)
     override val profileData: StateFlow<UserData?> get() = _profileData
 
-    private val _boberDataList = MutableStateFlow<List<BoberData?>>(listOf())
-    override val boberDataList: StateFlow<List<BoberData?>>
+    private val _boberDataList = MutableStateFlow(BoberListState())
+    override val boberDataList: StateFlow<BoberListState>
         get() = _boberDataList
 
 //    private val _likedUserList = MutableStateFlow<List<LikedUserData?>>(listOf())
@@ -60,6 +63,11 @@ class UserRepoImpl @Inject constructor(
     override val whoLikesList: StateFlow<List<WhoLikesData>>
         get() = _whoLikesList
 
+
+    private val _matchList = MutableStateFlow<List<MatchedUserData>>(listOf())
+    override val matchList: StateFlow<List<MatchedUserData>>
+        get() = _matchList
+
 //    private val _matchedUserList = MutableStateFlow<List<MatchedUserData>>(listOf())
 //    override val matchedUserList: StateFlow<List<MatchedUserData>>
 //        get() = _matchedUserList
@@ -73,10 +81,11 @@ class UserRepoImpl @Inject constructor(
         return boberPreferences.getCurrentUserId.first()
     }
 
-    suspend fun insertUserData(userEntity: UserEntity){
+    suspend fun insertUserData(userEntity: UserEntity) {
         userDao.insertUser(userEntity)
     }
-    suspend fun deleteUserDataFromLocal(userId: String){
+
+    suspend fun deleteUserDataFromLocal(userId: String) {
         userDao.deleteUser(userId)
     }
 
@@ -87,12 +96,11 @@ class UserRepoImpl @Inject constructor(
 
             if (response.success) {
                 _userData.value = response.user
-                if (response.user != null){
+                if (response.user != null) {
                     deleteUserDataFromLocal(response.user.id ?: "")
                     insertUserData(response.user.toUserEntity())
                 }
-            }
-            else{
+            } else {
                 Log.d("GetUserData", "Error Getting User data")
             }
             GetUserDataResponse(
@@ -187,12 +195,20 @@ class UserRepoImpl @Inject constructor(
 
 
     override suspend fun getBobers(): GetBobersResponse {
+        _boberDataList.value = BoberListState(loading = true)
         return try {
             val token = getToken()
 
             val response = api.getBobers("Bearer $token")
             if (response.success) {
-                _boberDataList.value = response.boberDataList
+                if (response.boberDataList.isEmpty()) {
+                    _boberDataList.value = BoberListState(empty = true)
+                } else {
+                    _boberDataList.value =
+                        BoberListState(boberList = response.boberDataList, empty = false)
+                }
+            } else {
+                _boberDataList.value = BoberListState(error = response.message)
             }
 
             GetBobersResponse(
@@ -201,8 +217,14 @@ class UserRepoImpl @Inject constructor(
                 message = response.message
             )
         } catch (e: Exception) {
+            _boberDataList.value = BoberListState(error = e.message ?: "Unknown error")
+
             GetBobersResponse(success = false, message = e.message ?: "")
         }
+    }
+
+    fun updateBoberList(boberList: List<BoberData>) {
+        _boberDataList.value = BoberListState(boberList = boberList)
     }
 
     override suspend fun getMatchedUsers(): MatchedUserResponse {
@@ -323,6 +345,12 @@ class UserRepoImpl @Inject constructor(
 
             if (response.success) {
                 _userData.value = response.user
+                val boberListMutable = boberDataList.value.boberList.toMutableList()
+                boberListMutable.removeIf { it.userId == recipientId }
+
+                _boberDataList.value = boberDataList.value.copy(
+                    boberList = boberListMutable
+                )
             }
             UpdateUserResponse(
                 success = response.success,
@@ -345,6 +373,14 @@ class UserRepoImpl @Inject constructor(
 
             if (response.success) {
                 _userData.value = response.user
+
+                val boberListMutable = boberDataList.value.boberList.toMutableList()
+                boberListMutable.removeIf { it.userId == recipientId }
+
+                _boberDataList.value = boberDataList.value.copy(
+                    boberList = boberListMutable
+                )
+
             }
             UpdateUserResponse(
                 success = response.success,
@@ -467,12 +503,15 @@ class UserRepoImpl @Inject constructor(
         }
     }
 
-    override suspend fun boberium(): UpdateUserResponse {
+    override suspend fun takePremiumCard(
+        premiumCardRequest: PremiumCardRequest
+    ): UpdateUserResponse {
         val token = getToken()
 
         return try {
-            val response = api.boberium(
-                token = "Bearer $token"
+            val response = api.takePremiumCard(
+                token = "Bearer $token",
+                premiumCardRequest = premiumCardRequest
             )
 
             if (response.success) {

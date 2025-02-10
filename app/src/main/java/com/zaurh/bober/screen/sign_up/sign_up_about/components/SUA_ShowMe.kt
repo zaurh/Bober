@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.ShowMe
 import com.zaurh.bober.screen.sign_up.SignUpViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +61,7 @@ fun SUA_ShowMe(
         ) {
             options.forEach { selectionOption ->
                 DropdownMenuItem(
-                    text = { Text(selectionOption.displayName, color = Color.White) },
+                    text = { Text(selectionOption.displayName, color = Color.White, fontFamily = outfitFamily) },
                     onClick = {
                         signUpViewModel.selectShowMe(selectionOption)
                         signUpViewModel.onShowMeChange()

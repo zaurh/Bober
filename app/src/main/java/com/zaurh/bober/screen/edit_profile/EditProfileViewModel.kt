@@ -1,9 +1,6 @@
 package com.zaurh.bober.screen.edit_profile
 
-import android.content.ContentResolver
-import android.content.Context
-import android.net.Uri
-import android.widget.Toast
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -20,11 +17,11 @@ import com.zaurh.bober.screen.edit_profile.states.DeleteImageState
 import com.zaurh.bober.screen.edit_profile.states.InterestsState
 import com.zaurh.bober.screen.edit_profile.states.LanguageState
 import com.zaurh.bober.screen.edit_profile.states.UsernameState
+import com.zaurh.bober.screen.sign_up.states.ImageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,8 +51,14 @@ class EditProfileViewModel @Inject constructor(
     private val _images = mutableStateOf(userDataState.value?.imageUrl ?: listOf())
     val images: MutableState<List<String>> = _images
 
-    private val _imageUploadLoading = mutableStateOf(false)
-    val imageUploadLoading: State<Boolean> = _imageUploadLoading
+    private val _imageState = mutableStateOf(ImageState())
+    val imageState: State<ImageState> = _imageState
+
+//    private val _imageUploadLoading = mutableStateOf(false)
+//    val imageUploadLoading: State<Boolean> = _imageUploadLoading
+
+    private val _bottomSheetEnabled = mutableStateOf(false)
+    val bottomSheetEnabled: State<Boolean> = _bottomSheetEnabled
 
     private val _deleteImageState = mutableStateOf(DeleteImageState())
     val deleteImageState: State<DeleteImageState> = _deleteImageState
@@ -90,6 +93,19 @@ class EditProfileViewModel @Inject constructor(
     private val _genderState = mutableStateOf(false)
     val genderState: State<Boolean> = _genderState
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "EditProfile Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "EditProfile Ended")
+
+    }
 
     fun onUsernameChange(username: String) {
         if (username.length <= 20){
@@ -231,11 +247,24 @@ class EditProfileViewModel @Inject constructor(
         _birthDateState.value = birthDate
     }
 
+    fun selectImage(imageUri: String, onSuccess: () -> Unit) {
+        _imageState.value = imageState.value.copy(
+            pickedImage = imageUri
+        )
+        if (imageState.value.pickedImage.isNotEmpty()) {
+            onSuccess()
+            _bottomSheetEnabled.value = false
+        }
+    }
 
     fun onImageChange(imageList: List<String>) {
         viewModelScope.launch(Dispatchers.IO) {
             _images.value = imageList
         }
+    }
+
+    fun bottomSheetTrigger(){
+        _bottomSheetEnabled.value = !bottomSheetEnabled.value
     }
 
     fun updateUserData(onSuccess: () -> Unit) {
@@ -266,55 +295,59 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun uploadMedia(
-        description: String,
-        imageUri: Uri,
-        contentResolver: ContentResolver,
-        context: Context,
-        onSuccess: (String) -> Unit
-    ) {
-        _imageUploadLoading.value = true
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val inputStream = contentResolver.openInputStream(imageUri)
-                val fileName = imageUri.lastPathSegment ?: "image.jpg"
+//    fun uploadMedia(
+//        description: String,
+//        imageUri: Uri,
+//        contentResolver: ContentResolver,
+//        context: Context,
+//        onSuccess: (String) -> Unit
+//    ) {
+//        _imageUploadLoading.value = true
+//        viewModelScope.launch(Dispatchers.IO) {
+//            try {
+//                val inputStream = contentResolver.openInputStream(imageUri)
+//                val fileName = imageUri.lastPathSegment ?: "image.jpg"
+//
+//                inputStream?.use {
+//                    val response = userRepository.uploadMedia(description, it, fileName)
+//                    if (response.success) {
+//                        withContext(Dispatchers.Main) {
+//                            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
+//                                .show()
+//                        }
+//                        onSuccess(response.fileLink)
+//                    } else {
+//                        withContext(Dispatchers.Main) {
+//                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                }
+//                _imageUploadLoading.value = false
+//
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+//                }
+//                _imageUploadLoading.value = false
+//
+//            }
+//        }
+//
+//    }
 
-                inputStream?.use {
-                    val response = userRepository.uploadMedia(description, it, fileName)
-                    if (response.success) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                        onSuccess(response.fileLink)
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-                _imageUploadLoading.value = false
 
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-                _imageUploadLoading.value = false
-
-            }
-        }
-    }
-
-
-    fun updateImage(fileLink: String) {
+    fun updateImage(fileLink: String, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             if ((userDataState.value?.imageUrl?.size ?: 0) < 6) {
-                userRepository.updateUserData(
+                val response = userRepository.updateUserData(
                     userUpdate = UserUpdate(
                         imageUrl = userDataState.value?.imageUrl?.plus(fileLink)
                             ?: listOf(fileLink)
                     )
                 )
+                if (response.success){
+                    onSuccess()
+                }
             }
         }
     }

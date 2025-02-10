@@ -4,8 +4,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.ui.MainActivity
 
 fun showNotification(
@@ -13,20 +13,29 @@ fun showNotification(
     context: Context,
     title: String,
     text: String,
+    additional: String = "",
     notificationType: NotificationType
 ) {
 
     val intent = Intent(context, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         when (notificationType) {
             NotificationType.LIKE -> {
-                putExtra("navigate_to", Screen.WhoLikesScreen.route)
+                putExtra("deepLink", "gotLiked:")
             }
+
             NotificationType.MATCH -> {
-                putExtra("navigate_to", Screen.PagerScreen.route)
+                putExtra("deepLink", "match:$additional")
             }
+
             NotificationType.CHAT -> {
-                putExtra("navigate_to", Screen.PagerScreen.route)
+                Log.d("asdadasdsdasda", additional)
+                putExtra("deepLink", "sendMessage:$additional")
+            }
+
+            NotificationType.REACT -> {
+                putExtra("deepLink", "sendMessage:$additional")
             }
         }
     }
@@ -55,6 +64,6 @@ fun showNotification(
     notificationManager.notify(1, notificationBuilder.build())
 }
 
-enum class NotificationType{
-    MATCH,LIKE,CHAT
+enum class NotificationType {
+    MATCH, LIKE, CHAT, REACT
 }

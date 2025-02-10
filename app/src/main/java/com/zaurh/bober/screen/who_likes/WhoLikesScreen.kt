@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.who_likes.components.WL_Content
@@ -17,10 +18,10 @@ fun WhoLikesScreen(
     chatScreenViewModel: ChatScreenViewModel,
     whoLikesViewModel: WhoLikesViewModel
 ) {
-    val newLikesState = chatScreenViewModel.newLikesState.value
+    val newLikesState = chatScreenViewModel.newLikesState.collectAsState()
 
     LaunchedEffect(true) {
-        if (newLikesState.newLikes.isEmpty()){
+        if (newLikesState.value.newLikes.isEmpty()){
             chatScreenViewModel.getWhoLikes()
         }
     }

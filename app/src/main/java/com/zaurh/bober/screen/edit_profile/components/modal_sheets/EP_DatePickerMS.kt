@@ -26,11 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commandiron.wheel_picker_compose.WheelDatePicker
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import com.zaurh.bober.util.localDateToString
 import com.zaurh.bober.util.stringToLocalDate
 import java.time.LocalDate
@@ -56,7 +58,8 @@ fun EP_DatePickerMS(
                     Text(
                         text = "Birth date",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onDatePickerChange(false)
@@ -69,7 +72,7 @@ fun EP_DatePickerMS(
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
-                Text(text = "Select your date of birth", color = Color.Gray)
+                Text(text = "Select your date of birth", color = Color.Gray, fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(16.dp))
                 val birthDate = editProfileViewModel.birthDateState.value
                 Box(modifier = Modifier.fillMaxWidth()){
@@ -80,7 +83,11 @@ fun EP_DatePickerMS(
                             .align(Alignment.Center),
                         startDate = if (birthDate.isNotEmpty()) stringToLocalDate(birthDate) else LocalDate.of(2000,1,1),
                         yearsRange = 1924..2006,
-                        textColor = Color.White
+                        textColor = Color.White,
+                        textStyle = TextStyle(
+                            fontFamily = outfitFamily,
+                            fontSize = 16.sp
+                        )
                     ) {
                         editProfileViewModel.onBirthDateChange(localDateToString(it))
                     }

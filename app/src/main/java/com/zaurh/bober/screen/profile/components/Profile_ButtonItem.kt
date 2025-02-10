@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun ProfileScreenButtonItem(
@@ -24,7 +26,7 @@ fun ProfileScreenButtonItem(
         disabledContainerColor = Color.White,
         containerColor = Color.White
     ),enabled = !isLoading,modifier = Modifier.fillMaxWidth(), onClick = { onClick() }) {
-        Text(text = title, color = colorResource(id = R.color.darkBlue))
+        Text(text = title, color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
         Spacer(modifier = Modifier.size(8.dp))
         if (isLoading){
             CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp,color = colorResource(id = R.color.darkBlue))

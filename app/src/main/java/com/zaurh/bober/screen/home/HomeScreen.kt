@@ -1,7 +1,6 @@
 package com.zaurh.bober.screen.home
 
 import android.app.Activity
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.navigation.Screen
@@ -31,11 +29,13 @@ import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.home.components.EmptyChatAlert
 import com.zaurh.bober.screen.home.components.Home_MatchUserItem
 import com.zaurh.bober.screen.home.components.SearchBar
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    homeViewModel: HomeViewModel = hiltViewModel(),
+    deepLink: String,
+    homeViewModel: HomeViewModel,
     chatScreenViewModel: ChatScreenViewModel
 ) {
     val currentUser = homeViewModel.userDataState.collectAsState()
@@ -50,26 +50,28 @@ fun HomeScreen(
 
 
     LaunchedEffect(true) {
-        if (chatList.isEmpty()){
-            chatScreenViewModel.getChatList()
-        }
         if (matchListState.matchList.isEmpty()){
             chatScreenViewModel.getMatchList()
         }
-        if (chatState.lastMessages.isEmpty()){
-            Log.d("dkaldjas", "SDakljdsa")
-            chatScreenViewModel.getLastMessages()
-        }
+
         homeViewModel.storeFCMToken()
         chatScreenViewModel.onRouteChange(
             onChatScreen = false,
             recipientId = ""
         )
-        chatScreenViewModel.clearRecipientMessages()
         chatScreenViewModel.clearProfileData()
         chatScreenViewModel.clearEmptyMessages()
     }
 
+//    LaunchedEffect(chatList) {
+//        if (chatState.recipientMessages.isNullOrEmpty()){
+//            chatScreenViewModel.chatListState.value.chatList.map { it.recipientId }.forEach {
+//                chatScreenViewModel.getRecipientMessages(it)
+//                Log.d("dsjkdsljkd", "2 - ${chatState.recipientMessages}")
+//
+//            }
+//        }
+//    }
 
 
     BackHandler(
@@ -107,7 +109,8 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.size(12.dp))
                     Text(
                         text = "New Matches ($newMatchesSize)",
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     Spacer(modifier = Modifier.size(12.dp))
                 }
@@ -133,7 +136,7 @@ fun HomeScreen(
                 }
                 Spacer(modifier = Modifier.size(12.dp))
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     val filteredChatList = chatList.filter { chat ->
                         chat.recipientUsername.contains(
                             searchValue,
@@ -141,16 +144,18 @@ fun HomeScreen(
                         )
                     }
                     item {
-                        if (matchList.isEmpty()) {
+                        if (matchListState.matchList.isEmpty() && chatListState.chatList.isEmpty()) {
                             EmptyChatAlert()
-                        } else if (filteredChatList.isEmpty() && chatList.isNotEmpty()){
+                        }
+
+                        else if (filteredChatList.isEmpty() && chatList.isNotEmpty()){
                             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = "No one is found.")
+                                Text(text = "No one is found.", fontFamily = outfitFamily)
                             }
                         }
                     }
 
-                    items(filteredChatList) { chatData ->
+                    items(filteredChatList.sortedByDescending { it.lastUpdated }) { chatData ->
                         val recipientId = chatData.recipientId
 
                         val recipientIsTyping =
@@ -158,22 +163,27 @@ fun HomeScreen(
                                 ?: false else false
 
 
-                        val lastMessage = chatState.lastMessages.find {
+//                        val lastMessage = chatState.lastMessages.find {
+//                            it.recipientUserId == user.value?.id && it.senderUserId == recipientId ||
+//                                    it.senderUserId == user.value?.id && it.recipientUserId == recipientId
+//                        }
+
+                        val lastMessage = chatState.recipientMessages?.find {
                             it.recipientUserId == user.value?.id && it.senderUserId == recipientId ||
                                     it.senderUserId == user.value?.id && it.recipientUserId == recipientId
                         }
 
-
                         val lastMessageIsMe = lastMessage?.senderUserId == currentUserId
 
                         val newMessage =
-                            !lastMessageIsMe && lastMessage?.messageStatus != MessageStatus.READ && lastMessage != null
+                            !lastMessageIsMe && lastMessage?.status != MessageStatus.READ && lastMessage != null
 
-                        val lastMessageTime = lastMessage?.messageTime?.toLong() ?: 0
-                        val lastMessageIsGif = lastMessage?.messageText?.endsWith(".gif") ?: false
+                        val lastMessageTime = lastMessage?.timestamp?.toLong() ?: 0
+                        val lastMessageIsGif = lastMessage?.text?.endsWith(".gif") ?: false && lastMessage?.text?.contains("media.tenor.com")  ?: false
                         val lastMessageText =
-                            if (lastMessageIsGif) "GIF" else lastMessage?.messageText ?: ""
-                        val lastMessageStatus = lastMessage?.messageStatus ?: MessageStatus.SENT
+                            if (lastMessageIsGif) "GIF" else lastMessage?.text ?: ""
+                        val lastMessageStatus = lastMessage?.status ?: MessageStatus.SENT
+                        val lastMessageEmote = lastMessage?.emoted ?: listOf()
 
                         HomeChatItem(
                             chatData = chatData,
@@ -183,15 +193,14 @@ fun HomeScreen(
                             lastMessageTime = lastMessageTime,
                             newMessage = newMessage,
 //                                newMessagesSize = newMessagesSize,
-                            typing = recipientIsTyping
+                            typing = recipientIsTyping,
+                            lastMessageEmote = lastMessageEmote
                         ) {
                             navController.navigate(Screen.ChatScreen.createRoute(recipientId = chatData.recipientId))
                             homeViewModel.switchRecipient(chatData.recipientId)
                             chatScreenViewModel.switchRecipientInState(chatData.recipientId)
                         }
-
                     }
-
                 }
             }
         }

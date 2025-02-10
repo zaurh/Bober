@@ -17,9 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.screen.sign_up.SignUpViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -30,8 +32,8 @@ fun SUA_Interests(
 
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "What are your interests", color = Color.White)
-            Text(text = "(${interestsState.interests.size}/10)", color = Color.White)
+            Text(text = "What are your interests", color = Color.White, fontFamily = outfitFamily)
+            Text(text = "(${interestsState.interests.size}/10)", color = Color.White, fontFamily = outfitFamily)
         }
         Spacer(modifier = Modifier.size(16.dp))
         FlowRow(
@@ -47,7 +49,9 @@ fun SUA_Interests(
                         text = interest.displayName,
                         color = if (interestsState.interests.contains(interest)) Color.White else colorResource(
                             id = R.color.darkBlue
-                        )
+                        ),
+                        fontFamily = outfitFamily,
+                        fontSize = 16.sp
                     )
                 }
             }

@@ -7,6 +7,8 @@ sealed class Screen(val route: String){
     data object SignUpGender: Screen(route = "sign_up_gender_screen")
     data object SignUpAbout: Screen(route = "sign_up_about")
     data object SignUpImage: Screen(route = "sign_up_image")
+    data object EditImage: Screen(route = "edit_image")
+    data object CropImage: Screen(route = "crop_image")
     data object SignInScreen: Screen(route = "sign_in_screen")
     data object ForgotPasswordScreen: Screen(route = "forgot_password_screen")
     data object ResetPasswordScreen: Screen(route = "reset_password_screen")
@@ -30,6 +32,5 @@ sealed class Screen(val route: String){
         return route.replace("{recipientId}", recipientId)
     }
 
-
-
 }
+

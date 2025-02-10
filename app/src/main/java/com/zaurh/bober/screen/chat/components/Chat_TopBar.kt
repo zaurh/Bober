@@ -1,6 +1,7 @@
 package com.zaurh.bober.screen.chat.components
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -27,14 +28,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
+import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import com.zaurh.bober.util.lastSeenDay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,10 +51,16 @@ fun Chat_TopBar(
     username: String,
     onClick: () -> Unit,
     navController: NavController,
-    chatScreenViewModel: ChatScreenViewModel
-) {
+    chatScreenViewModel: ChatScreenViewModel,
+    profileViewModel: ProfileViewModel,
+    ) {
     val profileData = chatScreenViewModel.profileDataState.collectAsState()
     val chatState = chatScreenViewModel.chatState.value
+    val selectedMessages = chatScreenViewModel.selectedMessages.value
+
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
 
     val recipientOnline =
         if (chatState.recipientUserId == profileData.value?.id) chatState.recipientOnlineStatus
@@ -69,41 +82,45 @@ fun Chat_TopBar(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         title = {
-
             Column() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                onClick()
-                            },
-                        model = image,
-                        contentDescription = "",
-                        contentScale = ContentScale.Crop
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Column() {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = username, color = MaterialTheme.colorScheme.primary)
-                            if (recipientOnline) {
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Icon(
-                                    modifier = Modifier.size(10.dp),
-                                    painter = painterResource(id = R.drawable.online_ic),
-                                    contentDescription = "",
-                                    tint = colorResource(id = R.color.darkGreen)
-                                )
+                    if (selectedMessages.isNotEmpty()){
+                        Text("${selectedMessages.size}", fontFamily = outfitFamily)
+                    }else{
+                        AsyncImage(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    onClick()
+                                },
+                            model = image,
+                            contentDescription = "",
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Column() {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = username, color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
+                                if (recipientOnline) {
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Icon(
+                                        modifier = Modifier.size(10.dp),
+                                        painter = painterResource(id = R.drawable.online_ic),
+                                        contentDescription = "",
+                                        tint = colorResource(id = R.color.darkGreen)
+                                    )
+                                }
+                            }
+                            AnimatedVisibility(!recipientOnline && !recipientIsTyping && profileData.value?.lastSeen != null) {
+                                Text(text = recipientLastSeen, fontSize = 12.sp, color = Color.Gray, fontFamily = outfitFamily)
+                            }
+                            AnimatedVisibility(recipientIsTyping) {
+                                Text(text = "typing...", fontSize = 12.sp, color = Color.Gray, fontFamily = outfitFamily)
                             }
                         }
-                        AnimatedVisibility(!recipientOnline && !recipientIsTyping && profileData.value?.lastSeen != null) {
-                            Text(text = recipientLastSeen, fontSize = 12.sp, color = Color.Gray)
-                        }
-                        AnimatedVisibility(recipientIsTyping) {
-                            Text(text = "typing...", fontSize = 12.sp, color = Color.Gray)
-                        }
                     }
+
 
                 }
 
@@ -111,28 +128,65 @@ fun Chat_TopBar(
 
         },
         navigationIcon = {
-            IconButton(onClick = {
-                navController.popBackStack()
-            }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
-            }
+                IconButton(onClick = {
+                    if (selectedMessages.isNotEmpty()){
+                        chatScreenViewModel.clearSelectMessages()
+                    }else{
+                        navController.popBackStack()
+                    }
+                }) {
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
+                }
+
         },
         actions = {
-            IconButton(onClick = {
-                chatScreenViewModel.openModalSheet()
-            }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (chatState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            color = MaterialTheme.colorScheme.secondary,
-                            strokeWidth = 2.dp
+            if (selectedMessages.isNotEmpty()){
+                if (selectedMessages.size < 2){
+                    val selectedMessage = selectedMessages.lastOrNull()
+                    IconButton(onClick = {
+                        chatScreenViewModel.enableReply(
+                            username = selectedMessage?.senderUsername ?: "",
+                            messageId = selectedMessage?.id ?: "",
+                            messageText = selectedMessage?.text ?: ""
                         )
-                        Spacer(Modifier.size(8.dp))
+                    }) {
+                        Icon(modifier = Modifier.size(20.dp),painter = painterResource(R.drawable.reply_ic), contentDescription = "", tint = MaterialTheme.colorScheme.primary)
                     }
-                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    IconButton(onClick = {
+                        chatScreenViewModel.clearSelectMessages()
+                        clipboardManager.setText(AnnotatedString(selectedMessages.last().text ?: ""))
+                        Toast.makeText(context, "Message copied", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(modifier = Modifier.size(20.dp),painter = painterResource(R.drawable.copy_ic), contentDescription = "", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                if (selectedMessages.any { it.senderUsername == username }){
+
+                    IconButton(onClick = {
+                        profileViewModel.onReportStateChange()
+                    }) {
+                        Icon(modifier = Modifier.size(20.dp),painter = painterResource(R.drawable.report_ic), contentDescription = "", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }else{
+                IconButton(onClick = {
+                    chatScreenViewModel.tempGetRoomMessages()
+                    chatScreenViewModel.openModalSheet()
+                }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (chatState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                color = MaterialTheme.colorScheme.secondary,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.size(8.dp))
+                        }
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    }
                 }
             }
+
         }
     )
     LaunchedEffect(profileData.value) {

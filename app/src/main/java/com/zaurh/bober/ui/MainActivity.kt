@@ -3,17 +3,15 @@ package com.zaurh.bober.ui
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.util.Consumer
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
@@ -38,8 +37,6 @@ import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.navigation.SetupNavGraph
-import com.zaurh.bober.screen.home.HomeViewModel
-import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
 import com.zaurh.bober.screen.sign_in.SignInViewModel
 import com.zaurh.bober.ui.theme.BoberTheme
@@ -51,7 +48,6 @@ import kotlin.time.Duration.Companion.seconds
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-//    private lateinit var connectivityObserver: ConnectivityObserver
 
     private lateinit var appUpdateManager: AppUpdateManager
     private val updateType = AppUpdateType.FLEXIBLE
@@ -77,6 +73,41 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val deepLinkState = remember { mutableStateOf("") }
+
+            DisposableEffect(Unit) {
+                val listener = Consumer<Intent> { intent ->
+                    val deepLink = intent.extras?.getString("deepLink")
+                    Log.d("aksldjlkadjsa", deepLink ?: "bos")
+                    if (deepLink != null) {
+                        deepLinkState.value = deepLink
+                        // Clear the intent to prevent re-triggering
+                        intent.replaceExtras(null)
+                    }
+                }
+                addOnNewIntentListener(listener)
+                onDispose {
+                    removeOnNewIntentListener(listener)
+                }
+            }
+
+            val deepLink = intent?.extras?.getString("deepLink") // access data like this
+
+            LaunchedEffect(deepLink) {
+                deepLinkState.value = deepLink ?: ""
+            }
+            LaunchedEffect(deepLinkState.value) {
+                if (deepLinkState.value.isNotEmpty()) {
+
+                    // Introduce a short delay before clearing the state
+                    delay(500) // Adjust delay time as needed
+                    deepLinkState.value = ""
+                }
+            }
+
+
+            Log.d("deepLinkPrint", deepLinkState.value)
+
 
             val navController = rememberNavController()
 
@@ -87,8 +118,6 @@ class MainActivity : ComponentActivity() {
             val savedTheme = dataStore.getDarkMode.collectAsState(initial = false)
             val scope = rememberCoroutineScope()
             val signInViewModel = hiltViewModel<SignInViewModel>()
-            val homeScreenViewModel = hiltViewModel<HomeViewModel>()
-            val matchViewModel = hiltViewModel<MatchViewModel>()
             val signedIn = signInViewModel.signedInState.collectAsState()
             val loading = signInViewModel.loading.collectAsState()
 
@@ -101,29 +130,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-//                LaunchedEffect(signedIn.value && appReady ) {
-//                    chatScreenViewModel.initSession(context)
-//                }
-
-
-                val navigateTo = intent.getStringExtra("navigate_to")
-
-
-                LaunchedEffect(navigateTo) {
-                    if (navigateTo != null) {
-                        navController.navigate(navigateTo)
-                    }
-                }
-
-//                LaunchedEffect(homeScreenViewModel.connectionEnabled.value) {
-//                    if(homeScreenViewModel.connectionEnabled.value){
-//                        if (!webSocketRepository.isConnected()){
-//                            chatScreenViewModel.initSession(context)
-//                        }
-//                    }
-//                }
-
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
@@ -131,8 +137,10 @@ class MainActivity : ComponentActivity() {
                     SetupNavGraph(
                         navController = navController,
                         startDestination =
-                        if (signedIn.value) Screen.PagerScreen.route
-                        else Screen.SignInScreen.route,
+                        if (signedIn.value) "chat_graph"
+                        else
+                            Screen.SignInScreen.route,
+                        deepLink = deepLinkState.value,
                         darkTheme = savedTheme.value ?: false,
                         onThemeUpdated = {
                             scope.launch {
@@ -142,26 +150,26 @@ class MainActivity : ComponentActivity() {
                         }
                     )
 
-
-//                    val gotMatchState = chatScreenViewModel.gotMatch.value
-                    AnimatedVisibility(
-                        visible = false,
-                        enter = fadeIn(animationSpec = tween(2000)),
-                        exit = fadeOut(animationSpec = tween(2000))
-                    ) {
-                        val matchListState = matchViewModel.matchListState.collectAsState()
-
-//                        val recipientUser =
-//                            matchListState.value.find { it?.userId == gotMatchState.recipientId }
-//                        val recipientImage = recipientUser?.image?.first().orEmpty()
-//                        GotMatchAlert(recipientImage = "")
-                    }
                 }
 
 
             }
+
+            // Check if there is a deep link when MainActivity is created
+            intent?.data?.let { uri ->
+                val recipientId = uri.getQueryParameter("userId")
+                if (!recipientId.isNullOrEmpty()) {
+                    // Navigate to ChatScreen with the recipientId
+                    navController.navigate("chat_screen/$recipientId")
+                }
+            }
         }
+
     }
+
+
+
+
 
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
         if (state.installStatus() == InstallStatus.DOWNLOADED){
@@ -228,6 +236,8 @@ class MainActivity : ComponentActivity() {
             appUpdateManager.unregisterListener(installStateUpdatedListener)
         }
     }
+
+
 
 
 

@@ -1,6 +1,5 @@
 package com.zaurh.bober.data.user
 
-import com.zaurh.bober.data.message.LastMessageData
 import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.WhoLikesData
 import com.zaurh.bober.data.user.room.UserEntity
@@ -10,13 +9,12 @@ import kotlinx.serialization.Serializable
 data class UserData(
     val id: String? = "",
     val fcmToken: String? = "",
-    val isPremium: Boolean? = false,
+    val premiumCards: List<PremiumCardData>? = listOf(),
     val name: String? = "",
     val gender: Gender? = Gender.PREFER_NOT_TO_SAY,
     val username: String? = "",
     val email: String? = "",
     val emailIsVerified: Boolean? = false,
-    val lastMessages: List<LastMessageData>? = listOf(),
     val password: String? = "",
     val encryptedLocation: String? = "",
     val aboutMe: String? = "",
@@ -45,13 +43,12 @@ data class UserData(
 
 fun UserData.toUserEntity() = UserEntity(
     userId = id,
-    isPremium = isPremium,
+    premiumCards = premiumCards,
     name = name,
     gender = gender,
     username = username,
     email = email,
     emailIsVerified = emailIsVerified,
-    lastMessages = lastMessages,
     password = password,
     encryptedLocation = encryptedLocation,
     aboutMe = aboutMe,

@@ -34,21 +34,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
@@ -57,45 +56,45 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.account.AccountScreen
+import com.zaurh.bober.screen.account.AccountViewModel
+import com.zaurh.bober.screen.account.PremiumAlert
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.home.HomeScreen
 import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.pager.components.LikeTokenItem
-import com.zaurh.bober.screen.pager.viewmodel.PagerViewModel
-import kotlinx.coroutines.DelicateCoroutinesApi
+import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PagerScreen(
     navController: NavController,
     chatScreenViewModel: ChatScreenViewModel,
     matchViewModel: MatchViewModel,
+    accountViewModel: AccountViewModel,
+    profileViewModel: ProfileViewModel,
+    deepLink: String,
     homeViewModel: HomeViewModel,
-    pagerViewModel: PagerViewModel = hiltViewModel(),
 ) {
 
-    val context = LocalContext.current
     val currentUser = chatScreenViewModel.userDataState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val chatState = chatScreenViewModel.chatState.value
-    val newLikesState = chatScreenViewModel.newLikesState.value
+    val newLikesState = chatScreenViewModel.newLikesState.collectAsState()
     val unreadMessagesState = chatScreenViewModel.unreadMessagesState.value
 
-    LaunchedEffect(true) {
-        chatScreenViewModel.getUnreadMessagesSize()
-        if (newLikesState.newLikes.isEmpty()){
-            chatScreenViewModel.getWhoLikes()
-        }
-
-        Log.d("sdaslkdj", "${currentUser.value}")
-    }
+    PremiumAlert(
+        homeViewModel = homeViewModel
+    )
 
 
     val newWhoLikesCount =
-        newLikesState.newLikes.count {it.new}
+        newLikesState.value.newLikes.count { it.new }
 
     val tabItems = listOf(
         TabItem(
@@ -107,7 +106,7 @@ fun PagerScreen(
             title = "Chat",
             selectedIcon = painterResource(id = R.drawable.chat_ic),
             unselectedIcon = painterResource(id = R.drawable.chat_ic),
-            indicator = unreadMessagesState.size
+            indicator = if(unreadMessagesState.size < 0) 0 else unreadMessagesState.size
         ),
         TabItem(
             title = "Profile",
@@ -116,20 +115,29 @@ fun PagerScreen(
             indicator = newWhoLikesCount
         )
     )
-    val pagerState = rememberPagerState {
+    val pagerState = rememberPagerState(initialPage = 1) {
         tabItems.size
     }
 
-    var selectedTabIndex by rememberSaveable {
+    var selectedTabIndex by remember {
         mutableIntStateOf(1)
+    }
+
+    LaunchedEffect(true) {
+        if (chatScreenViewModel.chatListState.value.chatList.isEmpty()){
+            chatScreenViewModel.getChatList()
+        }
+        chatScreenViewModel.getUnreadMessagesSize()
+        if (newLikesState.value.newLikes.isEmpty()) {
+            chatScreenViewModel.getWhoLikes()
+        }
+
+        Log.d("sdaslkdj", "${currentUser.value}")
     }
 
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-
-        Log.d("adskljdasl", "resuming")
         homeViewModel.getUserData()
-
         if (!chatState.socketIsObserving && !chatState.internetClosed && !chatState.initialized) {
             chatScreenViewModel.connectToChat()
             chatScreenViewModel.webSocketInitialized()
@@ -138,39 +146,55 @@ fun PagerScreen(
     }
 
 
-    LaunchedEffect(selectedTabIndex) {
-        pagerState.animateScrollToPage(selectedTabIndex)
-    }
+    LaunchedEffect(deepLink) {
 
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-        if (!pagerState.isScrollInProgress) {
-            selectedTabIndex = pagerState.currentPage
+        if (chatState.recipientMessages?.isNotEmpty() == true && chatState.socketIsObserving){
+            when {
+                deepLink.startsWith("sendMessage:") -> {
+                    val userId = deepLink.removePrefix("sendMessage:")
+                    chatScreenViewModel.switchRecipient(userId)
+                    chatScreenViewModel.switchRecipientInState(userId)
+                    navController.navigate(Screen.ChatScreen.createRoute(userId))
+                }
+                deepLink.startsWith("gotLiked:") -> {
+                    val userId = deepLink.removePrefix("gotLiked:")
+                    navController.navigate(Screen.WhoLikesScreen.route)
+                }
+                deepLink.startsWith("match:") -> {
+                    val userId = deepLink.removePrefix("match:")
+                    chatScreenViewModel.switchRecipient(userId)
+                    chatScreenViewModel.switchRecipientInState(userId)
+                    navController.navigate(Screen.ChatScreen.createRoute(userId))
+                }
+                else -> {
+
+
+                }
+            }
         }
     }
 
 
-//    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-//        if (!chatState.socketIsObserving) {
-//            chatScreenViewModel.connectToChat(context)
-//        } else {
-//            Log.d("websocketBober", "socket is observing already")
-//        }
-//    }
+    LaunchedEffect(pagerState.currentPage) {
+        selectedTabIndex = pagerState.currentPage
+    }
+
+
     val swipeRefreshState = rememberSwipeRefreshState(
         isRefreshing = homeViewModel.isRefreshing.value
     )
 
 
     SwipeRefresh(state = swipeRefreshState, onRefresh = {
-        chatScreenViewModel.connectToChat()
+        chatScreenViewModel.getChatList()
     }) {
         Scaffold(
             topBar = {
                 TopAppBar(title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (chatState.isLoading) {
+                        if (chatState.recipientMessagesLoading) {
                             Text(
-                                "Loading...", color = MaterialTheme.colorScheme.onSecondary
+                                "Loading...", color = MaterialTheme.colorScheme.onSecondary, fontFamily = outfitFamily
                             )
                             Spacer(Modifier.size(8.dp))
                             CircularProgressIndicator(
@@ -192,18 +216,16 @@ fun PagerScreen(
                                 fontFamily = FontFamily(Font(R.font.bober_font)),
                                 color = MaterialTheme.colorScheme.onSecondary
                             )
+
+
                         }
 
                     }
 
                 }, actions = {
                     AnimatedVisibility(selectedTabIndex == 0) {
-                        LaunchedEffect(true) {
-                            pagerViewModel.expandLikeToken()
-                        }
                         LikeTokenItem(
                             tokenCount = currentUser.value?.likeToken ?: 0,
-                            expanded = pagerViewModel.likeTokenExpanded.value
                         )
                         Spacer(Modifier.size(8.dp))
                     }
@@ -231,16 +253,23 @@ fun PagerScreen(
                         when (index) {
                             0 -> MatchScreen(
                                 navController = navController,
-                                matchViewModel = matchViewModel
+                                matchViewModel = matchViewModel,
+                                profileViewModel = profileViewModel
                             )
 
                             1 -> HomeScreen(
                                 navController = navController,
                                 chatScreenViewModel = chatScreenViewModel,
-//                                homeViewModel = homeViewModel
+                                deepLink = deepLink,
+                                homeViewModel = homeViewModel
                             )
 
-                            2 -> AccountScreen(navController = navController, chatScreenViewModel = chatScreenViewModel)
+                            2 -> AccountScreen(
+                                navController = navController,
+                                chatScreenViewModel = chatScreenViewModel,
+                                accountViewModel = accountViewModel,
+                                homeViewModel = homeViewModel
+                            )
                         }
                     }
 
@@ -255,6 +284,9 @@ fun PagerScreen(
                             Tab(
                                 selected = index == selectedTabIndex,
                                 onClick = {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
                                     selectedTabIndex = index
                                 },
                                 text = {
@@ -263,7 +295,9 @@ fun PagerScreen(
                                             text = tabItem.title,
                                             color = if (tabItem.indicator != 0) colorResource(
                                                 R.color.backgroundTop
-                                            ) else MaterialTheme.colorScheme.primary
+                                            ) else MaterialTheme.colorScheme.primary,
+                                            fontFamily = outfitFamily,
+                                            fontSize = 14.sp
                                         )
                                         Spacer(Modifier.size(4.dp))
                                         if (tabItem.indicator != 0) {
@@ -272,7 +306,8 @@ fun PagerScreen(
                                                     .clip(CircleShape)
                                                     .background(colorResource(R.color.backgroundTop)),
                                                 text = " ${tabItem.indicator} ",
-                                                color = Color.White
+                                                color = Color.White,
+                                                fontFamily = outfitFamily
                                             )
                                         }
                                     }
@@ -303,10 +338,6 @@ fun PagerScreen(
         )
 
     }
-
-//    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//        LocationPermission()
-//    }
 
 }
 

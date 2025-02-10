@@ -19,8 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EP_UsernameChange(
@@ -31,7 +33,7 @@ fun EP_UsernameChange(
 
     if (usernameState.changeState) {
         AlertDialog(
-            title = { Text(text = "Change username") },
+            title = { Text(text = "Change username", fontFamily = outfitFamily) },
             text = {
                 Column {
                     EP_TextField(
@@ -50,7 +52,7 @@ fun EP_UsernameChange(
                                 contentDescription = ""
                             )
                             Spacer(modifier = Modifier.size(4.dp))
-                            Text(text = usernameState.error, color = MaterialTheme.colorScheme.error)
+                            Text(text = usernameState.error, color = MaterialTheme.colorScheme.error, fontFamily = outfitFamily)
                         }
                     }
                 }
@@ -69,7 +71,7 @@ fun EP_UsernameChange(
                 }) {
                     if (usernameState.loading) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Checking...", color = Color.White)
+                            Text(text = "Checking...", color = Color.White, fontFamily = outfitFamily)
                             Spacer(modifier = Modifier.size(4.dp))
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
@@ -78,7 +80,7 @@ fun EP_UsernameChange(
                             )
                         }
                     } else {
-                        Text(text = "Confirm", color = Color.White)
+                        Text(text = "Confirm", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
                     }
                 }
             })

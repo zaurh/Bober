@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun DiscardChangesAlert(
@@ -18,9 +19,9 @@ fun DiscardChangesAlert(
 ) {
     if (alertState) {
         AlertDialog(title = {
-            Text(text = "Discard changes")
+            Text(text = "Discard changes", fontFamily = outfitFamily)
         }, text = {
-            Text(text = "Are you sure you want to discard all changes?")
+            Text(text = "Are you sure you want to discard all changes?", fontFamily = outfitFamily)
         }, onDismissRequest = {
             onDismiss()
         }, confirmButton = {
@@ -29,7 +30,7 @@ fun DiscardChangesAlert(
             ), onClick = {
                 onDiscard()
             }) {
-                Text(text = "Discard", color = Color.White)
+                Text(text = "Discard", color = Color.White, fontFamily = outfitFamily)
             }
         }, dismissButton = {
             Button(colors = ButtonDefaults.buttonColors(
@@ -37,7 +38,7 @@ fun DiscardChangesAlert(
             ), onClick = {
                 onDismiss()
             }) {
-                Text(text = "Cancel", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Cancel", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
             }
         })
     }

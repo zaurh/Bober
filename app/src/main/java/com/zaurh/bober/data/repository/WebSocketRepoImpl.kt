@@ -7,6 +7,7 @@ import com.zaurh.bober.data.websocket.GotMatchCommand
 import com.zaurh.bober.data.websocket.NewLikeCommand
 import com.zaurh.bober.data.websocket.UnMatchCommand
 import com.zaurh.bober.data.websocket.UnlikeCommand
+import com.zaurh.bober.domain.repository.LocalMessageRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.preferences.BoberPreferences
@@ -25,10 +26,9 @@ import io.ktor.http.cio.websocket.send
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
@@ -37,6 +37,7 @@ import javax.inject.Inject
 class WebSocketRepoImpl @Inject constructor(
     private val client: HttpClient,
     private val boberPreferences: BoberPreferences,
+    private val localMessageRepository: LocalMessageRepository
 ) : WebSocketRepository {
 
     private var socket: WebSocketSession? = null
@@ -55,17 +56,21 @@ class WebSocketRepoImpl @Inject constructor(
 
     override suspend fun initSession(): Resource<Unit> {
         return try {
+            Log.d("websocketconnectionlog2", "${socket?.isActive}")
             // Check if the socket is inactive or null before attempting to create a new session.
             if (socket == null || socket?.isActive == false) {
                 Log.d("websocketconnectionlog", "Initializing new WebSocket session.")
                 socket?.close() // Close any existing session (this may be redundant)
                 socket = null // Reset to ensure reinitialization
                 val token = getToken()
+//                Log.d("websocketconnectionlog", "${client.webSocketSession()}")
 
                 socket = client.webSocketSession {
                     url(WEBSOCKET_URL)
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
+                Log.d("websocketconnectionlog", "$socket")
+
                 // Update connection state
                 isConnected = socket?.isActive == true
             }
@@ -154,13 +159,16 @@ class WebSocketRepoImpl @Inject constructor(
     }
 
 
+
     override suspend fun sendMessage(
         message: String
     ): Resource<Unit> {
         return try {
             if (socket?.isActive == true) {
+                Log.d("websocketBober", "sendMessage start: ${System.currentTimeMillis()}")
                 socket?.send(Frame.Text(message))
-                Log.d("websocketBober", "sendMessage socket is active")
+                localMessageRepository.deleteMessage(message)
+                Log.d("websocketBober", "sendMessage end: ${System.currentTimeMillis()}")
                 Resource.Success(Unit)
             } else {
                 Log.d("websocketBober", "sendmessage socket is not active...")
@@ -188,102 +196,158 @@ class WebSocketRepoImpl @Inject constructor(
 
 
     override fun observeMessages(): Flow<MessageEvent> {
-        return try {
-            val isSocketActive = socket?.isActive == true
-            Log.d("websocketBober", "Socket active: $isSocketActive")
+        return flow {
+            try {
+                // Verify that the socket is active and ready to receive messages
+                val isSocketActive = socket?.isActive == true
+                Log.d("websocketBober", "Socket active: $isSocketActive")
 
-            if (!isSocketActive) {
-                Log.e("websocketBober", "Socket is not active")
-                return emptyFlow()
-            }
+                if (!isSocketActive) {
+                    Log.e("websocketBober", "Socket is not active")
+                    return@flow // Exit if the socket is not active
+                }
 
-            socket?.incoming
-                ?.receiveAsFlow()
-                ?.filterIsInstance<Frame.Text>()
-                ?.map { frame ->
-                    val json = frame.readText()
-                    Log.d("websocketBober", "Received JSON: $json")
+                Log.d("websocketBober", "soket : ${socket?.incoming}")
 
-                    when {
-                        json.startsWith("Switched recipient to") -> MessageEvent.SwitchedRecipient("switched to:")
-                        json.startsWith("typing:") -> {
-                            val senderUserId = json.removePrefix("typing:")
-                            MessageEvent.Typing(senderUserId)
-                        }
-                        json.startsWith("like_sent:")-> {
-                            val jsonData = json.removePrefix("like_sent:")
-                            Log.d("websocketbober", "like: $jsonData")
-                            val newLikeCommand = Json.decodeFromString<NewLikeCommand>(jsonData)
 
-                            MessageEvent.LikeSent(newLikeCommand)
-                        }
-                        json.startsWith("unlike_sent:")-> {
-                            val jsonData = json.removePrefix("unlike_sent:")
-                            Log.d("websocketbober", "unlike: $jsonData")
-                            val unlikeCommand = Json.decodeFromString<UnlikeCommand>(jsonData)
-                            MessageEvent.UnlikeSent(unlikeCommand)
-                        }
-                        json.startsWith("unmatch_sent:")-> {
-                            val jsonData = json.removePrefix("unmatch_sent:")
-                            Log.d("websocketbober", "unlike: $jsonData")
-                            val unMatchCommand = Json.decodeFromString<UnMatchCommand>(jsonData)
-                            MessageEvent.UnMatchSent(unMatchCommand)
-                        }
-                        json.startsWith("block_sent:")-> {
-                            val jsonData = json.removePrefix("block_sent:")
-                            Log.d("websocketbober", "unlike: $jsonData")
-                            val blockCommand = Json.decodeFromString<BlockCommand>(jsonData)
-                            MessageEvent.BlockSent(blockCommand)
-                        }
-                        json.startsWith("got_match:") -> {
-                            val jsonData = json.removePrefix("got_match:")
-                            Log.d("sdakasdkljaklsd", "$jsonData")
-                            val gotMatchCommand = Json.decodeFromString<GotMatchCommand>(jsonData)
-                            MessageEvent.GotMatch(gotMatchCommand)
-                        }
-                        json.startsWith("deliveredMessage:") -> {
-                            val recipientId = json.removePrefix("deliveredMessage:")
-                            MessageEvent.DeliveredMessage(
-                                messageData = MessageData(
-                                    text = "deliveredMessage:",
-                                    recipientUserId = recipientId
+                socket?.incoming
+                    ?.receiveAsFlow()
+                    ?.filterIsInstance<Frame.Text>()
+                    ?.collect { frame ->
+                        val json = frame.readText()
+                        Log.d("websocketBober", "Received JSON: $json")
+
+                        // Handle each type of message event based on the content of the JSON
+                        val event = when {
+                            json.startsWith("Switched recipient to") -> MessageEvent.SwitchedRecipient("switched to:")
+                            json.startsWith("typing:") -> {
+                                val senderUserId = json.removePrefix("typing:")
+                                MessageEvent.Typing(senderUserId)
+                            }
+                            json.startsWith("like_sent:") -> {
+                                val jsonData = json.removePrefix("like_sent:")
+                                try {
+                                    val newLikeCommand = Json.decodeFromString<NewLikeCommand>(jsonData)
+                                    MessageEvent.LikeSent(newLikeCommand)
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("unlike_sent:") -> {
+                                val jsonData = json.removePrefix("unlike_sent:")
+                                try {
+                                    val unlikeCommand = Json.decodeFromString<UnlikeCommand>(jsonData)
+                                    MessageEvent.UnlikeSent(unlikeCommand)
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("unmatch_sent:") -> {
+                                val jsonData = json.removePrefix("unmatch_sent:")
+                                try {
+                                    val unMatchCommand = Json.decodeFromString<UnMatchCommand>(jsonData)
+                                    MessageEvent.UnMatchSent(unMatchCommand)
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("block_sent:") -> {
+                                val jsonData = json.removePrefix("block_sent:")
+                                try {
+                                    val blockCommand = Json.decodeFromString<BlockCommand>(jsonData)
+                                    MessageEvent.BlockSent(blockCommand)
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("sent_emote:") -> {
+                                val encodedMessageData = json.removePrefix("sent_emote:")
+                                try {
+                                    val decodedMessageData = Json.decodeFromString<MessageData>(encodedMessageData)
+                                    MessageEvent.EmoteMessage(
+                                        messageData = decodedMessageData
+                                    )
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+
+                            }
+                            json.startsWith("remove_emote:") -> {
+                                val encodedMessageData = json.removePrefix("remove_emote:")
+                                try {
+                                    val decodedMessageData = Json.decodeFromString<MessageData>(encodedMessageData)
+                                    MessageEvent.RemoveEmote(
+                                        messageData = decodedMessageData
+                                    )
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("got_match:") -> {
+                                val jsonData = json.removePrefix("got_match:")
+                                try {
+                                    val gotMatchCommand = Json.decodeFromString<GotMatchCommand>(jsonData)
+                                    MessageEvent.GotMatch(gotMatchCommand)
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
+                            json.startsWith("deliveredMessage:") -> {
+                                val recipientId = json.removePrefix("deliveredMessage:")
+                                MessageEvent.DeliveredMessage(
+                                    messageData = MessageData(
+                                        text = "deliveredMessage:",
+                                        recipientUserId = recipientId
+                                    )
                                 )
-                            )
-                        }
-                        json.startsWith("readMessages:") -> {
-                            val recipientAndSenderId = json.removePrefix("readMessages:")
-                            val senderId = recipientAndSenderId.take(36)
-                            val recipientId = recipientAndSenderId.takeLast(36)
-                            MessageEvent.ReadMessages(
-                                messageData = MessageData(
-                                    text = "readMessages:",
-                                    senderUserId = senderId,
-                                    recipientUserId = recipientId
+                            }
+                            json.startsWith("readMessages:") -> {
+                                val recipientAndSenderId = json.removePrefix("readMessages:")
+                                val senderId = recipientAndSenderId.take(36)
+                                val recipientId = recipientAndSenderId.takeLast(36)
+                                MessageEvent.ReadMessages(
+                                    messageData = MessageData(
+                                        text = "readMessages:",
+                                        senderUserId = senderId,
+                                        recipientUserId = recipientId
+                                    )
                                 )
-                            )
+                            }
+                            json.startsWith("no_longer_matched:") -> MessageEvent.NoLongerMatched
+                            json.startsWith("triggerOnline:") -> {
+                                val recipientUserId = json.substringAfter(":").take(36)
+                                val recipientOnlineStatus = json.substringAfter(recipientUserId).take(4).toBoolean()
+                                val recipientLastSeen = json.substringAfter(recipientUserId)
+                                    .substringAfter(recipientOnlineStatus.toString())
+                                    .toLong()
+                                MessageEvent.TriggerOnline(
+                                    recipientUserId,
+                                    recipientOnlineStatus,
+                                    recipientLastSeen
+                                )
+                            }
+                            else -> {
+                                try {
+                                    val messageDto = Json.decodeFromString<MessageDataDto>(json)
+                                    MessageEvent.GenericMessage(messageDto.toMessageData())
+                                }catch (e: Exception){
+                                    return@collect
+                                }
+
+                            }
                         }
-                        json.startsWith("no_longer_matched:") -> MessageEvent.NoLongerMatched
-                        json.startsWith("triggerOnline:") -> {
-                            val recipientUserId = json.substringAfter(":").take(36)
-                            val recipientOnlineStatus = json.substringAfter(recipientUserId).take(4).toBoolean()
-                            val recipientLastSeen = json.substringAfter(recipientUserId)
-                                .substringAfter(recipientOnlineStatus.toString())
-                                .toLong()
-                            MessageEvent.TriggerOnline(
-                                recipientUserId,
-                                recipientOnlineStatus,
-                                recipientLastSeen
-                            )
-                        }
-                        else -> {
-                            val messageDto = Json.decodeFromString<MessageDataDto>(json)
-                            MessageEvent.GenericMessage(messageDto.toMessageData())
-                        }
+                        emit(event) // Emit the parsed message event to the flow
                     }
-                } ?: emptyFlow()
-        } catch (e: Exception) {
-            Log.e("websocketBober", "Error observing messages: ${e.message}")
-            emptyFlow()
+            } catch (e: Exception) {
+                Log.e("websocketBober", "Error observing messages: ${e.message}")
+            }
         }
     }
 
@@ -314,4 +378,6 @@ sealed class MessageEvent {
     object NoLongerMatched : MessageEvent()
     data class TriggerOnline(val recipientUserId: String, val onlineStatus: Boolean, val lastSeen: Long) : MessageEvent()
     data class GenericMessage(val messageData: MessageData) : MessageEvent()
+    data class EmoteMessage(val messageData: MessageData) : MessageEvent()
+    data class RemoveEmote(val messageData: MessageData) : MessageEvent()
 }

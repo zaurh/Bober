@@ -16,6 +16,9 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE text = :text")
     suspend fun deleteMessage(text: String)
 
+    @Query("DELETE FROM messages")
+    suspend fun clearMessages()
+
     @Query("DELETE FROM messages WHERE status = :status")
     suspend fun deleteSentMessage(status: MessageStatus = MessageStatus.SENT)
 

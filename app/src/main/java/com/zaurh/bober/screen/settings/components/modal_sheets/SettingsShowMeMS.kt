@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.ShowMe
 import com.zaurh.bober.screen.settings.SettingsViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +54,8 @@ fun SettingsShowMeMS(
                         Text(
                             text = "Show me",
                             fontSize = 24.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = outfitFamily
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         if (loadingState){
@@ -70,7 +72,7 @@ fun SettingsShowMeMS(
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
-                Text(text = "Select gender you want to match", color = Color.Gray)
+                Text(text = "Select gender you want to match", color = Color.Gray,fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(16.dp))
                 ShowMe.entries.forEach {
                     Text(text = if (selectedShowMe == it) it.displayName + " ✔" else it.displayName,
@@ -81,7 +83,9 @@ fun SettingsShowMeMS(
                             .padding(8.dp)
                             .fillMaxWidth(),
                         color = if (selectedShowMe == it) MaterialTheme.colorScheme.onSecondary else Color.Gray,
-                        fontSize = 18.sp)
+                        fontSize = 18.sp,
+                        fontFamily = outfitFamily
+                    )
                 }
                 Spacer(modifier = Modifier.size(48.dp))
 

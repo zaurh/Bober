@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.forgot_password
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -18,6 +19,19 @@ class ForgotPasswordViewModel @Inject constructor(
     private val _fpState = mutableStateOf(FpState())
     val fpState: State<FpState> = _fpState
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Forgot password Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Forgot password Ended")
+
+    }
 
     fun onEmailChange(email: String){
         _fpState.value = fpState.value.copy(

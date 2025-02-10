@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.stevdzasan.messagebar.ContentWithMessageBar
 import com.stevdzasan.messagebar.MessageBarPosition
 import com.stevdzasan.messagebar.rememberMessageBarState
@@ -38,6 +39,7 @@ import com.zaurh.bober.R
 import com.zaurh.bober.screen.settings.account_center.components.AC_TextField
 import com.zaurh.bober.screen.settings.account_center.password.PasswordScreenViewModel
 import com.zaurh.bober.screen.settings.components.SettingsDivider
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Password_Content(
@@ -101,7 +103,8 @@ fun Password_Content(
                         "To change your password, you need to enter your current password." +
                                 " If you do not remember your current password, click the button below:",
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     Text(
                         text = if (passwordState.resetPasswordLoading) "Loading..." else "Reset password",
@@ -110,7 +113,8 @@ fun Password_Content(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.clickable(enabled = !passwordState.resetPasswordLoading) {
                             passwordScreenViewModel.resetPassword()
-                        }
+                        },
+                        fontFamily = outfitFamily
                     )
                     SettingsDivider()
                     AC_TextField(
@@ -164,7 +168,7 @@ fun Password_Content(
                         passwordScreenViewModel.checkCurrentPassword()
                     }) {
                         if (passwordState.updatePasswordLoading) {
-                            Text(text = "Loading...", color = Color.White)
+                            Text(text = "Loading...", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
                             Spacer(modifier = Modifier.size(8.dp))
                             CircularProgressIndicator(
                                 modifier = Modifier.size(12.dp),
@@ -174,7 +178,9 @@ fun Password_Content(
                         } else {
                             Text(
                                 text = "Change password",
-                                color = Color.White
+                                color = Color.White,
+                                fontFamily = outfitFamily,
+                                fontSize = 16.sp
                             )
                         }
                     }

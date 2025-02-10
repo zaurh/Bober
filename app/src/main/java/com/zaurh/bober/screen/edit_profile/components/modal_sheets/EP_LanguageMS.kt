@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.data.user.Languages
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -61,7 +62,8 @@ fun EP_LanguageMS(
                     Text(
                         text = "Languages (${languageState.selectedLanguages.count()}/10)",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     IconButton(onClick = editProfileViewModel::onLanguagesStateChange) {
                         Icon(
@@ -72,7 +74,7 @@ fun EP_LanguageMS(
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
-                Text(text = "Select languages you speak", color = Color.Gray)
+                Text(text = "Select languages you speak", color = Color.Gray, fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(16.dp))
                 var maxLines by remember {
                     mutableIntStateOf(4)
@@ -86,13 +88,13 @@ fun EP_LanguageMS(
                     overflow = ContextualFlowRowOverflow.expandOrCollapseIndicator(
                         expandIndicator = {
                             TextButton(onClick = { maxLines += 3 }) {
-                                Text(text = "${this@expandOrCollapseIndicator.totalItemCount - this@expandOrCollapseIndicator.shownItemCount} + more")
+                                Text(text = "${this@expandOrCollapseIndicator.totalItemCount - this@expandOrCollapseIndicator.shownItemCount} + more", fontFamily = outfitFamily)
                             }
                         },
                         collapseIndicator = {
                             TextButton(onClick = { maxLines = 4 }) {
                                 Icon(imageVector = Icons.Default.Close, contentDescription = "")
-                                Text(text = "Hide")
+                                Text(text = "Hide", fontFamily = outfitFamily, fontSize = 16.sp)
                             }
                         }
                     )
@@ -108,7 +110,7 @@ fun EP_LanguageMS(
                         val languageText =
                             if (alreadySelected) Languages.entries[index].displayName + " ✔" else Languages.entries[index].displayName
 
-                        Text(text = languageText, color = Color.White)
+                        Text(text = languageText, color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
                     }
                 }
                 Spacer(modifier = Modifier.size(48.dp))

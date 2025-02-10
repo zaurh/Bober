@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.reset_password.ResetPasswordViewModel
 import com.zaurh.bober.screen.sign_in.components.SignIn_TextField
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun RP_Content(
@@ -73,7 +74,8 @@ fun RP_Content(
                 Text(
                     "Token is no longer valid. Please try sending new email to reset your password.",
                     color = Color.White,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    fontFamily = outfitFamily
                 )
             }
 
@@ -87,7 +89,8 @@ fun RP_Content(
                     "Create a new password",
                     color = Color.White,
                     fontSize = 32.sp,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    fontFamily = outfitFamily
                 )
             }
             Column(
@@ -98,7 +101,8 @@ fun RP_Content(
                 Text(
                     "Enter your new password",
                     textAlign = TextAlign.Center,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontFamily = outfitFamily
                 )
                 Spacer(Modifier.size(12.dp))
                 SignIn_TextField(
@@ -148,9 +152,10 @@ fun RP_Content(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            passwordState.updatePasswordMessage,
+                            text = passwordState.updatePasswordMessage,
                             color = Color.White,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            fontFamily = outfitFamily
                         )
                     }
                 }
@@ -167,7 +172,7 @@ fun RP_Content(
                 )
             }) {
                 if (passwordState.updatePasswordLoading) {
-                    Text(text = "Loading...", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Loading...", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                     Spacer(modifier = Modifier.size(8.dp))
                     CircularProgressIndicator(
                         modifier = Modifier.size(12.dp),
@@ -175,7 +180,7 @@ fun RP_Content(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(text = "Confirm", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Confirm", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                 }
             }
 

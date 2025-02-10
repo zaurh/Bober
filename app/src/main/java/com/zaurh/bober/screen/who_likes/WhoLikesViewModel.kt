@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.who_likes
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -19,6 +20,20 @@ class WhoLikesViewModel @Inject constructor(
 
     private val _searchText = mutableStateOf("")
     val searchText: State<String> = _searchText
+
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "WhoLikes Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "WhoLikes Ended")
+
+    }
 
 //    fun getWhoLikesList(){
 //        viewModelScope.launch(Dispatchers.IO) {

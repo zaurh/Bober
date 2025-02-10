@@ -9,11 +9,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun TitleItem(
     title: String
 ) {
-    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Gray)
+    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Gray, fontFamily = outfitFamily)
     Spacer(modifier = Modifier.size(12.dp))
 }

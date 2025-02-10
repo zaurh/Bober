@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.reset_password
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -19,12 +20,24 @@ class ResetPasswordViewModel @Inject constructor(
     private val authRepo: AuthRepo
 ) : ViewModel() {
 
-    val signedInState: StateFlow<Boolean> = authRepo.signedIn
-
     val userDataState: StateFlow<UserData?> = userRepository.userData
 
     private val _passwordState = mutableStateOf(RpPasswordState())
     val passwordState: State<RpPasswordState> = _passwordState
+
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Reset pass Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Reset pass Ended")
+
+    }
 
     fun onNewPasswordChange(password: String){
         _passwordState.value = passwordState.value.copy(

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EP_DeleteImageAlert(
@@ -30,10 +31,10 @@ fun EP_DeleteImageAlert(
 
     if (deleteImageState.confirmation) {
         AlertDialog(
-            title = { Text(text = "Delete image") },
+            title = { Text(text = "Delete image", fontFamily = outfitFamily) },
             text = {
                 Column {
-                    Text(text = "Are you sure you want to delete image?")
+                    Text(text = "Are you sure you want to delete image?", fontFamily = outfitFamily)
                     Spacer(modifier = Modifier.size(12.dp))
 
                     AnimatedVisibility(visible = deleteImageState.cannotDelete) {
@@ -47,7 +48,8 @@ fun EP_DeleteImageAlert(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
                                 text = "You need to have at least one image.",
-                                color = MaterialTheme.colorScheme.error
+                                color = MaterialTheme.colorScheme.error,
+                                fontFamily = outfitFamily
                             )
                         }
 
@@ -65,7 +67,7 @@ fun EP_DeleteImageAlert(
                 }) {
                     if (deleteImageState.loading) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Loading...", color = Color.White)
+                            Text(text = "Loading...", color = Color.White, fontFamily = outfitFamily)
                             Spacer(modifier = Modifier.size(4.dp))
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
@@ -74,7 +76,7 @@ fun EP_DeleteImageAlert(
                             )
                         }
                     } else {
-                        Text(text = "Confirm", color = Color.White)
+                        Text(text = "Yes, delete.", color = Color.White, fontFamily = outfitFamily)
                     }
                 }
 
@@ -85,7 +87,7 @@ fun EP_DeleteImageAlert(
                 ), onClick = {
                     editProfileViewModel.onDeleteImageState("")
                 }) {
-                    Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
                 }
             }
         )

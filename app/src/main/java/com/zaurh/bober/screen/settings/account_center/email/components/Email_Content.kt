@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.stevdzasan.messagebar.ContentWithMessageBar
@@ -32,6 +33,7 @@ import com.stevdzasan.messagebar.rememberMessageBarState
 import com.zaurh.bober.screen.settings.account_center.components.AC_TextField
 import com.zaurh.bober.screen.settings.account_center.email.EmailScreenViewModel
 import com.zaurh.bober.screen.settings.components.SettingsDivider
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Email_Content(
@@ -105,7 +107,8 @@ fun Email_Content(
                         "Verifying your email ensures that you can provide feedback," +
                                 " reach out to us with any issues, and securely reset your password if needed.",
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     SettingsDivider()
                     AC_TextField(
@@ -127,7 +130,7 @@ fun Email_Content(
                             emailScreenViewModel.sendEmailVerification()
                         }) {
                         if (emailVerificationState.loading) {
-                            Text(text = "Loading...", color = Color.White)
+                            Text(text = "Loading...", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
                             Spacer(modifier = Modifier.size(8.dp))
                             CircularProgressIndicator(
                                 modifier = Modifier.size(12.dp),
@@ -137,7 +140,9 @@ fun Email_Content(
                         } else {
                             Text(
                                 text = if (emailIsVerified) "Verified" else "Verify",
-                                color = Color.White
+                                color = Color.White,
+                                fontFamily = outfitFamily,
+                                fontSize = 16.sp
                             )
                         }
                     }

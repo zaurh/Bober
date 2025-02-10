@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,7 @@ fun WL_Content(
     navController: NavController,
     paddingValues: PaddingValues
 ) {
-    val whoLikesState = chatScreenViewModel.newLikesState.value
+    val whoLikesState = chatScreenViewModel.newLikesState.collectAsState()
     val searchQuery = whoLikesViewModel.searchText.value
 
     BackHandler(
@@ -41,7 +42,7 @@ fun WL_Content(
             if (searchQuery.isNotEmpty()){
                 whoLikesViewModel.onSearch("")
             }else{
-                navController.popBackStack()
+                navController.navigateUp()
             }
         }
     )
@@ -57,8 +58,8 @@ fun WL_Content(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            if (whoLikesState.newLikes.isNotEmpty()){
-                val filteredWhoLikes = whoLikesState.newLikes.filter {
+            if (whoLikesState.value.newLikes.isNotEmpty()){
+                val filteredWhoLikes = whoLikesState.value.newLikes.filter {
                     it.username.contains(searchQuery)
                 }
                 SearchBar(
@@ -70,11 +71,11 @@ fun WL_Content(
 
                 if (filteredWhoLikes.isNotEmpty()){
                     LazyVerticalGrid(columns = GridCells.Fixed(3)) {
-                        items(filteredWhoLikes) { whoLikesData ->
+                        items(filteredWhoLikes.sortedByDescending { it.new }) { whoLikesData ->
                             whoLikesData.let {
                                 WhoLikesUserItem(whoLikesData = it) {
-                                    navController.navigate(Screen.ProfileScreen.createRoute(it.id))
                                     chatScreenViewModel.newGotLikedToOld(it.id)
+                                    navController.navigate(Screen.ProfileScreen.createRoute(it.id))
                                 }
                             }
 

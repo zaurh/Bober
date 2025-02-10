@@ -4,9 +4,24 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.ViewModel
 
 class NotificationViewModel : ViewModel() {
+
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Notification Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Notification Ended")
+
+    }
 
     fun onNotificationChange(change: Boolean, context: Context, channelId: String) {
         controlNotificationChannel(

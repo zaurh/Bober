@@ -23,6 +23,7 @@ import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.home.components.SearchBar
 import com.zaurh.bober.screen.liked_users.LikedUserItem
 import com.zaurh.bober.screen.liked_users.LikedUsersViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -79,12 +80,12 @@ fun LU_Content(
                     }
                 }else{
                     if (searchQuery.isNotEmpty()){
-                        Text(text = "No one is found.")
+                        Text(text = "No one is found.", fontFamily = outfitFamily)
                     }
                 }
             }
             else{
-                Text(text = "You've not liked anyone.")
+                Text(text = "You've not liked anyone.", fontFamily = outfitFamily)
             }
 
         }

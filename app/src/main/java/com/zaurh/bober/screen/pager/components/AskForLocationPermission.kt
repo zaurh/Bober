@@ -45,6 +45,7 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.pager.viewmodel.PagerViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -66,7 +67,8 @@ fun AskForLocationPermission() {
     ) {
         Text(
             text = "You need to allow us using your location to show you people around",
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
         )
         Image(
             painterResource(id = R.drawable.location_ic),
@@ -78,12 +80,14 @@ fun AskForLocationPermission() {
         Text(
             "Don't worry!",
             textDecoration = TextDecoration.Underline,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            fontFamily = outfitFamily
         )
         Spacer(Modifier.size(8.dp))
         Text(
             "Your exact location will remain private, encrypted and will not be shared.",
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
 
         )
         Spacer(Modifier.size(12.dp))
@@ -100,7 +104,7 @@ fun AskForLocationPermission() {
                 locationPermissionState.launchPermissionRequest()
             }
         }) {
-            Text(text = "Allow", color = Color.White)
+            Text(text = "Allow", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
         }
     }
 }
@@ -123,12 +127,14 @@ fun AskForDeniedLocation() {
     ) {
         Text(
             text = "We see that you denied location sharing.\nIf you want to see people around, you need to enable location from application settings.",
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
         )
         Spacer(Modifier.size(8.dp))
         Text(
             text = "1.Click Go to settings\n2.Select App permissions\n3.Select Location\n4.Allow",
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
         )
         Image(
             painterResource(id = R.drawable.location_ic),
@@ -140,12 +146,14 @@ fun AskForDeniedLocation() {
         Text(
             "Don't worry!",
             textDecoration = TextDecoration.Underline,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            fontFamily = outfitFamily
         )
         Spacer(Modifier.size(8.dp))
         Text(
             "Your exact location will remain private, encrypted and will not be shared.",
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
 
         )
         Spacer(Modifier.size(12.dp))
@@ -162,7 +170,7 @@ fun AskForDeniedLocation() {
                 locationPermissionState.launchPermissionRequest()
             }
         }) {
-            Text(text = "Go to settings", color = Color.White)
+            Text(text = "Go to settings", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
         }
     }
 }
@@ -186,9 +194,9 @@ fun AskForEnableGPS() {
             tint = MaterialTheme.colorScheme.onSecondary
         )
         Spacer(Modifier.size(12.dp))
-        Text("Location Services", fontSize = 22.sp)
+        Text("Location Services", fontSize = 22.sp, fontFamily = outfitFamily)
         Spacer(Modifier.size(12.dp))
-        Text("You need to turn on location services to see people.")
+        Text("You need to turn on location services to see people.", fontFamily = outfitFamily)
         Spacer(Modifier.size(12.dp))
         Button(colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondary
@@ -197,7 +205,7 @@ fun AskForEnableGPS() {
             val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
             context.startActivity(intent)
         }) {
-            Text(text = "Turn on", color = Color.White)
+            Text(text = "Turn on", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
         }
     }
 }

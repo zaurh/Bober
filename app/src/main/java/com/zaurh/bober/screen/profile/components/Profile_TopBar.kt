@@ -10,6 +10,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,7 +23,7 @@ fun Profile_TopBar(
 
     TopAppBar(title = {
         val ageText = if (age != "0") ", $age" else ""
-        Text(text = "$username$ageText")
+        Text(text = "$username$ageText", fontFamily = outfitFamily)
     }, navigationIcon = {
         IconButton(onClick = {
             navController.popBackStack()

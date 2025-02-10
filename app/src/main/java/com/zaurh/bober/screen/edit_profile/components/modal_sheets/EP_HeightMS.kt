@@ -27,10 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +62,8 @@ fun EP_HeightMS(
                     Text(
                         text = "Height",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onHeightStateChange(false)
@@ -69,9 +72,9 @@ fun EP_HeightMS(
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
-                Text(text = "Add your height to your profile", color = Color.Gray)
+                Text(text = "Add your height to your profile", color = Color.Gray, fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(16.dp))
-                Text(text = "Centimeters", fontSize = 12.sp, color = Color.Gray)
+                Text(text = "Centimeters", fontSize = 12.sp, color = Color.Gray, fontFamily = outfitFamily)
                 TextField(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.tertiary,
@@ -86,14 +89,18 @@ fun EP_HeightMS(
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    placeholder = { Text(text = "Add your height") },
+                    placeholder = { Text(text = "Add your height", fontFamily = outfitFamily) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
                     value = heightTextState,
                     onValueChange = editProfileViewModel::onHeightTextChange,
                     singleLine = true,
-                    maxLines = 1
+                    maxLines = 1,
+                    textStyle = TextStyle(
+                        fontFamily = outfitFamily,
+                        fontSize = 16.sp
+                    )
                 )
 
             }

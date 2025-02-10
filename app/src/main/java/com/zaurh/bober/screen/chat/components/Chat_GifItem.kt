@@ -28,7 +28,7 @@ fun AnimatedGif(
     size: Int,
     circularSize: Int,
     clipPercentage: Int,
-    onClick: (String) -> Unit
+    onClick: (String) -> Unit,
 ) {
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -61,6 +61,43 @@ fun AnimatedGif(
             .clickable {
                 onClick(gifUrl)
             }
+    )
+
+}
+
+@Composable
+fun MessageGif(
+    context: Context,
+    gifUrl: String
+) {
+    val imageLoader = ImageLoader.Builder(context)
+        .components {
+            if (Build.VERSION.SDK_INT >= 28) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }
+        .build()
+
+    SubcomposeAsyncImage(
+        imageLoader = imageLoader,
+        model = gifUrl,
+        loading = {
+            Box(modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(60.dp), color = colorResource(
+                        id = R.color.backgroundBottom
+                    )
+                )
+            }
+
+        },
+        contentDescription = "",
+        modifier = Modifier
+            .height(100.dp)
+            .padding(4.dp)
+            .clip(RoundedCornerShape(5))
     )
 
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SettingsAgeRange(
@@ -43,12 +44,13 @@ fun SettingsAgeRange(
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Age range", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+            Text(text = "Age range", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
             val (start, end) = sliderValue.start.toInt() to sliderValue.endInclusive.toInt()
             Text(
                 text = "$start - $end",
                 color = MaterialTheme.colorScheme.primary,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                fontFamily = outfitFamily
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
@@ -68,6 +70,6 @@ fun SettingsAgeRange(
             )
         )
         Spacer(modifier = Modifier.size(8.dp))
-        Text(text = "Show users only within the selected age range.", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Show users only within the selected age range.", color = Color.Gray, fontSize = 12.sp, fontFamily = outfitFamily)
     }
 }

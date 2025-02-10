@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
     <application
         android:name=".BoberApp"
         android:allowBackup="true"
@@ -29,19 +33,18 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="192.168.0.46"
+                    android:host="192.168.0.45"
                     android:port="8080"
-                    android:pathPattern="/chat/.*" />
+                    android:pathPattern="/open_chat" />
             </intent-filter>
 
             <intent-filter>
@@ -50,9 +53,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="http"
-                    android:host="192.168.0.46"
+                    android:host="192.168.0.45"
                     android:port="8080"
-                    android:pathPattern="/chat/.*" />
+                    android:pathPattern="/open_chat" />
             </intent-filter>
 
             <!-- REMOTE SERVER HTTP -->
@@ -100,6 +103,48 @@
                 <data android:scheme="https" />
                 <data android:host="jwttest-4f945ca4f70a.herokuapp.com" />
                 <data android:pathPrefix="/verify_email" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:host="jwttest-4f945ca4f70a.herokuapp.com" />
+                <data android:pathPrefix="/open_chat" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="jwttest-4f945ca4f70a.herokuapp.com" />
+                <data android:pathPrefix="/open_chat" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:host="bober-edbb31a834f6.herokuapp.com" />
+                <data android:pathPrefix="/open_chat" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="bober-edbb31a834f6.herokuapp.com" />
+                <data android:pathPrefix="/open_chat" />
             </intent-filter>
 
 

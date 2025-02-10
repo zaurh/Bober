@@ -81,9 +81,10 @@ object AppModule {
     @Singleton
     fun provideWebsocketRepository(
         boberPreferences: BoberPreferences,
-        client: HttpClient
+        client: HttpClient,
+        localMessageRepository: LocalMessageRepository
     ): WebSocketRepository {
-        return WebSocketRepoImpl(client, boberPreferences)
+        return WebSocketRepoImpl(client, boberPreferences, localMessageRepository)
     }
 
 
@@ -129,6 +130,7 @@ object AppModule {
     fun provideRetrofitApi(@Named("base") retrofit: Retrofit): UserApi {
         return retrofit.create(UserApi::class.java)
     }
+
 
 
     @Provides

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Profile_ConfirmationAlert(
@@ -21,9 +22,9 @@ fun Profile_ConfirmationAlert(
 ) {
     if (alertState) {
         AlertDialog(title = {
-            Text(text = title)
+            Text(text = title, fontFamily = outfitFamily)
         }, text = {
-            Text(text = text)
+            Text(text = text, fontFamily = outfitFamily)
         }, onDismissRequest = {
             onDismiss()
         }, confirmButton = {
@@ -32,7 +33,7 @@ fun Profile_ConfirmationAlert(
             ), onClick = {
                 onConfirm()
             }) {
-                Text(text = confirmText, color = Color.White)
+                Text(text = confirmText, color = Color.White, fontFamily = outfitFamily)
             }
         }, dismissButton = {
             Button(colors = ButtonDefaults.buttonColors(
@@ -40,7 +41,7 @@ fun Profile_ConfirmationAlert(
             ), onClick = {
                 onDismiss()
             }) {
-                Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue))
+                Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
             }
         })
     }

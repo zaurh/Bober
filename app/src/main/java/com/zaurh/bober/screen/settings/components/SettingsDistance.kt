@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SettingsDistance(
@@ -50,11 +51,12 @@ fun SettingsDistance(
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Maximum distance", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+            Text(text = "Maximum distance", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
             Text(
                 text = "${sliderValue.toInt()} km.",
                 color = MaterialTheme.colorScheme.primary,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                fontFamily = outfitFamily
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
@@ -77,7 +79,8 @@ fun SettingsDistance(
                 .fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = "Show people further if there is \nno one in the selected distance.",
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                fontFamily = outfitFamily
             )
             Checkbox(
                 checked = showFullDistanceState,

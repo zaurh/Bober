@@ -7,4 +7,5 @@ interface LocalMessageRepository {
     suspend fun getPendingMessages(): List<MessageEntity>
     suspend fun deleteMessage(text: String)
     suspend fun deleteSentMessage()
+    suspend fun clearMessages()
 }

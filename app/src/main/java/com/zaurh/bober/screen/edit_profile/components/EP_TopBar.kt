@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +33,7 @@ fun EP_TopBar(
 
     TopAppBar(title = {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Edit profile")
+            Text(text = "Edit profile", fontFamily = outfitFamily)
             Spacer(modifier = Modifier.size(8.dp))
             if (isLoading) {
                 CircularProgressIndicator(
@@ -45,7 +46,12 @@ fun EP_TopBar(
 
     }, navigationIcon = {
         IconButton(onClick = {
-            navController.popBackStack()
+            if (editProfileViewModel.discardChanges.value) {
+                editProfileViewModel.onDiscardChangesAlert()
+            } else {
+                navController.navigateUp()
+                editProfileViewModel.onDiscardChanges(false)
+            }
         }) {
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
         }

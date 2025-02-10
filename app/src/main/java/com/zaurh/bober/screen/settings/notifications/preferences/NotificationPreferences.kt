@@ -18,6 +18,7 @@ class NotificationPreferences(private val context: Context) {
         val MESSAGES = booleanPreferencesKey("messages")
         val LIKES = booleanPreferencesKey("likes")
         val MATCH = booleanPreferencesKey("match")
+        val EMOTE = booleanPreferencesKey("emote")
     }
 
     suspend fun controlMessages(enabled: Boolean) {
@@ -52,5 +53,16 @@ class NotificationPreferences(private val context: Context) {
     val getMatchStatus: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[MATCH] ?: true
+        }
+
+    suspend fun controlEmote(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[EMOTE] = enabled
+        }
+    }
+
+    val getEmoteStatus: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[EMOTE] ?: true
         }
 }

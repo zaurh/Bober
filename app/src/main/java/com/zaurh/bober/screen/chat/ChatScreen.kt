@@ -1,6 +1,7 @@
 package com.zaurh.bober.screen.chat
 
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -9,31 +10,29 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.stevdzasan.messagebar.ContentWithMessageBar
 import com.stevdzasan.messagebar.rememberMessageBarState
-import com.zaurh.bober.data.message.MessageStatus
+import com.zaurh.bober.data.user.BackgroundColor
 import com.zaurh.bober.data.user.UserData
-import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
 import com.zaurh.bober.screen.chat.components.ChatBottomBar
 import com.zaurh.bober.screen.chat.components.Chat_Content
 import com.zaurh.bober.screen.chat.components.Chat_TopBar
+import com.zaurh.bober.screen.chat.modal_sheets.Chat_BackgroundModalSheet
+import com.zaurh.bober.screen.chat.modal_sheets.Chat_EmoteModalSheet
 import com.zaurh.bober.screen.chat.modal_sheets.Chat_ModalSheet
 import com.zaurh.bober.screen.profile.ProfileViewModel
 import com.zaurh.bober.screen.profile.components.BlockAlert
 import com.zaurh.bober.screen.profile.components.Profile_ReportAlert
 import com.zaurh.bober.screen.profile.components.UnMatchAlert
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun ChatScreen(
     navController: NavController,
@@ -46,56 +45,58 @@ fun ChatScreen(
     BlockAlert(profileViewModel = profileViewModel, navController = navController, blockedUsersViewModel = blockedUsersViewModel)
     UnMatchAlert(profileViewModel = profileViewModel,navController = navController)
 
-    val profileDataState = chatScreenViewModel.profileDataState.collectAsState()
+    val matchData = chatScreenViewModel.matchListState.value.matchList.find { it.id == recipientId }
+    val chatData = chatScreenViewModel.chatListState.value.chatList.find { it.recipientId == recipientId }
     val currentUserState = chatScreenViewModel.userDataState.collectAsState()
 
     val userId = currentUserState.value?.id ?: ""
 
-    var username by remember { mutableStateOf("") }
-    val messageList = chatScreenViewModel.chatState.value.recipientMessages
-    var unReadMessages by remember { mutableStateOf<List<MessageData>>(listOf()) }
-
     val chatState = chatScreenViewModel.chatState.value
     val messageBarState = rememberMessageBarState()
+    val focusRequester = FocusRequester()
+    val focusManager = LocalFocusManager.current
 
+
+    LaunchedEffect(chatScreenViewModel.replyingState.value.enabled) {
+        if (chatScreenViewModel.replyingState.value.enabled){
+            focusManager.clearFocus()
+            focusRequester.requestFocus()
+        }
+    }
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
         chatScreenViewModel.onRouteChange(
             onChatScreen = false,
             recipientId = userId
         )
-        chatScreenViewModel.clearRecipientMessages()
+        chatScreenViewModel.closeReply()
     }
 
-//    LaunchedEffect(true) {
-//        chatScreenViewModel.loadChatData(recipientId)
-//        chatScreenViewModel.onRouteChange(
-//            onChatScreen = true,
-//            recipientId = userId
-//        )
-//    }
-    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-        chatScreenViewModel.loadChatData(recipientId)
+    LaunchedEffect(true) {
+        chatScreenViewModel.getPrivMessages(recipientId)
+        chatScreenViewModel.getProfileData(recipientId)
         chatScreenViewModel.onRouteChange(
             onChatScreen = true,
             recipientId = userId
         )
-        unReadMessages = messageList?.filter {
-            it.senderUserId == recipientId && it.recipientUserId == userId && it.status != MessageStatus.READ
-        } ?: listOf()
+        Log.d("sadkjsdalksd", "asdjkhaskhsdakj")
 
-        if (unReadMessages.isNotEmpty()) {
-            chatScreenViewModel.messageIsRead()
-        }
     }
 
 
-
-    LaunchedEffect(profileDataState.value) {
-        if (profileDataState.value != null) {
-            username = profileDataState.value?.username ?: ""
-        }
+    LaunchedEffect(chatState.recipientMessages) {
+        Log.d("sadkjsdalksd", "${chatState.recipientMessages}")
     }
+
+
+    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+       chatScreenViewModel.handleDeepLink()
+        chatScreenViewModel.onRouteChange(
+            onChatScreen = true,
+            recipientId = userId
+        )
+    }
+
 
     LaunchedEffect(chatState.recipientDataError) {
         if (chatState.recipientDataError) {
@@ -104,22 +105,19 @@ fun ChatScreen(
     }
 
 
-    LaunchedEffect(messageList) {
-        unReadMessages = messageList?.filter {
-            it.senderUserId == recipientId && it.recipientUserId == userId && it.status != MessageStatus.READ
-        } ?: listOf()
-
-        if (unReadMessages.isNotEmpty()) {
-            chatScreenViewModel.messageIsRead()
-        }
-    }
-
 
     BackHandler(
         onBack = {
             if (chatScreenViewModel.gifState.value) {
                 chatScreenViewModel.onGifStateChange()
-            } else {
+            }
+            else if (chatScreenViewModel.replyingState.value.enabled){
+                chatScreenViewModel.closeReply()
+            }
+            else if(chatScreenViewModel.selectedMessages.value.isNotEmpty()){
+                chatScreenViewModel.clearSelectMessages()
+            }
+            else {
                 navController.popBackStack()
                 chatScreenViewModel.clearProfileData()
             }
@@ -128,10 +126,38 @@ fun ChatScreen(
 
     Chat_ModalSheet(
         chatScreenViewModel = chatScreenViewModel,
-        navController = navController,
-        profileId = recipientId,
         blockedUsersViewModel = blockedUsersViewModel,
-        profileViewModel = profileViewModel
+        profileViewModel = profileViewModel,
+        backgroundEnabled = chatData != null
+    )
+
+    Chat_BackgroundModalSheet(
+        chatScreenViewModel = chatScreenViewModel,
+        recipientId = recipientId,
+        doodle = chatData?.doodleEnabled ?: false,
+        backgroundColor = chatData?.backgroundColor ?: BackgroundColor.DEFAULT,
+    )
+
+
+    Chat_EmoteModalSheet(
+        chatScreenViewModel = chatScreenViewModel,
+        enabled = chatScreenViewModel.emoteModalState.value.enabled,
+        currentUserId = currentUserState.value?.id ?: "",
+        onClick = {
+            chatScreenViewModel.closeEmoteModalSheet()
+            if (it.senderId == currentUserState.value?.id){
+                chatScreenViewModel.removeEmote(
+                    senderId = currentUserState.value?.id ?: "",
+                    recipientId = recipientId,
+                    messageId = chatScreenViewModel.emoteModalState.value.messageData?.id ?: ""
+                )
+            }else{
+                navController.navigate(Screen.ProfileScreen.createRoute(recipientId))
+            }
+        },
+        onDismiss = {
+            chatScreenViewModel.closeEmoteModalSheet()
+        }
     )
 
 
@@ -140,13 +166,13 @@ fun ChatScreen(
     Box {
         Scaffold(
             topBar = {
-                val profilePic = profileDataState.value?.imageUrl?.firstOrNull() ?: ""
 
                 Chat_TopBar(
-                    image = profilePic,
-                    username = username,
+                    image = chatData?.recipientImage ?: matchData?.image ?: "",
+                    username = chatData?.recipientUsername ?: matchData?.username ?: "",
                     navController = navController,
                     chatScreenViewModel = chatScreenViewModel,
+                    profileViewModel = profileViewModel,
                     onClick = {
                         navController.navigate(Screen.ProfileScreen.createRoute(recipientId))
                     }
@@ -164,7 +190,10 @@ fun ChatScreen(
                     content = {
                         Chat_Content(
                             chatScreenViewModel = chatScreenViewModel,
-                            currentUser = currentUser
+                            currentUser = currentUser,
+                            profileId = recipientId,
+                            backgroundColor = chatData?.backgroundColor ?: BackgroundColor.DEFAULT,
+                            doodleEnabled = chatData?.doodleEnabled ?: true
                         )
                     })
 
@@ -172,7 +201,9 @@ fun ChatScreen(
             bottomBar = {
                 ChatBottomBar(
                     chatScreenViewModel = chatScreenViewModel,
-                    enabled = true
+                    enabled = true,
+                    backgroundColor = chatData?.backgroundColor ?: BackgroundColor.DEFAULT,
+                    focusRequester = focusRequester
                 )
             }
 

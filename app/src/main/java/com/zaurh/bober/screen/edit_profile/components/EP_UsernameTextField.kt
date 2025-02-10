@@ -12,14 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EP_UsernameTextField(
     editProfileViewModel: EditProfileViewModel
 ) {
     Column {
-        Text(text = "Username", color = MaterialTheme.colorScheme.primary)
+        Text(text = "Username", color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
@@ -34,7 +37,11 @@ fun EP_UsernameTextField(
             ),
             enabled = false,
             value = editProfileViewModel.usernameState.value.text,
-            onValueChange = {}
+            onValueChange = {},
+            textStyle = TextStyle(
+                fontFamily = outfitFamily,
+                fontSize = 16.sp
+            )
         )
     }
 }

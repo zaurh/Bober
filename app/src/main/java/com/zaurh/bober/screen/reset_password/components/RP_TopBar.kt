@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,7 +22,7 @@ fun RP_TopBar(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         title = {
-            Text("Reset password", color = MaterialTheme.colorScheme.primary)
+            Text("Reset password", color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
         },
         navigationIcon = {
             IconButton(onClick = {

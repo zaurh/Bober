@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EP_MultipleChoiceItem(
@@ -35,7 +36,7 @@ fun EP_MultipleChoiceItem(
 ) {
     val focus = LocalFocusManager.current
     Column {
-        Text(text = title, color = MaterialTheme.colorScheme.primary)
+        Text(text = title, color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
         Row(
             Modifier
                 .fillMaxWidth()
@@ -51,9 +52,20 @@ fun EP_MultipleChoiceItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(modifier = Modifier.size(22.dp),tint = Color.Gray, painter = painterResource(id = icon), contentDescription = "")
+                Icon(
+                    modifier = Modifier.size(22.dp),
+                    tint = Color.Gray,
+                    painter = painterResource(id = icon),
+                    contentDescription = ""
+                )
                 Spacer(modifier = Modifier.size(8.dp))
-                Text(text = text, color = MaterialTheme.colorScheme.primary, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    fontFamily = outfitFamily
+                )
             }
             Icon(
                 tint = Color.Gray,

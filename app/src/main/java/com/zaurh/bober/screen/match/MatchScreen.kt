@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alexstyl.swipeablecard.Direction
 import com.alexstyl.swipeablecard.ExperimentalSwipeableCardApi
@@ -55,17 +54,20 @@ import kotlinx.coroutines.launch
 @Composable
 fun MatchScreen(
     matchViewModel: MatchViewModel,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel,
     navController: NavController
 ) {
-    val matchListState = matchViewModel.matchListState.collectAsState()
+    val matchListState = matchViewModel.boberListState.collectAsState()
     val scope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val context = LocalContext.current
 
-    LaunchedEffect(true) {
-        matchViewModel.getBobers()
+    LaunchedEffect(matchListState.value.boberList) {
+        if (matchListState.value.boberList.isEmpty()){
+            matchViewModel.getBobers()
+        }
     }
+
     GetCurrentLocation()
 
     Box(
@@ -81,7 +83,7 @@ fun MatchScreen(
             when {
                 locationPermissionState.status.isGranted && isLocationEnabled(context) -> {
                     Box {
-                        val states = matchListState.value.reversed()
+                        val states = matchListState.value.boberList.reversed()
                             .map { it to rememberSwipeableCardState() }
 
                         Box(
@@ -89,40 +91,38 @@ fun MatchScreen(
                                 .fillMaxSize()
                                 .align(Alignment.Center)
                         ) {
+//
 
                             states.forEach { (matchProfile, state) ->
                                 if (state.swipedDirection == null) {
+
                                     val alphaOffset = state.offset.value.x
+                                    MatchCardItem(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .swipableCard(
+                                                state = state,
+                                                blockedDirections = listOf(Direction.Down),
+                                                onSwiped = {
 
-                                    matchProfile?.let {
-                                        MatchCardItem(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .swipableCard(
-                                                    state = state,
-                                                    blockedDirections = listOf(Direction.Down),
-                                                    onSwiped = {
-
-                                                    },
-                                                    onSwipeCancel = {
-                                                        Log.d("Swipeable-Card", "Cancelled swipe")
-                                                    },
-                                                ),
-                                            boberData = matchProfile,
-                                            profileViewModel = profileViewModel,
-                                            matchViewModel = matchViewModel,
-                                            onClick = {
-                                                navController.navigate(
-                                                    Screen.ProfileScreen.createRoute(
-                                                        recipientId = matchProfile.userId,
-                                                    )
-                                                ) {
-                                                    popUpTo(route = Screen.MatchScreen.route)
-                                                }
-                                            },
-                                            alphaOffSet = alphaOffset
-                                        )
-                                    }
+                                                },
+                                                onSwipeCancel = {
+                                                    Log.d("Swipeable-Card", "Cancelled swipe")
+                                                },
+                                            ),
+                                        boberData = matchProfile,
+                                        profileViewModel = profileViewModel,
+                                        onClick = {
+                                            navController.navigate(
+                                                Screen.ProfileScreen.createRoute(
+                                                    recipientId = matchProfile.userId,
+                                                )
+                                            ) {
+                                                popUpTo(route = Screen.MatchScreen.route)
+                                            }
+                                        },
+                                        alphaOffSet = alphaOffset
+                                    )
 
 
                                 }
@@ -210,7 +210,10 @@ fun MatchScreen(
 
                         }
                         if (states.isEmpty()) {
-                            EmptyAlert()
+                            EmptyAlert(
+                                loading = matchListState.value.loading,
+                                empty = matchListState.value.empty
+                            )
                         }
 
 

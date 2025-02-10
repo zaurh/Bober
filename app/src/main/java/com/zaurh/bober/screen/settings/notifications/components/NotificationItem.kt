@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun NotificationItem(
@@ -33,8 +34,8 @@ fun NotificationItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
-            Text(text = description, color = Color.Gray, fontSize = 12.sp)
+            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
+            Text(text = description, color = Color.Gray, fontSize = 12.sp, fontFamily = outfitFamily)
         }
         Switch(
             checked = checked,

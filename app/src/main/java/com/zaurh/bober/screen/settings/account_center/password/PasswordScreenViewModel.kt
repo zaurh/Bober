@@ -25,6 +25,19 @@ class PasswordScreenViewModel @Inject constructor(
     private val _passwordState = mutableStateOf(PasswordState())
     val passwordState: State<PasswordState> = _passwordState
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Password screen Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Password screen Ended")
+
+    }
 
     fun onCurrentPasswordChange(password: String) {
         _passwordState.value = passwordState.value.copy(

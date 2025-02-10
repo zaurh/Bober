@@ -26,6 +26,21 @@ class PagerViewModel @Inject constructor(
     val likeTokenExpanded: State<Boolean> = _likeTokenExpanded
 
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Pager Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Pager Ended")
+
+    }
+
+
     fun expandLikeToken(){
         viewModelScope.launch {
             Log.d("sdfsdfdfs", likeTokenExpanded.value.toString())
@@ -39,6 +54,8 @@ class PagerViewModel @Inject constructor(
 
         }
     }
+
+
 
     private fun convertToLocationData(location: Location): LocationData {
         return LocationData(

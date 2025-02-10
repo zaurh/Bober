@@ -35,6 +35,19 @@ class SignInViewModel @Inject constructor(
     private val _passwordVisible = mutableStateOf(false)
     val passwordVisible: State<Boolean> = _passwordVisible
 
+    init {
+        startedTemp()
+    }
+
+    private fun startedTemp(){
+        Log.d("Viewmodelstates", "SignIn Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "SignIn Ended")
+    }
+
     fun onUsernameChange(username: String) {
         _usernameState.value = username
     }

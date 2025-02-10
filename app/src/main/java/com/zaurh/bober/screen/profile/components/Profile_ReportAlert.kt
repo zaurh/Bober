@@ -37,9 +37,11 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.data.report.Reason
 import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun Profile_ReportAlert(
@@ -60,7 +62,7 @@ fun Profile_ReportAlert(
 
     if (reportState) {
         AlertDialog(
-            title = { Text(text = "Report reason") },
+            title = { Text(text = "Report reason", fontFamily = outfitFamily) },
             text = {
                 ExposedDropdownMenuBox(
                     expanded = dropdownState,
@@ -68,7 +70,7 @@ fun Profile_ReportAlert(
                 ) {
                     Column {
                         Column {
-                            Text(text = "Select report reason:")
+                            Text(text = "Select report reason:", fontFamily = outfitFamily)
                             Spacer(modifier = Modifier.size(8.dp))
                             TextField(
                                 modifier = Modifier
@@ -95,7 +97,8 @@ fun Profile_ReportAlert(
                                     )
                                 },
                                 textStyle = TextStyle.Default.copy(
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = outfitFamily
                                 )
                             )
                             ExposedDropdownMenu(
@@ -105,7 +108,7 @@ fun Profile_ReportAlert(
                             ) {
                                 Reason.entries.forEach { reason ->
                                     DropdownMenuItem(
-                                        text = { Text(reason.displayName, color = Color.White) },
+                                        text = { Text(text = reason.displayName, color = Color.White, fontFamily = outfitFamily, fontSize = 14.sp) },
                                         onClick = {
                                             profileViewModel.selectReason(reason)
                                             profileViewModel.onDropdownChange()
@@ -117,14 +120,14 @@ fun Profile_ReportAlert(
                         }
                         
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text(text = "Optional reason:")
+                        Text(text = "Optional reason:", fontFamily = outfitFamily)
                         Spacer(modifier = Modifier.size(8.dp))
                         TextField(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(120.dp)
                                 .clip(RoundedCornerShape(30)),
-                            placeholder = { Text(text = "Write here")},
+                            placeholder = { Text(text = "Write here", fontFamily = outfitFamily)},
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
@@ -141,10 +144,14 @@ fun Profile_ReportAlert(
                                 cursorColor = colorResource(R.color.darkBlue)
                             ),
                             value = optionalReason,
-                            onValueChange = profileViewModel::onOptionalChange
+                            onValueChange = profileViewModel::onOptionalChange,
+                            textStyle = TextStyle(
+                                fontFamily = outfitFamily,
+                                fontSize = 16.sp
+                            )
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text(text = "* Don't worry, $profileUsername won't know about it.", color = Color.Gray)
+                        Text(text = "* Don't worry, $profileUsername won't know about it.", color = Color.Gray, fontFamily = outfitFamily)
                     }
                 }
 
@@ -161,7 +168,7 @@ fun Profile_ReportAlert(
                         context = context
                     )
                 }) {
-                    Text(text = if (loading) "Loading..." else "Report", color = Color.White)
+                    Text(text = if (loading) "Loading..." else "Report", color = Color.White, fontFamily = outfitFamily, fontSize = 16.sp)
                 }
             },
             dismissButton = {
@@ -170,7 +177,7 @@ fun Profile_ReportAlert(
                 ),onClick = {
                     profileViewModel.onReportStateChange()
                 }) {
-                    Text(text = "Close", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Close", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                 }
             }
         )

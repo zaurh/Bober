@@ -9,9 +9,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import com.commandiron.wheel_picker_compose.WheelDatePicker
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.sign_up.SignUpViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import com.zaurh.bober.util.localDateToString
 import com.zaurh.bober.util.stringToLocalDate
 import java.time.LocalDate
@@ -30,7 +33,11 @@ fun SUA_DatePicker(
             WheelDatePicker(
                 startDate = if (birthDateState.birthDate.isNotEmpty()) stringToLocalDate(birthDateState.birthDate) else LocalDate.of(2000,1,1),
                 yearsRange = 1924..2005,
-                textColor = Color.White
+                textColor = Color.White,
+                textStyle = TextStyle(
+                    fontFamily = outfitFamily,
+                    fontSize = 16.sp
+                )
             ) {
                 signUpViewModel.onBirthDateChange(localDateToString(it))
             }
@@ -40,7 +47,7 @@ fun SUA_DatePicker(
             ),onClick = {
                 signUpViewModel.onDateOfBirthChange(false)
             }) {
-                Text(text = "Done", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Done", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
             }
         })
     }

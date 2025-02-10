@@ -19,8 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.zaurh.bober.data.responses.BlockedUserData
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun BlockedUserItem(
@@ -49,8 +51,8 @@ fun BlockedUserItem(
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(text = "@${blockedUserData.username}", color = MaterialTheme.colorScheme.primary)
-                Text(text = "${blockedUserData.name}", color = MaterialTheme.colorScheme.primary)
+                Text(text = "@${blockedUserData.username}", color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
+                Text(text = "${blockedUserData.name}", color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
             }
         }
 
@@ -59,7 +61,7 @@ fun BlockedUserItem(
         ),onClick = {
             onUnblockClick()
         }) {
-            Text(text = "Unblock", color = MaterialTheme.colorScheme.primary)
+            Text(text = "Unblock", color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily, fontSize = 16.sp)
         }
     }
 }

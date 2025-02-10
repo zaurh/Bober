@@ -20,6 +20,7 @@ import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.blocked_users.BlockedUserItem
 import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
 import com.zaurh.bober.screen.home.components.SearchBar
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun BU_Content(
@@ -85,12 +86,12 @@ fun BU_Content(
                     }
                 } else {
                     if (searchQuery != ""){
-                        Text(text = "No one is found.")
+                        Text(text = "No one is found.", fontFamily = outfitFamily)
                     }
                 }
 
             } else {
-                Text(text = "Your block list is empty.")
+                Text(text = "Your block list is empty.", fontFamily = outfitFamily)
             }
 
         }

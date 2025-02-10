@@ -19,10 +19,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SUA_TextField(
@@ -40,7 +43,7 @@ fun SUA_TextField(
 ) {
     val focus = LocalFocusManager.current
     Column() {
-        Text(text = title, color = Color.White)
+        Text(text = title, color = Color.White, fontFamily = outfitFamily)
         Spacer(modifier = Modifier.size(8.dp))
         TextField(
             modifier = modifier
@@ -80,11 +83,15 @@ fun SUA_TextField(
                 trailingIcon()
             },
             singleLine = true,
-            placeholder = { Text(text = placeholder) },
+            placeholder = { Text(text = placeholder, fontFamily = outfitFamily) },
             value = value,
             onValueChange = onValueChange,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = visualTransformation,
+            textStyle = TextStyle.Default.copy(
+                fontFamily = outfitFamily,
+                fontSize = 16.sp
+            )
         )
     }
 }

@@ -1,7 +1,5 @@
 package com.zaurh.bober.screen.chat.state
 
-import com.zaurh.bober.data.message.LastMessageData
-import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.model.MessageData
 
 data class ChatState(
@@ -10,7 +8,6 @@ data class ChatState(
     val recipientMessagesLoading: Boolean = false,
 
     val extendMessagesLoading: Boolean = false,
-    val currentPage: Int = 0,
     val pageSize: Int = 20,
 
     val recipientUserId: String? = null,
@@ -18,7 +15,6 @@ data class ChatState(
     val recipientLastSeen: Long? = null,
     val recipientIsTyping: Boolean? = null,
 
-    val recipientDataIsLoading: Boolean = false,
     val recipientDataError: Boolean = false,
 
     val isLoading: Boolean = false,
@@ -27,6 +23,4 @@ data class ChatState(
     val initialized: Boolean = false,
     val switchedRecipientId: String = "",
 
-    val lastMessages: List<LastMessageData> = emptyList(),
-    val matchList: List<MatchedUserData> = emptyList()
-)
+    )

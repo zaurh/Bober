@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.sign_up.SignUpViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SignUpUsername(
@@ -69,7 +71,8 @@ fun SignUpUsername(
         Text(
             text = "Hi there!",
             color = Color.White,
-            fontSize = 32.sp
+            fontSize = 32.sp,
+            fontFamily = outfitFamily
         )
         Column(
             modifier = Modifier
@@ -93,16 +96,29 @@ fun SignUpUsername(
                         .rotate(-10f), onClick = {
                     }, border = BorderStroke(1.dp, Color.Gray)
                 ) {
-                    Text(text = "@bober", color = colorResource(id = R.color.darkBlue))
+                    Text(
+                        text = "@bober",
+                        color = colorResource(id = R.color.darkBlue),
+                        fontFamily = outfitFamily,
+                        fontSize = 16.sp
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.size(32.dp))
-            Text(text = "Pick yourself a username", color = Color.White)
+            Text(text = "Pick yourself a username", color = Color.White, fontFamily = outfitFamily)
             Spacer(modifier = Modifier.size(16.dp))
             TextField(
                 modifier = Modifier.clip(RoundedCornerShape(40)),
-                leadingIcon = { Text(text = "@", fontWeight = FontWeight.Bold, color = Color.Gray) },
+                leadingIcon = {
+                    Text(
+                        text = "@",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray,
+                        fontFamily = outfitFamily,
+                        fontSize = 16.sp
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
@@ -119,8 +135,12 @@ fun SignUpUsername(
                 value = signUpViewModel.usernameState.value.username,
                 onValueChange = signUpViewModel::onUsernameChange,
                 isError = usernameState.errorMessage.isNotEmpty(),
-                placeholder = { Text(text = "Username", color = Color.LightGray) },
-                singleLine = true
+                placeholder = { Text(text = "Username", color = Color.LightGray, fontFamily = outfitFamily) },
+                singleLine = true,
+                textStyle = TextStyle(
+                    fontSize = 16.sp,
+                    fontFamily = outfitFamily
+                )
             )
             Spacer(modifier = Modifier.size(4.dp))
             AnimatedVisibility(visible = usernameState.errorMessage.isNotEmpty()) {
@@ -131,7 +151,7 @@ fun SignUpUsername(
                         contentDescription = ""
                     )
                     Spacer(modifier = Modifier.size(4.dp))
-                    Text(text = usernameState.errorMessage, color = Color.White)
+                    Text(text = usernameState.errorMessage, color = Color.White, fontFamily = outfitFamily)
                 }
             }
             Spacer(modifier = Modifier.size(16.dp))
@@ -145,7 +165,7 @@ fun SignUpUsername(
             }) {
                 if (usernameState.loading) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Checking...", color = colorResource(id = R.color.darkBlue))
+                        Text(text = "Checking...", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                         Spacer(modifier = Modifier.size(4.dp))
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
@@ -154,7 +174,7 @@ fun SignUpUsername(
                         )
                     }
                 } else {
-                    Text(text = "Next", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Next", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                 }
             }
         }
@@ -164,7 +184,7 @@ fun SignUpUsername(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Already have an account?", color = Color.White)
+            Text(text = "Already have an account?", color = Color.White, fontFamily = outfitFamily)
             Text(
                 modifier = Modifier.clickable {
                     navController.navigate(Screen.SignInScreen.route) {
@@ -174,7 +194,8 @@ fun SignUpUsername(
                 text = "Sign in",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                textDecoration = TextDecoration.Underline
+                textDecoration = TextDecoration.Underline,
+                fontFamily = outfitFamily
             )
 
         }

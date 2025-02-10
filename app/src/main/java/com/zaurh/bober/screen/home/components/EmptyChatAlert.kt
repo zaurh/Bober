@@ -15,6 +15,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EmptyChatAlert() {
@@ -26,7 +27,7 @@ fun EmptyChatAlert() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("You don't have any match yet.\nSwipe right to see bobers!", textAlign = TextAlign.Center)
+        Text("You don't have any match yet.\nSwipe right to see bobers!", textAlign = TextAlign.Center, fontFamily = outfitFamily)
         LottieAnimation(
             modifier = Modifier
                 .size(200.dp),

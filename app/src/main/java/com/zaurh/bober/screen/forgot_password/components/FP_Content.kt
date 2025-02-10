@@ -32,12 +32,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zaurh.bober.R
 import com.zaurh.bober.screen.forgot_password.ForgotPasswordViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun FP_Content(
@@ -67,7 +69,8 @@ fun FP_Content(
             "Forgot password?",
             color = Color.White,
             fontSize = 36.sp,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = outfitFamily
         )
 
         Column(
@@ -78,7 +81,8 @@ fun FP_Content(
             Text(
                 "Enter the email associated with your account and we'll send an email with instructions to reset your password.",
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.7f)
+                color = Color.White.copy(alpha = 0.7f),
+                fontFamily = outfitFamily
             )
             Spacer(Modifier.size(12.dp))
             TextField(
@@ -105,7 +109,11 @@ fun FP_Content(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email
                 ),
-                placeholder = { Text(text = "Enter email", color = Color.Gray) }
+                placeholder = { Text(text = "Enter email", color = Color.Gray, fontFamily = outfitFamily) },
+                textStyle = TextStyle(
+                    fontFamily = outfitFamily,
+                    fontSize = 16.sp
+                )
             )
             AnimatedVisibility(fpState.message != "") {
                 Row(
@@ -114,7 +122,7 @@ fun FP_Content(
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(fpState.message, color = Color.White, textAlign = TextAlign.Center)
+                    Text(fpState.message, color = Color.White, textAlign = TextAlign.Center, fontFamily = outfitFamily)
                 }
             }
 
@@ -127,7 +135,7 @@ fun FP_Content(
             forgotPasswordViewModel.resetPassword()
         }) {
             if (fpState.requestLoading) {
-                Text(text = "Loading...", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Loading...", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
                 Spacer(modifier = Modifier.size(8.dp))
                 CircularProgressIndicator(
                     modifier = Modifier.size(12.dp),
@@ -135,7 +143,7 @@ fun FP_Content(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text(text = "Send", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Send", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
             }
         }
 

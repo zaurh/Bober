@@ -12,6 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun EP_TextField(
@@ -25,12 +28,12 @@ fun EP_TextField(
 ) {
     Column(modifier = modifier) {
         Column(modifier = innerModifier) {
-            Text(text = title, color = MaterialTheme.colorScheme.primary)
+            Text(text = title, color = MaterialTheme.colorScheme.primary, fontFamily = outfitFamily)
             TextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20)),
-                placeholder = { Text(text = placeholder) },
+                placeholder = { Text(text = placeholder, fontFamily = outfitFamily) },
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
                     focusedContainerColor = MaterialTheme.colorScheme.tertiary,
@@ -44,7 +47,11 @@ fun EP_TextField(
                 ),
                 value = value,
                 onValueChange = onValueChange,
-                singleLine = singleLine
+                singleLine = singleLine,
+                textStyle = TextStyle(
+                    fontFamily = outfitFamily,
+                    fontSize = 16.sp
+                )
             )
         }
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SettingsItem(
@@ -34,9 +35,10 @@ fun SettingsItem(
     Row(
         Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .height(60.dp)
             .padding(8.dp)
-            .clickable { onClick() },
+            ,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -47,10 +49,10 @@ fun SettingsItem(
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
-                Text(text = description, color = Color.Gray, fontSize = 12.sp)
+                Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
+                Text(text = description, color = Color.Gray, fontSize = 12.sp, fontFamily = outfitFamily)
             }
         }
         if (rightArrowEnabled){

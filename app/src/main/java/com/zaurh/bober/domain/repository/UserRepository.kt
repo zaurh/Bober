@@ -1,5 +1,7 @@
 package com.zaurh.bober.domain.repository
 
+import com.zaurh.bober.data.repository.state.BoberListState
+import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.responses.AddMediaResponse
 import com.zaurh.bober.data.responses.BlockedUserData
 import com.zaurh.bober.data.responses.BlockedUsersResponse
@@ -7,14 +9,15 @@ import com.zaurh.bober.data.responses.GetBobersResponse
 import com.zaurh.bober.data.responses.GetLocationResponse
 import com.zaurh.bober.data.responses.GetUserDataResponse
 import com.zaurh.bober.data.responses.LikedUsersResponse
+import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
 import com.zaurh.bober.data.responses.WhoLikesData
 import com.zaurh.bober.data.responses.WhoLikesResponse
-import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.user.UserUpdate
+import com.zaurh.bober.screen.chat.state.ChatState
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
@@ -23,10 +26,11 @@ interface UserRepository {
     val userData: StateFlow<UserData?>
     val profileData: StateFlow<UserData?>
 
-    val boberDataList: StateFlow<List<BoberData?>>
+    val boberDataList: StateFlow<BoberListState>
 //    val likedUserList: StateFlow<List<LikedUserData?>>
     val blockedUserList: StateFlow<List<BlockedUserData?>>
     val whoLikesList: StateFlow<List<WhoLikesData>>
+    val matchList: StateFlow<List<MatchedUserData>>
 //    val matchedUserList: StateFlow<List<MatchedUserData>>
 
     suspend fun getUserData(): GetUserDataResponse
@@ -54,6 +58,6 @@ interface UserRepository {
     suspend fun report(recipientId: String, reason: String, optional: String): MessageResponse
     suspend fun unblock(recipientId: String): UpdateUserResponse
 
-    suspend fun boberium(): UpdateUserResponse
+    suspend fun takePremiumCard(premiumCardRequest: PremiumCardRequest): UpdateUserResponse
 
 }

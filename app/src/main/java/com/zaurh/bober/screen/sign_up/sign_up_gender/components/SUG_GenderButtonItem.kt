@@ -17,6 +17,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.zaurh.bober.R
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SUG_GenderButtonItem(
@@ -43,5 +44,5 @@ fun SUG_GenderButtonItem(
         )
     }
     Spacer(modifier = Modifier.size(8.dp))
-    Text(text = text, color = Color.White)
+    Text(text = text, color = Color.White, fontFamily = outfitFamily)
 }

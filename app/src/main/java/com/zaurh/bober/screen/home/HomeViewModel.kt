@@ -1,19 +1,18 @@
 package com.zaurh.bober.screen.home
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
+import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.AuthRepo
-import com.zaurh.bober.domain.repository.MessageRepository
 import com.zaurh.bober.domain.repository.UserRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
+import com.zaurh.bober.screen.pager.state.PremiumCardState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,18 +20,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    @ApplicationContext context: Context,
     private val userRepository: UserRepository,
-    private val messageRepository: MessageRepository,
     private val webSocketRepository: WebSocketRepository,
     private val authRepo: AuthRepo
 ): ViewModel() {
     var isRefreshing = mutableStateOf(false)
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
-//    val matchListState: StateFlow<List<MatchedUserData?>> = userRepository.matchedUserList
 
-//    val chatList: StateFlow<List<ChatData?>> = messageRepository.chatList
+    private val _premiumCardState = mutableStateOf(PremiumCardState())
+    val premiumCardState: State<PremiumCardState> = _premiumCardState
 
     private val _searchQuery = mutableStateOf("")
     val searchQuery: State<String> = _searchQuery
@@ -41,7 +38,18 @@ class HomeViewModel @Inject constructor(
     val connectionEnabled: State<Boolean> = _connectionEnabled
 
 
+    init {
+        startedTemp()
+    }
 
+    private fun startedTemp(){
+        Log.d("Viewmodelstates", "Home Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Home Ended")
+    }
 
 
     fun storeFCMToken(){
@@ -58,18 +66,68 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun openPremiumAlert(
+        expiryDate: Int
+    ){
+        _premiumCardState.value = premiumCardState.value.copy(
+            alertState = true,
+            congsText = false,
+            expiryDate = expiryDate
+        )
+    }
+
+    fun closePremiumAlert(){
+        _premiumCardState.value = _premiumCardState.value.copy(
+            alertState = false
+        )
+    }
+
 //    fun getMatchedUsers(){
 //        viewModelScope.launch(Dispatchers.IO) {
 //            val matchedUsers = userRepository.getMatchedUsers()
 //        }
 //    }
 
+    fun takePremiumCard(
+        premiumCardRequest: PremiumCardRequest
+    ){
+        _premiumCardState.value = premiumCardState.value.copy(
+            loading = true,
+            error = ""
+        )
+        viewModelScope.launch(Dispatchers.IO){
+            val result = userRepository.takePremiumCard(premiumCardRequest)
+            if (result.success){
+                _premiumCardState.value = premiumCardState.value.copy(
+                    alertState = false,
+                    loading = false,
+                    error = ""
+                )
+            }else{
+                _premiumCardState.value = premiumCardState.value.copy(
+                    loading = false,
+                    error = result.message
+                )
+            }
+        }
+    }
+
     fun getUserData(){
         viewModelScope.launch(Dispatchers.IO) {
             val response = userRepository.getUserData()
-//            if (response.user == null){
-//                authRepo.logout()
-//            }
+            if (response.user != null){
+                if (response.user.premiumCards?.any { it.received } == true){
+                    _premiumCardState.value = premiumCardState.value.copy(
+                        congsText = true,
+                        alertState = true,
+                        error = "",
+                        loading = false
+                    )
+                }
+            }
+            if (response.user == null){
+                authRepo.logout()
+            }
         }
     }
 

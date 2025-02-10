@@ -32,6 +32,19 @@ class EmailScreenViewModel @Inject constructor(
     private val _emailValidationState = mutableStateOf(EmailValidationState())
     val emailValidationState: State<EmailValidationState> = _emailValidationState
 
+    init {
+        startTemp()
+    }
+
+    fun startTemp(){
+        Log.d("Viewmodelstates", "Email screen Started")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("Viewmodelstates", "Email screen Ended")
+
+    }
 
     fun getUserData(){
         viewModelScope.launch(Dispatchers.IO){

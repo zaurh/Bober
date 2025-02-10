@@ -22,8 +22,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun LikeTokenItem(
-    tokenCount: Int,
-    expanded: Boolean
+    tokenCount: Int
 ) {
     Row(
         modifier = Modifier
@@ -42,15 +41,10 @@ fun LikeTokenItem(
             )
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "∞",
+                text = if (tokenCount > 99) "∞" else "$tokenCount",
                 color = Color.White,
                 fontSize = 12.sp
             )
-//            Text(
-//                text = if (tokenCount > 20) "∞" else "$tokenCount",
-//                color = Color.White,
-//                fontSize = 12.sp
-//            )
         }
 
     }

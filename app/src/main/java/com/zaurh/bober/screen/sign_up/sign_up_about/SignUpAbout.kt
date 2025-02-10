@@ -33,6 +33,7 @@ import com.zaurh.bober.screen.sign_up.sign_up_about.components.SUA_DatePicker
 import com.zaurh.bober.screen.sign_up.sign_up_about.components.SUA_Interests
 import com.zaurh.bober.screen.sign_up.sign_up_about.components.SUA_ShowMe
 import com.zaurh.bober.screen.sign_up.sign_up_about.components.SUA_TextField
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -60,7 +61,7 @@ fun SignUpAbout(
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = "Tell us more", color = Color.White, fontSize = 32.sp)
+            Text(text = "Tell us more", color = Color.White, fontSize = 32.sp, fontFamily = outfitFamily)
         }
         Column(
             modifier = Modifier
@@ -100,7 +101,7 @@ fun SignUpAbout(
             ), onClick = {
                 navController.navigate(Screen.SignUpImage.route)
             }) {
-                Text(text = "Next", color = colorResource(id = R.color.darkBlue))
+                Text(text = "Next", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
             }
         }
     }

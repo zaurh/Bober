@@ -42,18 +42,16 @@ import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.sign_in.components.SignIn_TextField
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SignInScreen(
     navController: NavController,
-    signInViewModel: SignInViewModel
+    signInViewModel: SignInViewModel,
 ) {
     val context = LocalContext.current
     val signedIn = signInViewModel.signedInState.collectAsState()
 
-    if (signedIn.value) {
-        navController.navigate(Screen.PagerScreen.route)
-    }
 
     Column(
         modifier = Modifier
@@ -124,7 +122,8 @@ fun SignInScreen(
                         navController.navigate(Screen.ForgotPasswordScreen.route)
                     },
                     color = Color.White,
-                    textDecoration = TextDecoration.Underline
+                    textDecoration = TextDecoration.Underline,
+                    fontFamily = outfitFamily
                 )
             }
 
@@ -139,7 +138,7 @@ fun SignInScreen(
                     signInViewModel.signIn(context)
                 }) {
                 if (signInViewModel.signInLoading.value || signedIn.value) {
-                    Text(text = "Loading...", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Loading...", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily)
                     Spacer(modifier = Modifier.size(8.dp))
                     CircularProgressIndicator(
                         modifier = Modifier.size(12.dp),
@@ -147,7 +146,7 @@ fun SignInScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(text = "Sign in", color = colorResource(id = R.color.darkBlue))
+                    Text(text = "Sign in", color = colorResource(id = R.color.darkBlue), fontFamily = outfitFamily, fontSize = 16.sp)
                 }
             }
         }
@@ -211,15 +210,16 @@ fun SignInScreen(
 //        }
         Spacer(Modifier.size(16.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Don't have an account?", color = Color.White)
+            Text(text = "Don't have an account?", color = Color.White, fontFamily = outfitFamily)
             Text(
                 modifier = Modifier.clickable {
                     navController.navigate(Screen.SignUpUsername.route)
                 },
                 text = "Sign up",
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
-                textDecoration = TextDecoration.Underline
+                fontWeight = FontWeight.SemiBold,
+                textDecoration = TextDecoration.Underline,
+                fontFamily = outfitFamily
             )
         }
 

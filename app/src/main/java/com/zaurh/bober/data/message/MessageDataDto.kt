@@ -12,24 +12,26 @@ data class MessageDataDto(
     val text: String? = null,
     val senderUsername: String? = null,
     val senderUserId: String? = null,
+    val recipientUsername: String? = null,
     val recipientUserId: String? = null,
+    val replyingMessageId: String? = null,
+    val emoted: List<EmoteData>,
     val timestamp: Long? = null,
     var status: MessageStatus = MessageStatus.SENT,
-    var deliveredTimestamp: Long? = null,
     val id: String? = null,
 ){
     fun toMessageData(): MessageData {
-//        val formattedDate = formatTimestampToTime(timestamp ?: 0)
-
         return MessageData(
-            id = id,
-            text = text,
-            timestamp = timestamp.toString(),
-            status = status,
-            deliveredTimestamp = deliveredTimestamp,
-            senderUsername = senderUsername,
-            senderUserId = senderUserId,
-            recipientUserId = recipientUserId
+            id = id ?: "",
+            text = text ?: "",
+            timestamp = timestamp.toString() ?: "",
+            status = status ?: MessageStatus.SENT,
+            senderUsername = senderUsername ?: "",
+            senderUserId = senderUserId ?: "",
+            recipientUsername = recipientUsername ?: "",
+            recipientUserId = recipientUserId ?: "",
+            replyingMessageId = replyingMessageId ?: "",
+            emoted = emoted ?: listOf()
         )
     }
 }

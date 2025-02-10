@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun SearchBar(
@@ -21,7 +24,7 @@ fun SearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20)),
-        placeholder = { Text(text = placeHolder) },
+        placeholder = { Text(text = placeHolder, fontFamily = outfitFamily) },
         value = value,
         onValueChange = onValueChange,
         colors = TextFieldDefaults.colors(
@@ -30,6 +33,10 @@ fun SearchBar(
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent
         ),
-        singleLine = true
+        singleLine = true,
+        textStyle = TextStyle(
+            fontFamily = outfitFamily,
+            fontSize = 16.sp
+        )
     )
 }

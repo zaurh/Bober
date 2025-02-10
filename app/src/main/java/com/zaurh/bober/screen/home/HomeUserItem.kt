@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.zaurh.bober.R
+import com.zaurh.bober.data.message.EmoteData
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.data.user.ChatData
+import com.zaurh.bober.ui.theme.outfitFamily
 import com.zaurh.bober.util.lastSeenDayForMessage
 
 @Composable
@@ -40,6 +42,7 @@ fun HomeChatItem(
     lastMessageStatus: MessageStatus,
     lastMessageTime: Long,
     lastMessageSenderIsCurrent: Boolean,
+    lastMessageEmote: List<EmoteData>,
     typing: Boolean,
     newMessage: Boolean,
 //    newMessagesSize: Int,
@@ -89,11 +92,11 @@ fun HomeChatItem(
                 Text(
                     text = chatData.recipientUsername,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    fontFamily = outfitFamily
                 )
                 if (typing) {
-                    Text(text = "typing...", fontSize = 14.sp, color = Color.Gray)
-
+                    Text(text = "typing...", fontSize = 14.sp, color = Color.Gray, fontFamily = outfitFamily)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val tickIcon = when (lastMessageStatus) {
@@ -116,7 +119,8 @@ fun HomeChatItem(
                             fontSize = 14.sp,
                             color = Color.Gray,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            fontFamily = outfitFamily
                         )
                     }
                 }
@@ -130,7 +134,8 @@ fun HomeChatItem(
                 Text(
                     text = lastSeenDayForMessage(lastMessageTime),
                     color = if (newMessage) colorResource(id = R.color.backgroundTop) else Color.Gray,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    fontFamily = outfitFamily
                 )
                 Spacer(modifier = Modifier.size(4.dp))
                 if (newMessage){
@@ -143,22 +148,19 @@ fun HomeChatItem(
                             .padding(start = 6.dp, end = 6.dp),
                         text = "NEW",
                         color = Color.White,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        fontFamily = outfitFamily
                     )
+                }else{
+                    if (lastMessageEmote.isNotEmpty()){
+                        Row() {
+                            lastMessageEmote.forEach {
+                                Text(text = it.emoteSealed.displayName, fontFamily = outfitFamily)
+                            }
+                        }
+                    }
+
                 }
-//                if (newMessagesSize > 0) {
-//                    Text(
-//                        modifier = Modifier
-//                            .clip(
-//                                CircleShape
-//                            )
-//                            .background(colorResource(id = R.color.backgroundTop))
-//                            .padding(start = 6.dp, end = 6.dp),
-//                        text = "$newMessagesSize",
-//                        color = Color.White,
-//                        fontSize = 14.sp
-//                    )
-//                }
             }
         }
     }

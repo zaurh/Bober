@@ -21,6 +21,7 @@ import java.util.Date
 import java.util.Locale
 
 
+
 fun lastSeenDay(timestamp: Long?): String{
     val millisecondsInOneDay = 24 * 60 * 60 * 1000
 

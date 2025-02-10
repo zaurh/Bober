@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.zaurh.bober.data.responses.LikedUserData
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -37,7 +38,8 @@ fun LikedUserItem(
         Text(
             modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
             text = "${likedUserData.username}",
-            color = Color.White
+            color = Color.White,
+            fontFamily = outfitFamily
         )
     }
 }

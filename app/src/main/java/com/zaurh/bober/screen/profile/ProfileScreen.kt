@@ -34,6 +34,7 @@ fun ProfileScreen(
     blockedUsersViewModel: BlockedUsersViewModel,
     navController: NavController
 ) {
+//    val profileData = chatScreenViewModel.chatListState.value.chatList.find { it.recipientId == recipientId }
     val profileData = profileViewModel.profileDataState.collectAsState()
     var username by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()

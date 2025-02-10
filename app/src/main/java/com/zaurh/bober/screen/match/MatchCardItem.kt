@@ -46,6 +46,7 @@ import coil.compose.AsyncImage
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.screen.profile.ProfileViewModel
+import com.zaurh.bober.ui.theme.outfitFamily
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -54,7 +55,6 @@ fun MatchCardItem(
     modifier: Modifier,
     boberData: BoberData,
     profileViewModel: ProfileViewModel,
-    matchViewModel: MatchViewModel,
     onClick: () -> Unit,
     alphaOffSet: Float
 ) {
@@ -138,7 +138,8 @@ fun MatchCardItem(
                         color = Color.White,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier.padding(10.dp),
+                        fontFamily = outfitFamily
                     )
                     IconButton(colors = IconButtonDefaults.iconButtonColors(
                         containerColor = colorResource(id = R.color.pink)
@@ -167,7 +168,8 @@ fun MatchCardItem(
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier.padding(10.dp),
+                        fontFamily = outfitFamily
                     )
                 }
 
@@ -176,7 +178,8 @@ fun MatchCardItem(
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(10.dp)
+                    modifier = Modifier.padding(10.dp),
+                    fontFamily = outfitFamily
                 )
 
             }

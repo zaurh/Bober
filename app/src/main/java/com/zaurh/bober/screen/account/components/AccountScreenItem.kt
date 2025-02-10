@@ -20,8 +20,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zaurh.bober.ui.theme.outfitFamily
 
 @Composable
 fun AccountScreenItem(
@@ -48,7 +50,7 @@ fun AccountScreenItem(
                 contentDescription = ""
             )
             Spacer(modifier = Modifier.size(6.dp))
-            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, fontFamily = outfitFamily, textAlign = TextAlign.Center)
         }
         if (count != "0" && count != ""){
             Box(modifier = Modifier
