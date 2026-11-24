@@ -20,11 +20,12 @@ import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.chat.components.ChatBottomBar
 import com.zaurh.bober.screen.chat.components.Chat_Content
 import com.zaurh.bober.screen.chat.components.Chat_TopBar
+import com.zaurh.bober.screen.chat.modal_sheets.Chat_BackgroundSheet
+import com.zaurh.bober.screen.chat.modal_sheets.Chat_MessageActionsSheet
 import com.zaurh.bober.screen.chat.modal_sheets.Chat_ModalSheet
+import com.zaurh.bober.screen.chat.modal_sheets.Chat_ReactionsSheet
 import com.zaurh.bober.screen.profile.ProfileViewModel
-import com.zaurh.bober.screen.profile.components.BlockAlert
-import com.zaurh.bober.screen.profile.components.Profile_ReportAlert
-import com.zaurh.bober.screen.profile.components.UnMatchAlert
+import com.zaurh.bober.screen.profile.components.ProfileDialogs
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -77,6 +78,8 @@ fun ChatScreen(
         onBack = {
             if (chatScreenViewModel.gifState.value) {
                 chatScreenViewModel.onGifStateChange()
+            } else if (chatScreenViewModel.replyingTo.value != null) {
+                chatScreenViewModel.cancelReply()
             } else {
                 navController.popBackStack()
                 chatScreenViewModel.clearProfileData()
@@ -86,13 +89,26 @@ fun ChatScreen(
 
     Chat_ModalSheet(
         chatScreenViewModel = chatScreenViewModel,
-        navController = navController,
-        profileId = profileId ?: ""
+        onViewProfile = { navController.navigate(Screen.ProfileScreen.passUsername(username)) },
+        profileViewModel = profileViewModel
     )
 
-    Profile_ReportAlert(profileViewModel = profileViewModel)
-    BlockAlert(profileViewModel = profileViewModel, navController = navController)
-    UnMatchAlert(profileViewModel = profileViewModel, navController = navController)
+    Chat_MessageActionsSheet(chatScreenViewModel = chatScreenViewModel, currentUserId = userId)
+    Chat_ReactionsSheet(chatScreenViewModel = chatScreenViewModel, currentUserId = userId)
+    val chatList = chatScreenViewModel.chatList.collectAsState().value
+    Chat_BackgroundSheet(
+        chatScreenViewModel = chatScreenViewModel,
+        chat = chatList.firstOrNull { it?.recipientId == profileId }
+    )
+
+    ProfileDialogs(
+        viewModel = profileViewModel,
+        user = profileDataState.value,
+        onRelationshipEnded = {
+            chatScreenViewModel.clearProfileData()
+            navController.popBackStack(Screen.PagerScreen.route, inclusive = false)
+        }
+    )
 
     Box {
         Scaffold(

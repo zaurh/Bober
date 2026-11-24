@@ -9,6 +9,12 @@ object Constants {
     /** OkHttp maps https:// to wss:// for WebSockets. */
     const val WEBSOCKET_URL = "$BASE_URL/chat-socket"
 
+    /**
+     * Web OAuth client of the Firebase/Google Cloud project. Google sign-in asks for an ID token for this
+     * client, and the backend (`/google_verify`) only accepts tokens issued for it (its `AUDIENCE`).
+     */
+    const val GOOGLE_WEB_CLIENT_ID = "107296471290-669ebbhg158lsqapptts39j60prtdreb.apps.googleusercontent.com"
+
     //Tenor GIF
     const val TENOR_BASE_URL = "https://api.tenor.com/v1/"
     const val TENOR_API_KEY = "LIVDSRZULELA"

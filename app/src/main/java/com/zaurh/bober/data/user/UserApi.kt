@@ -1,6 +1,11 @@
 package com.zaurh.bober.data.user
 
+import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
+import com.zaurh.bober.data.requests.GoogleTokenRequest
+import com.zaurh.bober.data.requests.SendEmailRequest
+import com.zaurh.bober.data.requests.UpdatePasswordRequest
+import com.zaurh.bober.data.requests.FcmTokenRequest
 import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
@@ -49,12 +54,32 @@ interface UserApi {
     @POST("/sign_in")
     suspend fun signIn(@Body request: SignInRequest): SignInResponse
 
+    /** Signs in with a Google ID token, creating the account on first use. Same response as /sign_in. */
+    @POST("/google_verify")
+    suspend fun signInWithGoogle(@Body request: GoogleTokenRequest): SignInResponse
+
     /** Public on purpose: sign-up uploads the profile picture before the account exists. */
     @Multipart
     @POST("/add_media")
     suspend fun uploadMedia(@Part image: MultipartBody.Part): AddMediaResponse
 
+    // --- Password reset (public; the emailed token authorizes the change) ---
+
+    /** Emails a reset link (`…/reset-password?token=…`) to the account with this verified email. */
+    @POST("/reset-password")
+    suspend fun sendPasswordReset(@Body request: SendEmailRequest): MessageResponse
+
+    @POST("/validate_password_token")
+    suspend fun validatePasswordToken(@Body request: ValidateTokenRequest): MessageResponse
+
+    /** Works with a reset token, or with the JWT of the user whose password changes. */
+    @POST("/update_password")
+    suspend fun updatePassword(@Body request: UpdatePasswordRequest): MessageResponse
+
     // --- Auth (JWT) ---
+
+    @POST("/check_current_password")
+    suspend fun checkCurrentPassword(@Body request: CheckCurrentPasswordRequest): MessageResponse
 
     @GET("/authenticate")
     suspend fun authenticate(): AuthenticateResponse
@@ -77,6 +102,10 @@ interface UserApi {
 
     @DELETE("/delete_user_data")
     suspend fun deleteUserData(): MessageResponse
+
+    /** Saves this device's FCM token so the backend can push while the app is closed. */
+    @PUT("/store_fcm_token")
+    suspend fun storeFcmToken(@Body request: FcmTokenRequest): MessageResponse
 
     @PUT("/premium")
     suspend fun activatePremium(@Body request: PremiumCardRequest): UpdateUserResponse

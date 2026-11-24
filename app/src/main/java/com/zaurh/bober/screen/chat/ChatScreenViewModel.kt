@@ -1,5 +1,7 @@
 package com.zaurh.bober.screen.chat
 
+import java.util.UUID
+import com.zaurh.bober.data.message.formatTimestampToTime
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -8,7 +10,10 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zaurh.bober.data.message.EmoteSealed
 import com.zaurh.bober.data.message.MessageStatus
+import com.zaurh.bober.data.user.ChatBackground
+import com.zaurh.bober.data.user.ChatData
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.websocket.SocketEvent
 import com.zaurh.bober.domain.repository.MessageRepository
@@ -18,7 +23,6 @@ import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.screen.match.GotMatchState
 import com.zaurh.bober.screen.settings.notifications.notifyForSocketEvent
-import com.zaurh.bober.services.RunningService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +45,22 @@ class ChatScreenViewModel @Inject constructor(
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
     val profileDataState: StateFlow<UserData?> = userRepository.profileData
+    val chatList: StateFlow<List<ChatData?>> = messageRepository.chatList
+
+    /** Message being replied to; shown above the input and sent with the next message. */
+    private val _replyingTo = mutableStateOf<MessageData?>(null)
+    val replyingTo: State<MessageData?> = _replyingTo
+
+    /** Long-pressed message whose actions sheet (react / reply / copy) is open. */
+    private val _actionsFor = mutableStateOf<MessageData?>(null)
+    val actionsFor: State<MessageData?> = _actionsFor
+
+    /** Message whose reactions list is open. */
+    private val _reactionsFor = mutableStateOf<MessageData?>(null)
+    val reactionsFor: State<MessageData?> = _reactionsFor
+
+    private val _backgroundSheet = mutableStateOf(false)
+    val backgroundSheet: State<Boolean> = _backgroundSheet
 
     private val _getNotificationState = mutableStateOf(GetNotificationState())
 
@@ -65,6 +85,10 @@ class ChatScreenViewModel @Inject constructor(
     private val _state = mutableStateOf(ChatState())
     val state: State<ChatState> = _state
 
+    /** Messages typed while offline, oldest first. Sent in order once the socket is back. */
+    private data class Outgoing(val localId: String, val text: String, val replyId: String?, val recipientId: String)
+    private val outbox = ArrayDeque<Outgoing>()
+
     private var typingJob: Job? = null
     private var searchGifJob: Job? = null
     private var socketJobs: List<Job> = emptyList()
@@ -80,6 +104,10 @@ class ChatScreenViewModel @Inject constructor(
         appContext = context.applicationContext
         webSocketRepository.connect()
         getAllMessages()
+        // Holds per-chat settings like the background; may be empty when opened from a notification.
+        if (messageRepository.chatList.value.isEmpty()) {
+            viewModelScope.launch(Dispatchers.IO) { messageRepository.getChatList() }
+        }
 
         if (socketJobs.any { it.isActive }) return
         _state.value = state.value.copy(socketIsObserving = true)
@@ -92,6 +120,7 @@ class ChatScreenViewModel @Inject constructor(
         var wasConnected = false
         val reconnectJob = webSocketRepository.isConnected
             .onEach { connected ->
+                if (connected) flushOutbox()
                 if (connected && wasConnected) getAllMessages()
                 if (connected) wasConnected = true
             }
@@ -132,8 +161,7 @@ class ChatScreenViewModel @Inject constructor(
             is SocketEvent.Matched -> onMatched(event)
             is SocketEvent.Unmatched -> onRelationshipEnded(event.command.otherThan(currentUserId))
             is SocketEvent.Blocked -> onRelationshipEnded(event.command.otherThan(currentUserId))
-            // Reactions aren't shown in this app yet; they must not be treated as new messages.
-            is SocketEvent.ReactionChanged -> Unit
+            is SocketEvent.ReactionChanged -> event.message?.let { onReactionChanged(it.toMessageData()) }
             SocketEvent.NoLongerMatched -> toast("You are no longer matched.")
             is SocketEvent.Unknown -> Log.d(TAG, "Unhandled socket frame: ${event.raw}")
         }
@@ -142,6 +170,8 @@ class ChatScreenViewModel @Inject constructor(
 
     private fun onNewMessage(event: SocketEvent.NewMessage) {
         val message = event.message.toMessageData()
+        // The server's echo of a queued message replaces its local "sending" placeholder.
+        if (message.senderUserId == currentUserId) removePlaceholderFor(message)
         val messages = state.value.messages
         if (message.id != null && messages.any { it.id == message.id }) return
         _state.value = state.value.copy(messages = listOf(message) + messages)
@@ -150,6 +180,15 @@ class ChatScreenViewModel @Inject constructor(
         val partnerId = if (message.senderUserId == currentUserId) message.recipientUserId else message.senderUserId
         if (messageRepository.chatList.value.none { it?.recipientId == partnerId }) {
             viewModelScope.launch(Dispatchers.IO) { messageRepository.getChatList() }
+        }
+    }
+
+    /** Reactions update an existing message in place; they are never new messages. */
+    private fun onReactionChanged(updated: MessageData) {
+        val id = updated.id ?: return
+        updateMessages(shouldUpdate = { it.id == id }, update = { it.copy(emoted = updated.emoted) })
+        _reactionsFor.value?.takeIf { it.id == id }?.let { open ->
+            _reactionsFor.value = if (updated.emoted.isEmpty()) null else open.copy(emoted = updated.emoted)
         }
     }
 
@@ -216,8 +255,7 @@ class ChatScreenViewModel @Inject constructor(
     }
 
     private suspend fun showNotificationIfNeeded(event: SocketEvent) {
-        // While the app is in the background RunningService shows notifications instead.
-        if (RunningService.isRunning) return
+        // The socket only runs in the foreground; in the background, push notifications take over.
         val context = appContext ?: return
         val notificationState = _getNotificationState.value
         withContext(Dispatchers.IO) {
@@ -241,12 +279,61 @@ class ChatScreenViewModel @Inject constructor(
     fun sendMessage() {
         val text = messageText.value
         if (text.isBlank()) return
-        if (webSocketRepository.sendMessage(text)) {
-            _messageText.value = ""
-            _gifState.value = false
-        } else {
-            toast("Not connected. Please try again in a moment.")
+        val replyId = replyingTo.value?.id
+        val sent = webSocketRepository.isConnected.value && send(text, replyId)
+        if (!sent) queue(text, replyId) ?: return
+        _messageText.value = ""
+        _gifState.value = false
+        _replyingTo.value = null
+    }
+
+    private fun send(text: String, replyId: String?): Boolean =
+        if (replyId != null) webSocketRepository.sendReply(replyId, text) else webSocketRepository.sendMessage(text)
+
+    /** Offline: shows the message with a clock icon and sends it on reconnect. Null if there's no open chat. */
+    private fun queue(text: String, replyId: String?): Unit? {
+        val me = userDataState.value ?: return null
+        val recipient = profileDataState.value ?: return null
+        val recipientId = recipient.id?.takeIf { it.isNotEmpty() } ?: return null
+        val localId = "local-${UUID.randomUUID()}"
+        outbox.addLast(Outgoing(localId, text, replyId, recipientId))
+        val placeholder = MessageData(
+            id = localId,
+            text = text,
+            senderUsername = me.username,
+            senderUserId = me.id,
+            recipientUserId = recipientId,
+            recipientUsername = recipient.username,
+            timestamp = formatTimestampToTime(System.currentTimeMillis()),
+            status = MessageStatus.SENDING,
+            replyingMessageId = replyId,
+        )
+        _state.value = state.value.copy(messages = listOf(placeholder) + state.value.messages)
+        return Unit
+    }
+
+    /**
+     * Sends queued messages in order. The backend delivers to the "current recipient", so each one is
+     * sent to its own chat, then the open chat is selected again.
+     */
+    private fun flushOutbox() {
+        if (outbox.isEmpty()) return
+        val openChat = profileDataState.value?.id
+        while (outbox.isNotEmpty()) {
+            val next = outbox.first()
+            webSocketRepository.switchRecipient(next.recipientId)
+            if (!send(next.text, next.replyId)) break // Dropped again; retry on the next reconnect.
+            outbox.removeFirst()
         }
+        openChat?.takeIf { it.isNotEmpty() }?.let(webSocketRepository::switchRecipient)
+    }
+
+    private fun removePlaceholderFor(echo: MessageData) {
+        val messages = state.value.messages
+        val placeholder = messages.lastOrNull {
+            it.status == MessageStatus.SENDING && it.text == echo.text && it.recipientUserId == echo.recipientUserId
+        } ?: return
+        _state.value = state.value.copy(messages = messages - placeholder)
     }
 
     fun onMessageChange(message: String) {
@@ -293,7 +380,9 @@ class ChatScreenViewModel @Inject constructor(
             _state.value = state.value.copy(isLoading = true)
             val result = messageRepository.getPrivateMessages()
             _state.value = if (result.success) {
-                state.value.copy(messages = result.messageList.map { it.toMessageData() }, isLoading = false)
+                // Keep messages still waiting in the outbox; the server doesn't know about them yet.
+                val pending = state.value.messages.filter { it.status == MessageStatus.SENDING }
+                state.value.copy(messages = pending + result.messageList.map { it.toMessageData() }, isLoading = false)
             } else {
                 // Keep what is on screen rather than wiping the conversation on a network error.
                 state.value.copy(isLoading = false)
@@ -316,6 +405,77 @@ class ChatScreenViewModel @Inject constructor(
             withContext(Dispatchers.Main) {
                 if (response.success) onSuccess() else toast(response.message)
             }
+        }
+    }
+
+    // --- Message actions: reply, react, copy ---
+
+    fun openMessageActions(message: MessageData) {
+        // Queued messages have no server id yet, so they can't be reacted or replied to.
+        if (message.id != null && message.status != MessageStatus.SENDING) _actionsFor.value = message
+    }
+
+    fun closeMessageActions() {
+        _actionsFor.value = null
+    }
+
+    fun startReply(message: MessageData) {
+        _actionsFor.value = null
+        if (message.status == MessageStatus.SENDING) return
+        _replyingTo.value = message
+    }
+
+    fun cancelReply() {
+        _replyingTo.value = null
+    }
+
+    /** Picking the reaction the user already left removes it; anything else adds or replaces it. */
+    fun react(message: MessageData, emote: EmoteSealed) {
+        _actionsFor.value = null
+        val messageId = message.id ?: return
+        val currentUser = userDataState.value ?: return
+        val mine = message.emoted.firstOrNull { it.senderId == currentUser.id }?.emoteSealed
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = if (mine == emote) {
+                messageRepository.removeEmote(messageId)
+            } else {
+                messageRepository.emoteMessage(messageId, emote, currentUser)
+            }
+            if (!response.success) toast(response.message)
+        }
+    }
+
+    fun removeMyReaction(message: MessageData) {
+        val messageId = message.id ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = messageRepository.removeEmote(messageId)
+            if (!response.success) toast(response.message)
+        }
+    }
+
+    fun openReactions(message: MessageData) {
+        if (message.emoted.isNotEmpty()) _reactionsFor.value = message
+    }
+
+    fun closeReactions() {
+        _reactionsFor.value = null
+    }
+
+    // --- Chat background ---
+
+    fun openBackgroundSheet() {
+        _modalSheetState.value = false
+        _backgroundSheet.value = true
+    }
+
+    fun closeBackgroundSheet() {
+        _backgroundSheet.value = false
+    }
+
+    fun changeBackground(recipientId: String, background: ChatBackground, doodle: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = messageRepository.changeChatBackground(recipientId, background, doodle)
+            if (!response.success) toast(response.message)
         }
     }
 

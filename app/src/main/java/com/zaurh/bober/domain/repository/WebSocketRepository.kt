@@ -23,6 +23,13 @@ interface WebSocketRepository {
     /** Closes the connection and stops reconnecting. */
     fun disconnect()
 
+    /**
+     * Closes the connection while the app is in the background, so the backend sees the user as
+     * offline and sends push notifications instead. Unlike [disconnect], the open chat is remembered
+     * and re-selected by the next [connect].
+     */
+    fun pause()
+
     /** Selects the chat partner that subsequent messages, typing and read receipts are for. */
     fun switchRecipient(recipientUserId: String)
 
@@ -32,5 +39,8 @@ interface WebSocketRepository {
     fun markMessagesRead()
 
     /** Sends a chat message to the current recipient. Returns false if the socket isn't open. */
+    /** Sends [text] as a reply to the message with [replyingMessageId] (a 36-char UUID). */
+    fun sendReply(replyingMessageId: String, text: String): Boolean
+
     fun sendMessage(text: String): Boolean
 }

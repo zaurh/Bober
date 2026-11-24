@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.liked_users
 
+import com.zaurh.bober.ui.components.BackTopBar
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
@@ -9,7 +10,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.liked_users.components.LU_Content
-import com.zaurh.bober.screen.liked_users.components.LU_TopBar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -23,7 +23,7 @@ fun LikedUsersScreen(
 
     Scaffold(
         topBar = {
-            LU_TopBar(navController = navController)
+            BackTopBar(title = "Liked users", onBack = { navController.popBackStack() })
         },
         content = { paddingValues ->
             LU_Content(

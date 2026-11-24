@@ -2,6 +2,7 @@ package com.zaurh.bober.screen.settings.notifications
 
 import android.content.Context
 import com.zaurh.bober.data.websocket.SocketEvent
+import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,22 +26,23 @@ suspend fun notifyForSocketEvent(
             if (message.senderUserId == currentUserId || message.senderUserId == openChatWith) return
             if (!preferences.getMessagesStatus.isEnabled()) return
             showNotification(
-                channelId = "chat",
                 context = context,
+                type = NotificationType.CHAT,
                 title = message.senderUsername,
                 text = if (message.text.endsWith(".gif")) "Sent GIF" else message.text,
-                notificationType = NotificationType.CHAT
+                route = chatRoute(message.senderUsername),
+                conversationKey = message.senderUserId,
             )
         }
 
         is SocketEvent.LikeReceived -> {
             if (!preferences.getLikesStatus.isEnabled()) return
             showNotification(
-                channelId = "like",
                 context = context,
+                type = NotificationType.LIKE,
                 title = "Bober",
                 text = "Someone liked you!",
-                notificationType = NotificationType.LIKE
+                route = Screen.WhoLikesScreen.route,
             )
         }
 
@@ -49,11 +51,11 @@ suspend fun notifyForSocketEvent(
             if (event.match.senderUserId == currentUserId) return
             if (!preferences.getMatchStatus.isEnabled()) return
             showNotification(
-                channelId = "match",
                 context = context,
+                type = NotificationType.MATCH,
                 title = "Bober",
                 text = "You've got a new match!",
-                notificationType = NotificationType.MATCH
+                route = Screen.PagerScreen.route,
             )
         }
 
@@ -62,4 +64,4 @@ suspend fun notifyForSocketEvent(
 }
 
 /** Reads the current value once. (Collecting would never return and re-fire on every settings change.) */
-private suspend fun Flow<Boolean>.isEnabled(): Boolean = first()
+internal suspend fun Flow<Boolean>.isEnabled(): Boolean = first()

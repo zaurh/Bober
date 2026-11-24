@@ -3,33 +3,23 @@ package com.zaurh.bober.navigation
 import com.zaurh.bober.screen.sign_up.sign_up_gender.SignUpGender
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.zaurh.bober.screen.account.AccountScreen
 import com.zaurh.bober.screen.blocked_users.BlockedUsersScreen
 import com.zaurh.bober.screen.blocked_users.BlockedUsersViewModel
 import com.zaurh.bober.screen.chat.ChatScreen
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.edit_profile.EditProfileScreen
-import com.zaurh.bober.screen.home.HomeScreen
 import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.liked_users.LikedUsersScreen
-import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
-import com.zaurh.bober.screen.match.components.GotMatchAlert
 import com.zaurh.bober.screen.pager.PagerScreen
 import com.zaurh.bober.screen.profile.ProfileScreen
-import com.zaurh.bober.screen.profile.ProfileViewModel
 import com.zaurh.bober.screen.settings.SettingsScreen
 import com.zaurh.bober.screen.settings.notifications.NotificationScreen
 import com.zaurh.bober.screen.sign_in.SignInScreen
@@ -56,7 +46,6 @@ fun SetupNavGraph(
     val blockedUsersViewModel = hiltViewModel<BlockedUsersViewModel>()
     val whoLikesViewModel = hiltViewModel<WhoLikesViewModel>()
     val homeViewModel = hiltViewModel<HomeViewModel>()
-    val profileViewModel = hiltViewModel<ProfileViewModel>()
 
 
 
@@ -89,18 +78,6 @@ fun SetupNavGraph(
                 signInViewModel = signInViewModel
             )
         }
-        composable(route = Screen.MatchScreen.route) {
-            MatchScreen(
-                matchViewModel = matchViewModel,
-                chatScreenViewModel = chatScreenViewModel,
-                navController = navController
-            )
-        }
-        composable(route = Screen.AccountScreen.route) {
-            AccountScreen(
-                navController = navController
-            )
-        }
         composable(
             route = Screen.ProfileScreen.route, arguments = listOf(
                 navArgument("username") { type = NavType.StringType },
@@ -108,11 +85,7 @@ fun SetupNavGraph(
         ) { backStackEntry ->
             val arguments = requireNotNull(backStackEntry.arguments)
             val username = arguments.getString("username")
-            ProfileScreen(
-                username = username ?: "",
-                navController = navController,
-                profileViewModel = profileViewModel
-            )
+            ProfileScreen(username = username ?: "", navController = navController)
         }
         composable(
             route = Screen.ChatScreen.route,
@@ -160,13 +133,6 @@ fun SetupNavGraph(
         composable(route = Screen.EditProfileScreen.route) {
             EditProfileScreen(
                 navController = navController
-            )
-        }
-        composable(route = Screen.HomeScreen.route) {
-            HomeScreen(
-                navController = navController,
-                chatScreenViewModel = chatScreenViewModel,
-                homeViewModel = homeViewModel
             )
         }
     }

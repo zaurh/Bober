@@ -1,199 +1,132 @@
 package com.zaurh.bober.screen.profile
 
-import android.content.Context
-import android.widget.Toast
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zaurh.bober.data.report.Reason
+import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** Which confirmation is open on a profile (or on the chat screen, which reuses these). */
+enum class ProfileDialog { Unmatch, Block, Report }
+
+data class ReportForm(
+    val reason: Reason? = null,
+    val details: String = "",
+)
+
+data class ProfileUiState(
+    /** The profile shown on this screen; null until loaded. */
+    val user: UserData? = null,
+    val loading: Boolean = false,
+    val error: String? = null,
+    /** A like / pass / unmatch / block / report request is in flight. */
+    val busy: Boolean = false,
+    val dialog: ProfileDialog? = null,
+    val report: ReportForm = ReportForm(),
+)
+
+/**
+ * Another user's profile and the relationship actions on it. Each profile screen gets its own
+ * instance, so opening one profile from another never shows stale data or photo positions.
+ */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
 ) : ViewModel() {
 
     val currentUserDataState: StateFlow<UserData?> = userRepository.userData
-    val profileDataState: StateFlow<UserData?> = userRepository.profileData
 
-    private val _unMatchLoading = mutableStateOf(false)
-    val unMatchLoading: State<Boolean> = _unMatchLoading
+    private val _state = mutableStateOf(ProfileUiState())
+    val state: State<ProfileUiState> = _state
 
-    private val _unLikeLoading = mutableStateOf(false)
-    val unLikeLoading: State<Boolean> = _unLikeLoading
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    /** One-off messages for a toast (errors, "reported"). */
+    val messages: SharedFlow<String> = _messages
 
-    private val _reportState = mutableStateOf(ReportState())
-    val reportState: State<ReportState> = _reportState
-
-    private val _imageIndex: MutableState<Int?> = mutableStateOf(null)
-    val imageIndex: State<Int?> = _imageIndex
-
-    private val _blockAlertState = mutableStateOf(false)
-    val blockAlertState: State<Boolean> = _blockAlertState
-
-    private val _unmatchAlertState = mutableStateOf(false)
-    val unmatchAlertState: State<Boolean> = _unmatchAlertState
-
-    fun updateIndex(index: Int) {
-        _imageIndex.value = index
+    private fun update(transform: ProfileUiState.() -> ProfileUiState) {
+        _state.value = _state.value.transform()
     }
 
-
-    fun getProfileID(username: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.getProfileID(username)
-        }
-    }
-
-
-    fun clearProfileData() {
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.clearProfileData()
-        }
-    }
-
-    fun like(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.like(recipientId)
-            if (response.success){
-                clearProfileData()
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
-
-    fun unLike(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.unlike(recipientId)
-            if (response.success) {
-                clearProfileData()
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
-
-    fun pass(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.pass(recipientId)
-            if (response.success){
-                clearProfileData()
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
-
-    fun onUnMatchStateChange() {
-        _unmatchAlertState.value = !unmatchAlertState.value
-    }
-
-    fun unMatch(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.unmatch(recipientId)
-            if (response.success) {
-                _unmatchAlertState.value = false
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
-
-    fun onBlockStateChange() {
-        _blockAlertState.value = !blockAlertState.value
-    }
-
-    fun block(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.block(recipientId)
-            if (response.success) {
-                _blockAlertState.value = false
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
-        }
-    }
-
-    fun report(recipientId: String, context: Context) {
-        _reportState.value = reportState.value.copy(
-            loading = true
-        )
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.report(
-                recipientId = recipientId,
-                reason = reportState.value.selectedReason.displayName,
-                optional = reportState.value.optionalReason.ifEmpty { "No optional" }
-            )
-            if (response.success) {
-                viewModelScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "User has been reported successfully", Toast.LENGTH_SHORT)
-                        .show()
-                }
-                _reportState.value = reportState.value.copy(
-                    reportState = false,
+    fun load(username: String) {
+        if (state.value.user?.username == username) return
+        update { copy(loading = true, error = null) }
+        viewModelScope.launch {
+            val response = userRepository.getProfileID(username)
+            update {
+                copy(
                     loading = false,
-                    optionalReason = "",
-                    selectedReason = Reason.NOT_SELECTED
+                    user = if (response.success) response.user else user,
+                    error = if (response.success) null else response.message
                 )
-            } else {
-                _reportState.value = reportState.value.copy(
-                    error = response.message,
-                    loading = false
-                )
-                viewModelScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
-                }
             }
         }
     }
 
-    fun unblock(recipientId: String, onSuccess: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.unblock(recipientId)
-            if (response.success) {
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
+    // --- Relationship actions. [onSuccess] runs on the main thread, typically to navigate away. ---
+
+    fun like(recipientId: String, onSuccess: () -> Unit) = action(onSuccess) { userRepository.like(recipientId) }
+
+    fun pass(recipientId: String, onSuccess: () -> Unit) = action(onSuccess) { userRepository.pass(recipientId) }
+
+    fun unLike(recipientId: String, onSuccess: () -> Unit) = action(onSuccess) { userRepository.unlike(recipientId) }
+
+    fun unblock(recipientId: String, onSuccess: () -> Unit = {}) = action(onSuccess) { userRepository.unblock(recipientId) }
+
+    fun unMatch(recipientId: String, onSuccess: () -> Unit) =
+        action({ closeDialog(); onSuccess() }) { userRepository.unmatch(recipientId) }
+
+    fun block(recipientId: String, onSuccess: () -> Unit) =
+        action({ closeDialog(); onSuccess() }) { userRepository.block(recipientId) }
+
+    fun report(recipientId: String) {
+        val form = state.value.report
+        val reason = form.reason ?: return
+        action({
+            closeDialog()
+            _messages.tryEmit("Thanks, we'll review this report.")
+        }) {
+            userRepository.report(
+                recipientId = recipientId,
+                reason = reason.displayName,
+                optional = form.details.trim().ifEmpty { "No optional" }
+            )
         }
     }
 
-    fun onReportStateChange() {
-        _reportState.value = reportState.value.copy(
-            reportState = !reportState.value.reportState
-        )
+    private fun action(onSuccess: () -> Unit, call: suspend () -> MessageResponse) {
+        if (state.value.busy) return
+        update { copy(busy = true) }
+        viewModelScope.launch {
+            val response = call()
+            update { copy(busy = false) }
+            if (response.success) onSuccess() else _messages.emit(response.message)
+        }
     }
 
-    fun onDropdownChange() {
-        _reportState.value = reportState.value.copy(
-            reasonDropdown = !reportState.value.reasonDropdown
-        )
+    // --- Dialogs ---
+
+    fun openDialog(dialog: ProfileDialog) {
+        update { copy(dialog = dialog, report = if (dialog == ProfileDialog.Report) ReportForm() else report) }
+    }
+
+    fun closeDialog() {
+        update { copy(dialog = null) }
     }
 
     fun selectReason(reason: Reason) {
-        _reportState.value = reportState.value.copy(
-            selectedReason = reason
-        )
+        update { copy(report = report.copy(reason = reason)) }
     }
 
-    fun onOptionalChange(reason: String) {
-        _reportState.value = reportState.value.copy(
-            optionalReason = reason
-        )
+    fun onReportDetailsChange(details: String) {
+        if (details.length <= 300) update { copy(report = report.copy(details = details)) }
     }
-
 }

@@ -67,7 +67,9 @@ class SettingsViewModel @Inject constructor(
 
     fun onShowMeStateChange(change: Boolean) {
         _showMeState.value = showMeState.value.copy(
-            state = change
+            state = change,
+            // Start from the saved value; the profile may have loaded after this screen opened.
+            showMe = if (change) userDataState.value?.showMe ?: showMeState.value.showMe else showMeState.value.showMe
         )
     }
 
@@ -130,41 +132,36 @@ class SettingsViewModel @Inject constructor(
     }
 
 
-    fun logout(onSuccess: () -> Unit){
-        viewModelScope.launch(Dispatchers.IO){
-            val response = authRepo.logout()
-            if (response.success){
-                userRepository.clearProfileData()
-                userRepository.clearUserData()
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-            }
+    fun logout(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            // Clears the token and every cache, and disconnects the socket.
+            if (authRepo.logout().success) onSuccess()
         }
     }
 
-    fun deleteAccount(onSuccess: () -> Unit){
-        _deleteAccountState.value = deleteAccountState.value.copy(
-            loading = true
-        )
-        viewModelScope.launch(Dispatchers.IO){
-            userRepository.clearProfileData()
-            userRepository.clearUserData()
+    private val _error = mutableStateOf<String?>(null)
+    /** A failed action's message, shown once as a toast. */
+    val error: State<String?> = _error
 
+    fun errorShown() {
+        _error.value = null
+    }
+
+    fun deleteAccount(onSuccess: () -> Unit) {
+        if (deleteAccountState.value.loading) return
+        _deleteAccountState.value = deleteAccountState.value.copy(loading = true)
+        viewModelScope.launch {
             val response = userRepository.deleteUserData()
-            if (response.success){
+            _deleteAccountState.value = deleteAccountState.value.copy(loading = false)
+            if (response.success) {
+                // Logging out clears every cache and disconnects the socket.
                 authRepo.logout()
-                viewModelScope.launch(Dispatchers.Main) {
-                    onSuccess()
-                }
-                _deleteAccountState.value = deleteAccountState.value.copy(
-                    loading = false
-                )
+                _deleteAccountState.value = DeleteAccountState()
+                onSuccess()
+            } else {
+                _error.value = response.message
             }
         }
-        _deleteAccountState.value = deleteAccountState.value.copy(
-            loading = false
-        )
     }
 
 }

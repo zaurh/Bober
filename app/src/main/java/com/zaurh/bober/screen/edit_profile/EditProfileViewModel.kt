@@ -22,10 +22,17 @@ import com.zaurh.bober.screen.edit_profile.states.LanguageState
 import com.zaurh.bober.screen.edit_profile.states.UsernameState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+/** The backend keeps at most this many profile photos. */
+const val MAX_PHOTOS = 6
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
@@ -63,7 +70,7 @@ class EditProfileViewModel @Inject constructor(
     private val _aboutMeState = mutableStateOf(userDataState.value?.aboutMe ?: "")
     val aboutMeState: State<String> = _aboutMeState
 
-    private val _heightTextState = mutableStateOf(userDataState.value?.height.toString())
+    private val _heightTextState = mutableStateOf(userDataState.value?.height?.takeIf { it > 0 }?.toString().orEmpty())
     val heightTextState: State<String> = _heightTextState
 
     private val _jobTitleState = mutableStateOf(userDataState.value?.jobTitle ?: "")
@@ -89,6 +96,31 @@ class EditProfileViewModel @Inject constructor(
 
     private val _genderState = mutableStateOf(false)
     val genderState: State<Boolean> = _genderState
+
+    init {
+        // The screen can open before the profile has loaded; fill the form once it arrives, so saving
+        // never overwrites the real profile with empty fields.
+        if (userDataState.value == null) {
+            viewModelScope.launch {
+                userDataState.filterNotNull().first().let { user ->
+                    if (!discardChanges.value) fillFrom(user)
+                }
+            }
+        }
+    }
+
+    private fun fillFrom(user: UserData) {
+        _usernameState.value = usernameState.value.copy(text = user.username.orEmpty())
+        _nameState.value = user.name.orEmpty()
+        _images.value = user.imageUrl.orEmpty()
+        _aboutMeState.value = user.aboutMe.orEmpty()
+        _heightTextState.value = user.height?.takeIf { it > 0 }?.toString().orEmpty()
+        _jobTitleState.value = user.jobTitle.orEmpty()
+        _gender.value = user.gender
+        _birthDateState.value = user.birthDate.orEmpty()
+        _languageState.value = languageState.value.copy(selectedLanguages = user.languages.orEmpty())
+        _interestsState.value = interestsState.value.copy(selectedInterests = user.interests.orEmpty())
+    }
 
 
     fun onUsernameChange(username: String) {
@@ -238,36 +270,38 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    /** Errors (failed save, upload, delete) to show as a toast. */
+    val messages: SharedFlow<String> = _messages
+
     fun updateUserData(onSuccess: () -> Unit) {
+        if (loadingState.value) return
         viewModelScope.launch(Dispatchers.IO) {
             _loadingState.value = true
-            userRepository.updateUserData(
+            val response = userRepository.updateUserData(
                 userUpdate = UserUpdate(
                     name = nameState.value,
                     aboutMe = aboutMeState.value,
                     languages = languageState.value.selectedLanguages,
                     interests = interestsState.value.selectedInterests,
                     imageUrl = images.value,
-                    height = heightTextState.value.toInt(),
+                    height = heightTextState.value.toIntOrNull() ?: 0,
                     jobTitle = jobTitleState.value,
                     gender = gender.value,
                     birthDate = birthDateState.value
                 ),
-                onSuccess = {
-                    viewModelScope.launch(Dispatchers.Main) {
-                        onSuccess()
-                    }
-                    _loadingState.value = false
-                },
-                onFailure = {
-                    _loadingState.value = false
-                }
             )
+            _loadingState.value = false
+            if (response.success) {
+                _discardChanges.value = false
+                withContext(Dispatchers.Main) { onSuccess() }
+            } else {
+                _messages.emit(response.message)
+            }
         }
     }
 
     fun uploadMedia(
-        description: String,
         imageUri: Uri,
         contentResolver: ContentResolver,
         context: Context,
@@ -308,7 +342,7 @@ class EditProfileViewModel @Inject constructor(
 
     fun updateImage(fileLink: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            if ((userDataState.value?.imageUrl?.size ?: 0) < 6) {
+            if ((userDataState.value?.imageUrl?.size ?: 0) < MAX_PHOTOS) {
                 userRepository.updateUserData(
                     userUpdate = UserUpdate(
                         imageUrl = userDataState.value?.imageUrl?.plus(fileLink)
@@ -351,6 +385,7 @@ class EditProfileViewModel @Inject constructor(
                             loading = false,
                             selectedImage = ""
                         )
+                        _messages.tryEmit("Couldn't delete the photo. Please try again.")
                     }
                 )
             }else{

@@ -202,6 +202,7 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun like(recipientId: String): MessageResponse =
         relationshipAction({ api.like(recipientId) }) {
+            _boberDataList.update { list -> list.filterNot { it?.userId == recipientId } }
             // Likes cost a token and may create a match; both live on the user.
             getUserData()
         }
@@ -214,7 +215,9 @@ class UserRepoImpl @Inject constructor(
 
     // The swipe deck advances on its own, and the server drops passed users from the next /bobers.
     override suspend fun pass(recipientId: String): MessageResponse =
-        apiCall({ MessageResponse(success = false, message = it) }) { api.pass(recipientId) }
+        relationshipAction({ api.pass(recipientId) }) {
+            _boberDataList.update { list -> list.filterNot { it?.userId == recipientId } }
+        }
 
     override suspend fun unmatch(recipientId: String): MessageResponse =
         relationshipAction({ api.unmatch(recipientId) }) {

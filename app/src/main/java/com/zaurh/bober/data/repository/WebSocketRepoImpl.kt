@@ -65,11 +65,17 @@ class WebSocketRepoImpl @Inject constructor(
     }
 
     override fun disconnect() {
+        close()
+        currentRecipientId = null
+    }
+
+    override fun pause() = close()
+
+    private fun close() {
         synchronized(lock) {
             shouldBeConnected = false
             reconnectJob?.cancel()
             reconnectJob = null
-            currentRecipientId = null
             socket?.close(NORMAL_CLOSURE, null)
             socket = null
             _isConnected.value = false
@@ -90,6 +96,10 @@ class WebSocketRepoImpl @Inject constructor(
     }
 
     override fun sendMessage(text: String): Boolean = send(text)
+
+    // The backend reads the first 36 characters after "reply:" as the replied-to message id.
+    override fun sendReply(replyingMessageId: String, text: String): Boolean =
+        if (replyingMessageId.length == MESSAGE_ID_LENGTH) send("reply:$replyingMessageId$text") else send(text)
 
     private fun send(text: String): Boolean {
         val open = synchronized(lock) { socket.takeIf { _isConnected.value } }
@@ -163,6 +173,7 @@ class WebSocketRepoImpl @Inject constructor(
 
     private companion object {
         const val TAG = "WebSocketRepo"
+        const val MESSAGE_ID_LENGTH = 36 // UUID
         const val NORMAL_CLOSURE = 1000
         const val POLICY_VIOLATION = 1008
         const val INITIAL_BACKOFF_MS = 1_000L

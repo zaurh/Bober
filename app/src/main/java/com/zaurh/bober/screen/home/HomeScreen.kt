@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.home
 
+import androidx.compose.runtime.remember
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -37,8 +38,12 @@ fun HomeScreen(
     val currentUserId = homeViewModel.userDataState.collectAsState().value?.id.orEmpty()
     val query = homeViewModel.searchQuery.value
 
-    // New messages can mean new conversations or matches, so refresh both.
-    LaunchedEffect(messages) {
+    // A message from someone new means a new conversation (and maybe a match): refresh both then.
+    // Keyed on the set of partners, not every message, so typing, ticks and reactions don't refetch.
+    val partners = remember(messages, currentUserId) {
+        messages.mapNotNull { if (it.senderUserId == currentUserId) it.recipientUserId else it.senderUserId }.toSet()
+    }
+    LaunchedEffect(partners) {
         homeViewModel.getChatList()
         homeViewModel.getMatchedUsers()
     }

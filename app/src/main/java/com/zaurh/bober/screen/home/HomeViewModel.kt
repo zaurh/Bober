@@ -1,6 +1,6 @@
 package com.zaurh.bober.screen.home
 
-import android.util.Log
+import kotlinx.coroutines.coroutineScope
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -38,8 +38,25 @@ class HomeViewModel @Inject constructor(
 
     fun getMatchedUsers(){
         viewModelScope.launch(Dispatchers.IO) {
-            val matchedUsers = userRepository.getMatchedUsers()
-            Log.d("sdfljsdflk", "$matchedUsers")
+            userRepository.getMatchedUsers()
+        }
+    }
+
+    private val _refreshing = mutableStateOf(false)
+    val refreshing: State<Boolean> = _refreshing
+
+    /** Pull to refresh: reloads the profile, chats, matches and likes together. */
+    fun refresh() {
+        if (refreshing.value) return
+        _refreshing.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            coroutineScope {
+                launch { userRepository.getUserData() }
+                launch { messageRepository.getChatList() }
+                launch { userRepository.getMatchedUsers() }
+                launch { userRepository.getWhoLikes() }
+            }
+            _refreshing.value = false
         }
     }
 
@@ -53,8 +70,7 @@ class HomeViewModel @Inject constructor(
 
     fun getChatList(){
         viewModelScope.launch(Dispatchers.IO) {
-            val a = messageRepository.getChatList()
-            Log.d("dsjlkdl", "$a")
+            messageRepository.getChatList()
         }
     }
 

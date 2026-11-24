@@ -1,6 +1,9 @@
 package com.zaurh.bober.data.remote
 
+import com.zaurh.bober.data.message.EmoteSealed
+import com.zaurh.bober.data.responses.ChatListResponse
 import com.zaurh.bober.data.responses.GetAllMessagesResponse
+import com.zaurh.bober.data.user.ChatBackground
 import com.zaurh.bober.data.responses.GetUserDataResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.user.PremiumCards
@@ -66,5 +69,39 @@ class BackendJsonTest {
     fun `error bodies decode`() {
         val body = """{"success":false,"message":"You don't have enough like token."}"""
         assertEquals("You don't have enough like token.", NetworkJson.decodeFromString<MessageResponse>(body).message)
+    }
+
+    @Test
+    fun `chat list keeps the per-chat background and doodle`() {
+        val body = """
+            {"success":true,"chatList":[
+              {"recipientId":"u4","recipientImage":"z.jpg","recipientUsername":"carol","backgroundColor":"SKY_BLUE","doodleEnabled":true,"lastUpdated":1},
+              {"recipientId":"u5","recipientImage":"w.jpg","recipientUsername":"dave","backgroundColor":"SOME_NEW_COLOR","doodleEnabled":false,"lastUpdated":2}
+            ]}
+        """.trimIndent()
+
+        val chats = NetworkJson.decodeFromString<ChatListResponse>(body).chatList
+
+        assertEquals(ChatBackground.SKY_BLUE, chats[0].backgroundColor)
+        assertTrue(chats[0].doodleEnabled)
+        // A color this app version doesn't know falls back to the default instead of failing the list.
+        assertEquals(ChatBackground.DEFAULT, chats[1].backgroundColor)
+    }
+
+    @Test
+    fun `messages carry reactions and the replied-to id`() {
+        val body = """
+            {"success":true,"messageList":[{"id":"m2","text":"same","senderUsername":"bob","senderUserId":"u2",
+              "recipientUserId":"u1","recipientUsername":"me","replyingMessageId":"m1",
+              "emoted":[{"emoteSealed":"HEART","senderId":"u1","senderUsername":"me","senderImage":"a.jpg"},
+                        {"emoteSealed":"NOTHING","senderId":"u9","senderUsername":"x","senderImage":""}],
+              "timestamp":"1719842400000","status":"READ"}]}
+        """.trimIndent()
+
+        val message = NetworkJson.decodeFromString<GetAllMessagesResponse>(body).messageList.single().toMessageData()
+
+        assertEquals("m1", message.replyingMessageId)
+        // NOTHING is the backend's "no reaction" placeholder and isn't shown.
+        assertEquals(listOf(EmoteSealed.HEART), message.emoted.map { it.emoteSealed })
     }
 }

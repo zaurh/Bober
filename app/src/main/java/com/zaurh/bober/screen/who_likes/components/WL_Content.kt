@@ -17,7 +17,7 @@ import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.home.components.SearchBar
-import com.zaurh.bober.screen.who_likes.WhoLikesUserItem
+import com.zaurh.bober.ui.components.PersonCard
 import com.zaurh.bober.screen.who_likes.WhoLikesViewModel
 import com.zaurh.bober.ui.components.EmptyState
 
@@ -45,28 +45,30 @@ fun WL_Content(
                 message = "When someone likes you, they'll appear here. Like them back to match!",
                 animation = R.raw.empty_animation
             )
-            return@Column
-        }
-
-        val filtered = likes.filter { it.username.contains(query, ignoreCase = true) }
-        SearchBar(
-            value = query,
-            onValueChange = whoLikesViewModel::onSearch,
-            placeHolder = "Search",
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        if (filtered.isEmpty()) {
-            EmptyState(title = "No one found", message = "Try a different name.", animation = R.raw.empty_animation)
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(filtered, key = { it.id }) { like ->
-                    WhoLikesUserItem(whoLikesData = like) {
-                        navController.navigate(Screen.ProfileScreen.passUsername(like.username))
+
+            val filtered = likes.filter { it.username.contains(query, ignoreCase = true) }
+            SearchBar(
+                value = query,
+                onValueChange = whoLikesViewModel::onSearch,
+                placeHolder = "Search",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            if (filtered.isEmpty()) {
+                EmptyState(title = "No one found", message = "Try a different name.", animation = R.raw.empty_animation)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(filtered, key = { it.id }) { like ->
+                        PersonCard(
+                            image = like.image,
+                            title = if (like.age.isNotBlank()) "${like.username}, ${like.age}" else like.username,
+                            onClick = { navController.navigate(Screen.ProfileScreen.passUsername(like.username)) },
+                        )
                     }
                 }
             }

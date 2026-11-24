@@ -26,7 +26,7 @@ class ThemePreferences(private val context: Context) {
 
     val getDarkMode: Flow<Boolean?> = context.dataStore.data
         .map { preferences ->
-            preferences[DARK_MODE] ?: false
+            preferences[DARK_MODE] // null until the user picks: follow the system theme
         }
 
 

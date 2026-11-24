@@ -1,15 +1,18 @@
 package com.zaurh.bober.screen.settings.components
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import com.zaurh.bober.R
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
+/** Permanent account deletion. The button unlocks after a short countdown so it can't be hit by accident. */
 @Composable
 fun DeleteAccountAlert(
     alertState: Boolean,
@@ -19,30 +22,24 @@ fun DeleteAccountAlert(
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
-    if (alertState) {
-        AlertDialog(title = {
-            Text(text = "Delete account?")
-        }, text = {
-            Text(text = "Are you sure you want to delete your account permanently?")
-        }, onDismissRequest = {
-            onDismiss()
-        }, confirmButton = {
-            Button(colors = ButtonDefaults.buttonColors(
-               MaterialTheme.colorScheme.primary
-            ), enabled = enabled, onClick = {
-                onDelete()
-            }) {
-                Text(text = if (countdown > 0) "$countdown" else if (loading) "Loading..." else "Yes, delete.", color = Color.White)
+    if (!alertState) return
+    AlertDialog(
+        onDismissRequest = { if (!loading) onDismiss() },
+        title = { Text("Delete your account?") },
+        text = { Text("Your profile, matches and messages will be deleted permanently. This can't be undone.") },
+        confirmButton = {
+            Button(
+                onClick = onDelete,
+                enabled = enabled && !loading,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                when {
+                    loading -> CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onError)
+                    countdown > 0 -> Text("Delete ($countdown)")
+                    else -> Text("Delete")
+                }
             }
-        }, dismissButton = {
-            Button(colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(id = R.color.white)
-            ), onClick = {
-                onDismiss()
-            }) {
-                Text(text = "No, go back.", color = colorResource(id = R.color.darkBlue))
-            }
-        })
-    }
-
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !loading) { Text("Cancel") } }
+    )
 }

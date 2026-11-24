@@ -19,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -128,18 +127,4 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier, trailing: (@Compo
         Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         trailing?.invoke()
     }
-}
-
-/** Soft chip used for interests / tags on photos. */
-@Composable
-fun PhotoChip(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        color = Color.White,
-        style = MaterialTheme.typography.labelMedium,
-        modifier = modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.22f))
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-    )
 }

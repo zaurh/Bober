@@ -41,7 +41,6 @@ import com.zaurh.bober.R
 import com.zaurh.bober.data.location.isLocationEnabled
 import com.zaurh.bober.data.user.BoberData
 import com.zaurh.bober.navigation.Screen
-import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.pager.components.AskForDeniedLocation
 import com.zaurh.bober.screen.pager.components.AskForEnableGPS
 import com.zaurh.bober.screen.pager.components.AskForLocationPermission
@@ -58,7 +57,6 @@ private const val VISIBLE_CARDS = 3
 @Composable
 fun MatchScreen(
     matchViewModel: MatchViewModel,
-    chatScreenViewModel: ChatScreenViewModel,
     navController: NavController
 ) {
     val context = LocalContext.current

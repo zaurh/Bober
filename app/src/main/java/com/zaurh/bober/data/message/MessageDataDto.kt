@@ -18,6 +18,7 @@ data class MessageDataDto(
     val recipientUserId: String = "",
     val recipientUsername: String = "",
     val replyingMessageId: String = "",
+    val emoted: List<EmoteData> = listOf(),
     @Serializable(with = FlexibleLongSerializer::class)
     val timestamp: Long = 0,
     val status: MessageStatus = MessageStatus.SENT,
@@ -31,6 +32,8 @@ data class MessageDataDto(
         senderUserId = senderUserId,
         recipientUserId = recipientUserId,
         recipientUsername = recipientUsername,
+        replyingMessageId = replyingMessageId.ifBlank { null },
+        emoted = emoted.filter { it.emoteSealed != EmoteSealed.NOTHING },
     )
 }
 
@@ -39,7 +42,8 @@ enum class MessageStatus {
     SENT,       // Stored on the server, not yet received by the recipient
     DELIVERED,  // Reached the recipient's device
     READ,       // Read by the recipient
-    FAILED      // Client-side only: could not be sent
+    FAILED,     // Client-side only: could not be sent
+    SENDING     // Client-side only: queued while offline, sent when the connection is back
 }
 
 @SuppressLint("SimpleDateFormat")

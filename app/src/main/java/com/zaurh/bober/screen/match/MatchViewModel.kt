@@ -55,10 +55,4 @@ class MatchViewModel @Inject constructor(
             if (!response.success) _messages.emit(response.message)
         }
     }
-
-    fun encryptLocation(location: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.encryptLocation(location)
-        }
-    }
 }

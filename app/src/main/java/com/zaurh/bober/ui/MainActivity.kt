@@ -1,6 +1,11 @@
 package com.zaurh.bober.ui
 
-import android.content.Context
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import com.zaurh.bober.screen.password.ResetPasswordDialog
+import com.zaurh.bober.screen.password.PasswordViewModel
 import android.content.Intent
 import android.os.Build
 import android.net.Uri
@@ -21,15 +26,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.compose.rememberNavController
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.navigation.Screen
@@ -38,9 +40,9 @@ import com.zaurh.bober.screen.chat.ChatScreenViewModel
 import com.zaurh.bober.screen.match.components.GotMatchAlert
 import com.zaurh.bober.screen.settings.email.EmailLinkResultDialog
 import com.zaurh.bober.screen.settings.email.EmailVerificationViewModel
+import com.zaurh.bober.screen.settings.notifications.EXTRA_NAVIGATE_TO
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
 import com.zaurh.bober.screen.sign_in.SignInViewModel
-import com.zaurh.bober.services.RunningService
 import com.zaurh.bober.ui.theme.BoberTheme
 import com.zaurh.bober.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,9 +58,17 @@ class MainActivity : ComponentActivity() {
     /** Token from an opened `…/verify_email?token=…` link, waiting until the user is signed in. */
     private var pendingEmailToken by mutableStateOf<String?>(null)
 
+    /** Token from an opened `…/reset-password?token=…` link. Works signed out. */
+    private var pendingResetToken by mutableStateOf<String?>(null)
+
+    /** Route from a tapped notification, waiting until the session check has finished. */
+    private var pendingRoute by mutableStateOf<String?>(null)
+
 
     @Inject
     lateinit var webSocketRepository: WebSocketRepository
+
+    private lateinit var inAppUpdates: InAppUpdates
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,16 +81,23 @@ class MainActivity : ComponentActivity() {
         // Draw behind the system bars; screens handle insets (top app bars, nav bar, auth gradient).
         enableEdgeToEdge()
 
+        inAppUpdates = InAppUpdates(this)
+        if (savedInstanceState == null) inAppUpdates.check()
+
         // On recreation (e.g. rotation) the link was already handled.
-        if (savedInstanceState == null) consumeEmailVerificationLink(intent)
+        if (savedInstanceState == null) {
+            consumeEmailVerificationLink(intent)
+            consumeNotificationRoute(intent)
+        }
 
 
         setContent {
 
             val context = LocalContext.current
             val dataStore = ThemePreferences(context)
-            var darkTheme by remember { mutableStateOf(false) }
-            val savedTheme = dataStore.getDarkMode.collectAsState(initial = false)
+            // The user's choice, or the system theme until they make one.
+            val savedTheme = dataStore.getDarkMode.collectAsState(initial = null)
+            val darkTheme = savedTheme.value ?: isSystemInDarkTheme()
             val scope = rememberCoroutineScope()
             val navController = rememberNavController()
             val signInViewModel = hiltViewModel<SignInViewModel>()
@@ -88,22 +105,11 @@ class MainActivity : ComponentActivity() {
             val signedIn = signInViewModel.signedInState.collectAsState()
             val loading = signInViewModel.loading.collectAsState()
             val emailVerificationViewModel = hiltViewModel<EmailVerificationViewModel>()
+            val passwordViewModel = hiltViewModel<PasswordViewModel>()
 
-            fun startForegroundService(context: Context) {
-                val intent = Intent(context, RunningService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
-                } else {
-                    context.startService(intent)
-                }
-            }
 
-            LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
-                startForegroundService(context)
-//                profileViewModel.clearProfileData()
-            }
 
-            BoberTheme(darkTheme = savedTheme.value ?: false) {
+            BoberTheme(darkTheme = darkTheme) {
 
 
                 LaunchedEffect(key1 = loading.value) {
@@ -139,11 +145,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val navigateTo = intent.getStringExtra("navigate_to")
-                LaunchedEffect(navigateTo) {
-                    if (navigateTo != null) {
-                        navController.navigate(navigateTo)
+                val resetToken = pendingResetToken
+                LaunchedEffect(resetToken) {
+                    if (resetToken != null) {
+                        pendingResetToken = null
+                        passwordViewModel.openReset(resetToken)
                     }
+                }
+
+                // Opened from a notification: go to its screen once we know the user is signed in.
+                val route = pendingRoute
+                LaunchedEffect(route, loading.value, signedIn.value) {
+                    if (route == null || loading.value) return@LaunchedEffect
+                    pendingRoute = null
+                    if (signedIn.value) navController.navigate(route) { launchSingleTop = true }
                 }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -152,11 +167,10 @@ class MainActivity : ComponentActivity() {
                     SetupNavGraph(
                         navController = navController,
                         startDestination = if (signedIn.value) Screen.PagerScreen.route else Screen.SignInScreen.route,
-                        darkTheme = savedTheme.value ?: false,
+                        darkTheme = darkTheme,
                         onThemeUpdated = {
                             scope.launch {
-                                darkTheme = !(savedTheme.value ?: false)
-                                dataStore.saveDarkMode(darkTheme)
+                                dataStore.saveDarkMode(!darkTheme)
                             }
                         }
                     )
@@ -178,6 +192,16 @@ class MainActivity : ComponentActivity() {
                             onDismiss = chatScreenViewModel::dismissMatch
                         )
                     }
+                    ResetPasswordDialog(viewModel = passwordViewModel)
+                    if (inAppUpdates.updateReady) {
+                        AlertDialog(
+                            onDismissRequest = inAppUpdates::later,
+                            title = { Text("Update ready") },
+                            text = { Text("A new version of Bober has been downloaded. Restart to finish updating.") },
+                            confirmButton = { TextButton(onClick = inAppUpdates::install) { Text("Restart") } },
+                            dismissButton = { TextButton(onClick = inAppUpdates::later) { Text("Later") } }
+                        )
+                    }
                     EmailLinkResultDialog(
                         state = emailVerificationViewModel.link.value,
                         onDismiss = emailVerificationViewModel::dismissLinkResult
@@ -189,21 +213,55 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Foreground: live chat over the socket (no-op when signed out).
+        webSocketRepository.connect()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Background: go offline so the backend sends push notifications instead.
+        if (!isChangingConfigurations) webSocketRepository.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        inAppUpdates.onResume()
+    }
+
+    override fun onDestroy() {
+        inAppUpdates.release()
+        super.onDestroy()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         consumeEmailVerificationLink(intent)
+        consumeNotificationRoute(intent)
     }
 
+    private fun consumeNotificationRoute(intent: Intent?) {
+        val route = intent?.getStringExtra(EXTRA_NAVIGATE_TO) ?: return
+        pendingRoute = route
+        intent.removeExtra(EXTRA_NAVIGATE_TO)
+    }
+
+    /** Handles the backend's email links: `/verify_email?token=…` and `/reset-password?token=…`. */
     private fun consumeEmailVerificationLink(intent: Intent?) {
         val data = intent?.data ?: return
-        val token = emailVerificationToken(data) ?: return
-        pendingEmailToken = token
+        when (linkPath(data)) {
+            "/verify_email" -> pendingEmailToken = linkToken(data) ?: return
+            "/reset-password" -> pendingResetToken = linkToken(data) ?: return
+            else -> return
+        }
         intent.data = null
     }
 
-    private fun emailVerificationToken(uri: Uri): String? {
+    private fun linkPath(uri: Uri): String? {
         val backend = Uri.parse(Constants.BASE_URL)
-        if (uri.scheme != "https" || uri.host != backend.host || uri.path != "/verify_email") return null
-        return uri.getQueryParameter("token")?.takeIf { it.isNotBlank() }
+        return uri.path.takeIf { uri.scheme == "https" && uri.host == backend.host }
     }
+
+    private fun linkToken(uri: Uri): String? = uri.getQueryParameter("token")?.takeIf { it.isNotBlank() }
 }

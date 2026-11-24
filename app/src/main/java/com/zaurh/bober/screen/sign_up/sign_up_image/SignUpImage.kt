@@ -1,5 +1,11 @@
 package com.zaurh.bober.screen.sign_up.sign_up_image
 
+import com.zaurh.bober.screen.image_edit.ImageEditorDialog
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,8 +62,20 @@ fun SignUpImage(
     val password = signUpViewModel.passwordState.value
     val loading = signUpViewModel.signUpLoading.value
 
+    // Picked photos go through the editor (crop / rotate / filter) before uploading.
+    var editing by rememberSaveable { mutableStateOf<Uri?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) signUpViewModel.uploadMedia(uri, context.contentResolver)
+        if (uri != null) editing = uri
+    }
+    editing?.let { source ->
+        ImageEditorDialog(
+            source = source,
+            onDone = { edited ->
+                editing = null
+                signUpViewModel.uploadMedia(edited, context.contentResolver)
+            },
+            onCancel = { editing = null }
+        )
     }
 
     val signedIn = signUpViewModel.signedIn.collectAsState()

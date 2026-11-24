@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.settings.components.SettingsContent
-import com.zaurh.bober.screen.settings.components.SettingsTopBar
+import com.zaurh.bober.ui.components.BackTopBar
 import com.zaurh.bober.screen.settings.components.modal_sheets.SettingsShowMeMS
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -21,7 +21,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            SettingsTopBar(navController = navController)
+            BackTopBar(title = "Settings", onBack = { navController.popBackStack() })
         },
         content = { paddingValues ->
             SettingsContent(

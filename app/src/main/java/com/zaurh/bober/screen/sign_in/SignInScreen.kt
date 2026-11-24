@@ -1,6 +1,9 @@
 package com.zaurh.bober.screen.sign_in
 
-import android.widget.Toast
+import androidx.compose.material3.CircularProgressIndicator
+import com.zaurh.bober.screen.password.PasswordViewModel
+import com.zaurh.bober.screen.password.ForgotPasswordDialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +54,8 @@ import androidx.compose.material3.TextButton
 @Composable
 fun SignInScreen(
     navController: NavController,
-    signInViewModel: SignInViewModel
+    signInViewModel: SignInViewModel,
+    passwordViewModel: PasswordViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val focus = LocalFocusManager.current
@@ -68,6 +72,8 @@ fun SignInScreen(
         focus.clearFocus()
         signInViewModel.signIn(context)
     }
+
+    ForgotPasswordDialog(viewModel = passwordViewModel)
 
     GradientBackground {
         Column(
@@ -111,7 +117,12 @@ fun SignInScreen(
                 onGradient = true,
                 keyboardActions = KeyboardActions(onDone = { submit() }),
             )
-            Spacer(Modifier.height(24.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                TextButton(onClick = passwordViewModel::openForgot) {
+                    Text("Forgot password?", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
             BoberButton(
                 text = "Sign in",
                 onClick = ::submit,
@@ -129,7 +140,8 @@ fun SignInScreen(
             Spacer(Modifier.height(24.dp))
 
             Surface(
-                onClick = { Toast.makeText(context, "Google sign-in is coming soon", Toast.LENGTH_SHORT).show() },
+                onClick = { signInViewModel.signInWithGoogle(context) },
+                enabled = !signInViewModel.googleLoading.value,
                 shape = CircleShape,
                 color = Color.White.copy(alpha = 0.18f),
                 contentColor = Color.White,
@@ -141,9 +153,14 @@ fun SignInScreen(
                     Box(
                         Modifier
                             .size(28.dp)
-                            .padding(2.dp)
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Image(painterResource(R.drawable.google_logo), contentDescription = null)
+                        if (signInViewModel.googleLoading.value) {
+                            CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Image(painterResource(R.drawable.google_logo), contentDescription = null)
+                        }
                     }
                     Spacer(Modifier.size(12.dp))
                     Text("Continue with Google", style = MaterialTheme.typography.labelLarge)

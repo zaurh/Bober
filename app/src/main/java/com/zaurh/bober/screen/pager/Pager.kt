@@ -1,6 +1,13 @@
 package com.zaurh.bober.screen.pager
 
-import android.content.Intent
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.AnimatedVisibility
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Row
@@ -50,7 +57,6 @@ import com.zaurh.bober.screen.home.HomeScreen
 import com.zaurh.bober.screen.home.HomeViewModel
 import com.zaurh.bober.screen.match.MatchScreen
 import com.zaurh.bober.screen.match.MatchViewModel
-import com.zaurh.bober.services.RunningService
 import com.zaurh.bober.ui.components.BrandWordmark
 
 private enum class Tab(val title: String, val icon: Int) {
@@ -83,8 +89,7 @@ fun PagerScreen(
         if (currentUser.value == null) homeViewModel.getUserData()
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        // Back in the foreground: the UI takes over notifications and messages are resynced.
-        context.stopService(Intent(context, RunningService::class.java))
+        // Back in the foreground: messages are resynced.
         chatScreenViewModel.connectToChat(context)
     }
 
@@ -99,6 +104,17 @@ fun PagerScreen(
                             Spacer(Modifier.size(10.dp))
                             CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
                         }
+                    }
+                },
+                navigationIcon = {
+                    // Likes cost a token; show the balance while swiping.
+                    AnimatedVisibility(visible = pagerState.currentPage == Tab.Discover.ordinal && currentUser.value != null) {
+                        val user = currentUser.value
+                        LikeTokenPill(
+                            tokens = user?.likeToken ?: 0,
+                            unlimited = user?.isPremium == true,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
                     }
                 },
                 actions = {
@@ -132,19 +148,35 @@ fun PagerScreen(
             }
         }
     ) { padding ->
+        // Pull down on a scrolling list (chats, profile) to reload everything.
+        val refreshState = rememberPullToRefreshState()
+        if (refreshState.isRefreshing) {
+            LaunchedEffect(Unit) {
+                homeViewModel.refresh()
+                chatScreenViewModel.connectToChat(context) // reloads messages
+                if (pagerState.currentPage == Tab.Discover.ordinal) matchViewModel.getBobers()
+            }
+        }
+        val refreshing = homeViewModel.refreshing.value
+        LaunchedEffect(refreshing) {
+            if (!refreshing) refreshState.endRefresh()
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .nestedScroll(refreshState.nestedScrollConnection)
+        ) {
         // Swiping between tabs is off: horizontal swipes belong to the discover cards.
         HorizontalPager(
             state = pagerState,
             userScrollEnabled = false,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) { page ->
             when (Tab.entries[page]) {
                 Tab.Discover -> MatchScreen(
                     navController = navController,
                     matchViewModel = matchViewModel,
-                    chatScreenViewModel = chatScreenViewModel
                 )
                 Tab.Chats -> HomeScreen(
                     navController = navController,
@@ -153,6 +185,29 @@ fun PagerScreen(
                 )
                 Tab.Profile -> AccountScreen(navController = navController)
             }
+        }
+        PullToRefreshContainer(state = refreshState, modifier = Modifier.align(Alignment.TopCenter))
+        }
+    }
+}
+
+/** Remaining like tokens. Premium accounts (and the backend's "unlimited" balances) show ∞. */
+@Composable
+private fun LikeTokenPill(tokens: Int, unlimited: Boolean, modifier: Modifier = Modifier) {
+    val empty = !unlimited && tokens <= 0
+    Surface(
+        shape = CircleShape,
+        color = if (empty) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+        contentColor = if (empty) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = modifier
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.size(4.dp))
+            Text(
+                if (unlimited || tokens > 999) "∞" else "$tokens",
+                style = MaterialTheme.typography.labelLarge
+            )
         }
     }
 }

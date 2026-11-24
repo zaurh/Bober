@@ -1,6 +1,20 @@
 package com.zaurh.bober.screen.chat.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import com.zaurh.bober.R
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -38,12 +52,27 @@ fun ChatBottomBar(
     val gifMode = chatScreenViewModel.gifState.value
     val value = if (gifMode) chatScreenViewModel.tenorQuery.value else chatScreenViewModel.messageText.value
 
+    val replyingTo = chatScreenViewModel.replyingTo.value
+
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier) {
+      Column(
+          Modifier
+              .fillMaxWidth()
+              .navigationBarsPadding()
+              .imePadding()
+      ) {
+        val currentUserId = chatScreenViewModel.userDataState.collectAsState().value?.id
+        val profile = chatScreenViewModel.profileDataState.collectAsState().value
+        AnimatedVisibility(visible = replyingTo != null && !gifMode) {
+            if (replyingTo != null) {
+                val author = if (replyingTo.senderUserId == currentUserId) "yourself"
+                else profile?.name?.ifEmpty { null } ?: replyingTo.senderUsername.orEmpty()
+                ReplyBar(author = author, text = replyingTo.preview, onClose = chatScreenViewModel::cancelReply)
+            }
+        }
         Row(
             Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .imePadding()
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom
         ) {
@@ -83,6 +112,49 @@ fun ChatBottomBar(
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                 }
             }
+        }
+      }
+    }
+}
+
+@Composable
+private fun ReplyBar(author: String, text: String, onClose: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp)
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painterResource(R.drawable.reply_ic),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.size(12.dp))
+        Box(
+            Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+        )
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = 10.dp)
+        ) {
+            Text("Replying to $author", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        IconButton(onClick = onClose) {
+            Icon(Icons.Default.Close, contentDescription = "Cancel reply")
         }
     }
 }

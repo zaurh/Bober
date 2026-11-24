@@ -123,4 +123,5 @@ fun MessageStatus.tickIcon(): Int = when (this) {
     MessageStatus.SENT, MessageStatus.FAILED -> R.drawable.sent_ic
     MessageStatus.DELIVERED -> R.drawable.delivered_ic
     MessageStatus.READ -> R.drawable.read_ic
+    MessageStatus.SENDING -> R.drawable.pending_clock
 }

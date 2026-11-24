@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,19 +71,6 @@ fun BoberButton(
         } else {
             Text(text, style = MaterialTheme.typography.labelLarge)
         }
-    }
-}
-
-/** Low-emphasis text action, e.g. "Sign in" under a form. */
-@Composable
-fun BoberTextButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
-) {
-    TextButton(onClick = onClick, modifier = modifier) {
-        Text(text, color = color, style = MaterialTheme.typography.labelLarge)
     }
 }
 

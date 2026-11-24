@@ -36,12 +36,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.pager.viewmodel.PagerViewModel
 import com.zaurh.bober.ui.components.BoberButton
 import com.zaurh.bober.ui.theme.BrandGradient
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /** Shared layout for the location prompts on the discover tab. */
 @Composable
@@ -126,40 +123,13 @@ fun AskForEnableGPS() {
     )
 }
 
+/** Uploads the location when the discover tab opens (throttled), and asks for notification permission. */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun GetCurrentLocation(
-    pagerViewModel: PagerViewModel = hiltViewModel(),
-    matchViewModel: MatchViewModel = hiltViewModel()
-) {
-    val currentLocation = pagerViewModel.currentLocation
-    val locationPermissionState = rememberPermissionState(
-        permission = Manifest.permission.ACCESS_FINE_LOCATION
-    )
-    val notificationPermission =
-        rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
-
-
-
-    LaunchedEffect(key1 = currentLocation) {
-        pagerViewModel.getCurrentLocation()
-        val jsonData = Json.encodeToString(currentLocation)
-        currentLocation?.let {
-            matchViewModel.encryptLocation(jsonData)
-        }
-    }
-
-    LaunchedEffect(locationPermissionState.status.isGranted) {
-        when (locationPermissionState.status.isGranted) {
-            true -> {
-                if (!notificationPermission.status.isGranted) {
-                    notificationPermission.launchPermissionRequest()
-                }
-                pagerViewModel.getCurrentLocation()
-            }
-
-            false -> {
-            }
-        }
+fun GetCurrentLocation(pagerViewModel: PagerViewModel = hiltViewModel()) {
+    val notificationPermission = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+    LaunchedEffect(Unit) {
+        if (!notificationPermission.status.isGranted) notificationPermission.launchPermissionRequest()
+        pagerViewModel.refreshLocation()
     }
 }

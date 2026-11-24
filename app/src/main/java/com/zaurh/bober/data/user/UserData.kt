@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserData(
     val id: String? = "",
+    /** Set for accounts created with Google sign-in (they have no password of their own). */
+    val googleId: String? = "",
     val premiumCards: List<PremiumCardData>? = listOf(),
     val name: String? = "",
     val email: String? = "",

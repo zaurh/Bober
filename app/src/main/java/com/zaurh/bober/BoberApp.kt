@@ -3,61 +3,34 @@ package com.zaurh.bober
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
+import com.zaurh.bober.screen.settings.notifications.NotificationType
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class BoberApp : Application() {
 
-
     override fun onCreate() {
         super.onCreate()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannels()
-        }
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createNotificationChannels()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannels() {
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val channel1 = NotificationChannel(
-            "foreground",
-            "Foreground notifications",
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            description = "Get notifications everywhere."
-        }
-
-        val channel2 = NotificationChannel(
-            "chat",
-            "Chat notifications",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Receiving message notifications."
-        }
-
-        val channel3 = NotificationChannel(
-            "like",
-            "Like notifications",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Receiving like notifications."
-        }
-
-        val channel4 = NotificationChannel(
-            "match",
-            "Match notifications",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Receiving match notifications."
-        }
-
-        notificationManager.createNotificationChannels(listOf(channel1, channel2, channel3, channel4))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = getSystemService(NotificationManager::class.java)
+        // Used by the old always-on background service, which push notifications replaced.
+        manager.deleteNotificationChannel("foreground")
+        manager.createNotificationChannels(
+            NotificationType.entries.map { type ->
+                val (name, description) = when (type) {
+                    NotificationType.CHAT -> "Messages" to "New messages and reactions"
+                    NotificationType.LIKE -> "Likes" to "When someone likes you"
+                    NotificationType.MATCH -> "Matches" to "When you get a new match"
+                }
+                NotificationChannel(type.channelId, name, NotificationManager.IMPORTANCE_HIGH).apply {
+                    this.description = description
+                }
+            }
+        )
     }
 }
-

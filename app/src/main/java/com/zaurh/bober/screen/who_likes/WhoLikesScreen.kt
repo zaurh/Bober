@@ -1,5 +1,6 @@
 package com.zaurh.bober.screen.who_likes
 
+import com.zaurh.bober.ui.components.BackTopBar
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
@@ -8,7 +9,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.who_likes.components.WL_Content
-import com.zaurh.bober.screen.who_likes.components.WL_TopBar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -22,7 +22,7 @@ fun WhoLikesScreen(
 
     Scaffold(
         topBar = {
-            WL_TopBar(navController = navController)
+            BackTopBar(title = "Likes you", onBack = { navController.popBackStack() })
         },
         content = { paddingValues ->
             WL_Content(
