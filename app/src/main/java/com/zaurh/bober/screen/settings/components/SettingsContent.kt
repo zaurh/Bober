@@ -146,7 +146,7 @@ fun SettingsContent(
 
         SettingsGroup("Support") {
             SettingsRow(
-                icon = R.drawable.warning_ic,
+                icon = R.drawable.support,
                 title = "Contact us",
                 subtitle = "Questions, feedback or a problem",
                 onClick = { context.sendMail() }

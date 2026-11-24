@@ -1,8 +1,6 @@
 package com.zaurh.bober.screen.chat
 
-import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -27,7 +25,6 @@ import com.zaurh.bober.screen.chat.modal_sheets.Chat_ReactionsSheet
 import com.zaurh.bober.screen.profile.ProfileViewModel
 import com.zaurh.bober.screen.profile.components.ProfileDialogs
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun ChatScreen(
     navController: NavController,

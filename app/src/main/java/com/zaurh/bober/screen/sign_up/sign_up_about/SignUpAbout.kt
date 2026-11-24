@@ -1,7 +1,5 @@
 package com.zaurh.bober.screen.sign_up.sign_up_about
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -42,7 +40,6 @@ import java.time.LocalDate
 private const val MAX_INTERESTS = 10
 
 @OptIn(ExperimentalLayoutApi::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SignUpAbout(
     signUpViewModel: SignUpViewModel,

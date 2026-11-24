@@ -8,8 +8,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.AnimatedVisibility
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,7 +64,6 @@ private enum class Tab(val title: String, val icon: Int) {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PagerScreen(
     navController: NavController,

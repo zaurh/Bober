@@ -1,8 +1,6 @@
 package com.zaurh.bober.screen.liked_users
 
 import com.zaurh.bober.ui.components.BackTopBar
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -11,7 +9,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.liked_users.components.LU_Content
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LikedUsersScreen(
     navController: NavController,

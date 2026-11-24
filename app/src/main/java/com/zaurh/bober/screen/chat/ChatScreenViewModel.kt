@@ -87,7 +87,7 @@ class ChatScreenViewModel @Inject constructor(
 
     /** Messages typed while offline, oldest first. Sent in order once the socket is back. */
     private data class Outgoing(val localId: String, val text: String, val replyId: String?, val recipientId: String)
-    private val outbox = ArrayDeque<Outgoing>()
+    private val outbox = mutableListOf<Outgoing>()
 
     private var typingJob: Job? = null
     private var searchGifJob: Job? = null
@@ -296,7 +296,7 @@ class ChatScreenViewModel @Inject constructor(
         val recipient = profileDataState.value ?: return null
         val recipientId = recipient.id?.takeIf { it.isNotEmpty() } ?: return null
         val localId = "local-${UUID.randomUUID()}"
-        outbox.addLast(Outgoing(localId, text, replyId, recipientId))
+        outbox.add(Outgoing(localId, text, replyId, recipientId))
         val placeholder = MessageData(
             id = localId,
             text = text,
@@ -323,7 +323,7 @@ class ChatScreenViewModel @Inject constructor(
             val next = outbox.first()
             webSocketRepository.switchRecipient(next.recipientId)
             if (!send(next.text, next.replyId)) break // Dropped again; retry on the next reconnect.
-            outbox.removeFirst()
+            outbox.removeAt(0)
         }
         openChat?.takeIf { it.isNotEmpty() }?.let(webSocketRepository::switchRecipient)
     }

@@ -1,8 +1,6 @@
 package com.zaurh.bober.navigation
 
 import com.zaurh.bober.screen.sign_up.sign_up_gender.SignUpGender
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -31,7 +29,6 @@ import com.zaurh.bober.screen.sign_up.sign_up_username.SignUpUsername
 import com.zaurh.bober.screen.who_likes.WhoLikesScreen
 import com.zaurh.bober.screen.who_likes.WhoLikesViewModel
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SetupNavGraph(
     darkTheme: Boolean,

@@ -7,14 +7,12 @@ import androidx.compose.material3.AlertDialog
 import com.zaurh.bober.screen.password.ResetPasswordDialog
 import com.zaurh.bober.screen.password.PasswordViewModel
 import android.content.Intent
-import android.os.Build
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -70,7 +68,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var inAppUpdates: InAppUpdates
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

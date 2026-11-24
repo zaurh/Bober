@@ -3,9 +3,7 @@ package com.zaurh.bober.util
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -43,13 +41,11 @@ fun lastSeenDay(timestamp: Long?): String{
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun localDateToString(localDate: LocalDate): String {
     val formatter = DateTimeFormatter.ISO_LOCAL_DATE
     return localDate.format(formatter)
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun stringToLocalDate(dateString: String): LocalDate {
     if (dateString.isNotEmpty()){
         val formatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -59,7 +55,6 @@ fun stringToLocalDate(dateString: String): LocalDate {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun calculateAge(dateOfBirth: String): Int {
     if (dateOfBirth.isNotEmpty()){
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")

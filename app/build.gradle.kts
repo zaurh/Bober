@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.zaurh.bober"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.zaurh.bober"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 7
-        versionName = "1.1.0"
+        targetSdk = 36
+        versionCode = 27
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
