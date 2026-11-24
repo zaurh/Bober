@@ -45,11 +45,11 @@ fun SettingsItem(
                 modifier = Modifier.size(24.dp),
                 painter = painterResource(id = icon),
                 contentDescription = "",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.size(8.dp))
             Column {
-                Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+                Text(text = title, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
                 Text(text = description, color = Color.Gray, fontSize = 12.sp)
             }
         }
@@ -57,7 +57,7 @@ fun SettingsItem(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }else{
             trailingIcon()

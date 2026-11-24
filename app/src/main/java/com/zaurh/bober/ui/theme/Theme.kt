@@ -6,61 +6,65 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    surface = ThemeColors.Night.surface,
-    tertiary = ThemeColors.Night.textFieldContainer,
-    secondary = ThemeColors.Night.buttonBackground,
-    primary = ThemeColors.Night.text,
-    onSecondary = ThemeColors.Night.cursor,
-    onTertiary = ThemeColors.Night.multipleChoice
-)
+private val LightColorScheme = with(LightTokens) {
+    lightColorScheme(
+        primary = primary, onPrimary = onPrimary,
+        primaryContainer = primaryContainer, onPrimaryContainer = onPrimaryContainer,
+        secondary = secondary, onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer, onSecondaryContainer = onSecondaryContainer,
+        tertiary = BoberPalette.Purple, onTertiary = onSecondary,
+        background = background, onBackground = onBackground,
+        surface = surface, onSurface = onSurface,
+        surfaceVariant = surfaceVariant, onSurfaceVariant = onSurfaceVariant,
+        surfaceContainerLowest = surfaceContainerLowest, surfaceContainerLow = surfaceContainerLow,
+        surfaceContainer = surfaceContainer, surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceTint = primary,
+        outline = outline, outlineVariant = outlineVariant,
+        error = error,
+    )
+}
 
-private val LightColorScheme = lightColorScheme(
-    surface = ThemeColors.Day.surface,
-    tertiary = ThemeColors.Day.textFieldContainer,
-    secondary = ThemeColors.Day.buttonBackground,
-    primary = ThemeColors.Day.text,
-    onSecondary = ThemeColors.Day.cursor,
-    onTertiary = ThemeColors.Day.multipleChoice
-
-
-)
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-
+private val DarkColorScheme = with(DarkTokens) {
+    darkColorScheme(
+        primary = primary, onPrimary = onPrimary,
+        primaryContainer = primaryContainer, onPrimaryContainer = onPrimaryContainer,
+        secondary = secondary, onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer, onSecondaryContainer = onSecondaryContainer,
+        tertiary = BoberPalette.Purple, onTertiary = onSecondary,
+        background = background, onBackground = onBackground,
+        surface = surface, onSurface = onSurface,
+        surfaceVariant = surfaceVariant, onSurfaceVariant = onSurfaceVariant,
+        surfaceContainerLowest = surfaceContainerLowest, surfaceContainerLow = surfaceContainerLow,
+        surfaceContainer = surfaceContainer, surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceTint = primary,
+        outline = outline, outlineVariant = outlineVariant,
+        error = error,
+    )
+}
 
 @Composable
 fun BoberTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     content: @Composable () -> Unit
 ) {
-    val colors = if (!darkTheme) {
-        LightColorScheme
-    } else {
-        DarkColorScheme
+    val colors = if (darkTheme) DarkColorScheme else LightColorScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        // Runs only when the theme changes, so screens can override it (e.g. white icons on the gradient).
+        DisposableEffect(darkTheme) {
+            val window = (view.context as Activity).window
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+            onDispose { }
+        }
     }
-    val activity = LocalView.current.context as Activity
-    val backgroundArgb = colors.surface.toArgb()
-    activity.window?.statusBarColor = backgroundArgb
-
-    val wic = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
-    wic.isAppearanceLightStatusBars = !darkTheme
-    MaterialTheme(
-        colorScheme = colors,
-        content = content,
-        typography = Typography
-    )
+    MaterialTheme(colorScheme = colors, typography = Typography, shapes = Shapes, content = content)
 }

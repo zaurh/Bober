@@ -53,24 +53,23 @@ fun ChatScreen(
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
         chatScreenViewModel.getProfileData(username)
-        chatScreenViewModel.onRouteChange(
-            onChatScreen = true,
-            recipientId = userId
-        )
     }
 
-//    LaunchedEffect(key1 = profileId) {
-//        chatScreenViewModel.switchRecipient(profileId ?: "")
-//    }
+    // The backend routes messages, typing and read receipts to the selected recipient, so select the
+    // chat partner however this screen was opened (chat list, profile, notification...).
+    LaunchedEffect(profileId) {
+        if (profileId != null) {
+            chatScreenViewModel.switchRecipient(profileId)
+            chatScreenViewModel.onRouteChange(onChatScreen = true, recipientId = profileId)
+        }
+    }
 
     LaunchedEffect(messageList, profileId) {
-        val unreadMessages = messageList.filter {
+        val hasUnread = messageList.any {
             it.senderUserId == profileId && it.recipientUserId == userId && it.status != MessageStatus.READ
         }
-        unreadMessages.forEach {
-            chatScreenViewModel.messageIsRead(it.id ?: "")
-        }
-
+        // One receipt marks the whole conversation as read on the server.
+        if (profileId != null && hasUnread) chatScreenViewModel.markMessagesRead()
     }
 
 
@@ -124,9 +123,7 @@ fun ChatScreen(
                 )
             },
             bottomBar = {
-                ChatBottomBar(
-                    chatScreenViewModel = chatScreenViewModel
-                )
+                ChatBottomBar(chatScreenViewModel = chatScreenViewModel)
             }
 
         )

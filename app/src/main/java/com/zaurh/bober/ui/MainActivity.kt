@@ -3,9 +3,12 @@ package com.zaurh.bober.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -32,12 +35,14 @@ import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.navigation.SetupNavGraph
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
-import com.zaurh.bober.screen.match.MatchViewModel
 import com.zaurh.bober.screen.match.components.GotMatchAlert
+import com.zaurh.bober.screen.settings.email.EmailLinkResultDialog
+import com.zaurh.bober.screen.settings.email.EmailVerificationViewModel
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
 import com.zaurh.bober.screen.sign_in.SignInViewModel
 import com.zaurh.bober.services.RunningService
 import com.zaurh.bober.ui.theme.BoberTheme
+import com.zaurh.bober.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,6 +52,9 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     private var appReady = false
+
+    /** Token from an opened `…/verify_email?token=…` link, waiting until the user is signed in. */
+    private var pendingEmailToken by mutableStateOf<String?>(null)
 
 
     @Inject
@@ -60,6 +68,11 @@ class MainActivity : ComponentActivity() {
         installSplashScreen().apply {
             setKeepOnScreenCondition { !appReady }
         }
+        // Draw behind the system bars; screens handle insets (top app bars, nav bar, auth gradient).
+        enableEdgeToEdge()
+
+        // On recreation (e.g. rotation) the link was already handled.
+        if (savedInstanceState == null) consumeEmailVerificationLink(intent)
 
 
         setContent {
@@ -72,9 +85,9 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val signInViewModel = hiltViewModel<SignInViewModel>()
             val chatScreenViewModel = hiltViewModel<ChatScreenViewModel>()
-            val matchViewModel = hiltViewModel<MatchViewModel>()
             val signedIn = signInViewModel.signedInState.collectAsState()
             val loading = signInViewModel.loading.collectAsState()
+            val emailVerificationViewModel = hiltViewModel<EmailVerificationViewModel>()
 
             fun startForegroundService(context: Context) {
                 val intent = Intent(context, RunningService::class.java)
@@ -99,9 +112,30 @@ class MainActivity : ComponentActivity() {
                         appReady = true
                     }
                 }
-                LaunchedEffect(key1 = signedIn.value) {
-                    if (!signedIn.value) {
-                        webSocketRepository.closeSession()
+                val authRoutes = setOf(
+                    Screen.SignInScreen.route, Screen.SignUpUsername.route, Screen.SignUpGender.route,
+                    Screen.SignUpAbout.route, Screen.SignUpImage.route
+                )
+                LaunchedEffect(signedIn.value, loading.value) {
+                    if (!signedIn.value && !loading.value) {
+                        webSocketRepository.disconnect()
+                        // Session ended (logout elsewhere, or the server rejected the token): back to sign-in.
+                        val current = navController.currentDestination?.route
+                        if (current != null && current !in authRoutes) {
+                            navController.navigate(Screen.SignInScreen.route) { popUpTo(0) }
+                        }
+                    }
+                }
+
+                // The backend's /validate_email_token needs the JWT, so wait for sign-in before verifying.
+                val emailToken = pendingEmailToken
+                LaunchedEffect(emailToken, loading.value, signedIn.value) {
+                    if (emailToken == null || loading.value) return@LaunchedEffect
+                    if (signedIn.value) {
+                        pendingEmailToken = null
+                        emailVerificationViewModel.verifyLinkToken(emailToken)
+                    } else {
+                        Toast.makeText(context, "Sign in to finish verifying your email.", Toast.LENGTH_LONG).show()
                     }
                 }
 
@@ -129,15 +163,25 @@ class MainActivity : ComponentActivity() {
                     val gotMatchState = chatScreenViewModel.gotMatch.value
                     AnimatedVisibility(
                         visible = gotMatchState.gotMatch,
-                        enter = fadeIn(animationSpec = tween(2000)),
-                        exit = fadeOut(animationSpec = tween(2000))
+                        enter = fadeIn(animationSpec = tween(400)),
+                        exit = fadeOut(animationSpec = tween(300))
                     ) {
-                        val matchListState = matchViewModel.matchListState.collectAsState()
-
-                        val recipientUser = matchListState.value.find { it?.userId == gotMatchState.recipientId}
-                        val recipientImage = recipientUser?.image?.first().orEmpty()
-                        GotMatchAlert(recipientImage = recipientImage)
+                        GotMatchAlert(
+                            recipientImage = gotMatchState.recipientImage,
+                            recipientName = gotMatchState.recipientUsername,
+                            onSendMessage = {
+                                chatScreenViewModel.dismissMatch()
+                                if (gotMatchState.recipientUsername.isNotEmpty()) {
+                                    navController.navigate(Screen.ChatScreen.createRoute(gotMatchState.recipientUsername))
+                                }
+                            },
+                            onDismiss = chatScreenViewModel::dismissMatch
+                        )
                     }
+                    EmailLinkResultDialog(
+                        state = emailVerificationViewModel.link.value,
+                        onDismiss = emailVerificationViewModel::dismissLinkResult
+                    )
                 }
 
 
@@ -145,8 +189,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        consumeEmailVerificationLink(intent)
+    }
+
+    private fun consumeEmailVerificationLink(intent: Intent?) {
+        val data = intent?.data ?: return
+        val token = emailVerificationToken(data) ?: return
+        pendingEmailToken = token
+        intent.data = null
+    }
+
+    private fun emailVerificationToken(uri: Uri): String? {
+        val backend = Uri.parse(Constants.BASE_URL)
+        if (uri.scheme != "https" || uri.host != backend.host || uri.path != "/verify_email") return null
+        return uri.getQueryParameter("token")?.takeIf { it.isNotBlank() }
+    }
 }
-
-
-
-

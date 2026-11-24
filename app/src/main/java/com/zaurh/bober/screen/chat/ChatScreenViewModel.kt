@@ -10,15 +10,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zaurh.bober.data.message.MessageStatus
 import com.zaurh.bober.data.user.UserData
+import com.zaurh.bober.data.websocket.SocketEvent
 import com.zaurh.bober.domain.repository.MessageRepository
 import com.zaurh.bober.domain.repository.TenorRepo
 import com.zaurh.bober.domain.repository.UserRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.screen.match.GotMatchState
-import com.zaurh.bober.screen.settings.notifications.NotificationType
-import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
-import com.zaurh.bober.screen.settings.notifications.showNotification
+import com.zaurh.bober.screen.settings.notifications.notifyForSocketEvent
+import com.zaurh.bober.services.RunningService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,9 +40,9 @@ class ChatScreenViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
+    val profileDataState: StateFlow<UserData?> = userRepository.profileData
 
     private val _getNotificationState = mutableStateOf(GetNotificationState())
-    private val getNotificationState: State<GetNotificationState> = _getNotificationState
 
     private val _gifState = mutableStateOf(false)
     val gifState: State<Boolean> = _gifState
@@ -55,8 +56,6 @@ class ChatScreenViewModel @Inject constructor(
     private val _gifUrls = MutableStateFlow<List<String>>(emptyList())
     val gifUrls: StateFlow<List<String>> get() = _gifUrls
 
-    val profileDataState: StateFlow<UserData?> = userRepository.profileData
-
     private val _messageText = mutableStateOf("")
     val messageText: State<String> = _messageText
 
@@ -68,73 +67,196 @@ class ChatScreenViewModel @Inject constructor(
 
     private var typingJob: Job? = null
     private var searchGifJob: Job? = null
+    private var socketJobs: List<Job> = emptyList()
+    private var appContext: Context? = null
 
+    private val currentUserId: String? get() = userDataState.value?.id
 
+    /**
+     * Connects to the chat socket and (re)loads messages. Safe to call on every resume: the socket
+     * connection is shared and idempotent, and events are only subscribed to once.
+     */
     fun connectToChat(context: Context) {
-        val dataStore = NotificationPreferences(context)
+        appContext = context.applicationContext
+        webSocketRepository.connect()
+        getAllMessages()
 
-        viewModelScope.launch {
-            if (_state.value.socketIsObserving) {
-                webSocketRepository.closeSession() // Close the existing session first
+        if (socketJobs.any { it.isActive }) return
+        _state.value = state.value.copy(socketIsObserving = true)
+
+        val eventsJob = webSocketRepository.events
+            .onEach(::handleEvent)
+            .launchIn(viewModelScope)
+
+        // Messages sent while the socket was down are only available over REST: resync on reconnect.
+        var wasConnected = false
+        val reconnectJob = webSocketRepository.isConnected
+            .onEach { connected ->
+                if (connected && wasConnected) getAllMessages()
+                if (connected) wasConnected = true
             }
-            _state.value = state.value.copy(
-                socketIsObserving = true
-            )
-            webSocketRepository.initSession()
-            getAllMessages()
-            webSocketRepository.observeMessages()
-                .onEach { message ->
-                    val messageText = message.text ?: ""
-                    when (messageText) {
-                        "switched to:" -> {}
-                        "typing:" -> {
-                            typingCommand(message)
-                        }
+            .launchIn(viewModelScope)
 
-                        "no_longer_matched:" -> {
-                            noLongerMatchedCommand(context)
-                        }
-
-                        "like_sent:" -> {
-                            likeSentCommand(dataStore, context)
-                        }
-
-                        "got_match:" -> {
-                            gotMatchCommand(message, dataStore, context)
-                        }
-
-                        "deliveredMessage:" -> {
-                            deliveredCommand(message)
-                        }
-
-                        "readMessages:" -> {
-                            readMessagesCommand(message)
-                        }
-
-                        "triggerOnline:" -> {
-                            triggerOnlineCommand(message)
-                        }
-
-                        else -> {
-                            sendMessageCommand(message, context)
-                        }
-                    }
-                }.launchIn(viewModelScope)
-
-        }
+        socketJobs = listOf(eventsJob, reconnectJob)
     }
 
-    fun closeWebsocket() {
-        viewModelScope.launch(Dispatchers.IO) {
-            webSocketRepository.closeSession()
-        }
+    fun switchRecipient(recipientUserId: String) {
+        if (recipientUserId.isNotEmpty()) webSocketRepository.switchRecipient(recipientUserId)
     }
 
     fun onRouteChange(onChatScreen: Boolean, recipientId: String) {
-        _getNotificationState.value = getNotificationState.value.copy(
+        _getNotificationState.value = GetNotificationState(
             onChatScreen = onChatScreen,
             recipientId = recipientId
         )
+    }
+
+    // --- Socket events ---
+
+    private suspend fun handleEvent(event: SocketEvent) {
+        when (event) {
+            is SocketEvent.NewMessage -> onNewMessage(event)
+            is SocketEvent.Typing -> onTyping(event.senderUserId)
+            is SocketEvent.Delivered -> onDelivered(event.recipientUserId)
+            is SocketEvent.Read -> onRead(event)
+            is SocketEvent.Presence -> _state.value = state.value.copy(
+                recipientUserId = event.userId,
+                recipientOnlineStatus = event.online,
+                recipientLastSeen = event.lastSeen
+            )
+
+            is SocketEvent.LikeReceived, is SocketEvent.LikeRemoved -> {
+                viewModelScope.launch(Dispatchers.IO) { userRepository.getWhoLikes() }
+            }
+
+            is SocketEvent.Matched -> onMatched(event)
+            is SocketEvent.Unmatched -> onRelationshipEnded(event.command.otherThan(currentUserId))
+            is SocketEvent.Blocked -> onRelationshipEnded(event.command.otherThan(currentUserId))
+            // Reactions aren't shown in this app yet; they must not be treated as new messages.
+            is SocketEvent.ReactionChanged -> Unit
+            SocketEvent.NoLongerMatched -> toast("You are no longer matched.")
+            is SocketEvent.Unknown -> Log.d(TAG, "Unhandled socket frame: ${event.raw}")
+        }
+        showNotificationIfNeeded(event)
+    }
+
+    private fun onNewMessage(event: SocketEvent.NewMessage) {
+        val message = event.message.toMessageData()
+        val messages = state.value.messages
+        if (message.id != null && messages.any { it.id == message.id }) return
+        _state.value = state.value.copy(messages = listOf(message) + messages)
+
+        // A first message creates the chat on the server: refresh the chat list so it shows up.
+        val partnerId = if (message.senderUserId == currentUserId) message.recipientUserId else message.senderUserId
+        if (messageRepository.chatList.value.none { it?.recipientId == partnerId }) {
+            viewModelScope.launch(Dispatchers.IO) { messageRepository.getChatList() }
+        }
+    }
+
+    private fun onTyping(senderUserId: String) {
+        typingJob?.cancel()
+        typingJob = viewModelScope.launch {
+            _state.value = state.value.copy(recipientUserId = senderUserId, recipientIsTyping = true)
+            delay(2000)
+            _state.value = state.value.copy(recipientUserId = senderUserId, recipientIsTyping = false)
+        }
+    }
+
+    /** Messages the current user sent to [recipientUserId] reached their device. */
+    private fun onDelivered(recipientUserId: String) {
+        updateMessages(
+            shouldUpdate = { it.recipientUserId == recipientUserId && it.status == MessageStatus.SENT },
+            update = { it.copy(status = MessageStatus.DELIVERED) }
+        )
+    }
+
+    /** [SocketEvent.Read.readerUserId] read everything [SocketEvent.Read.otherUserId] sent them. */
+    private fun onRead(event: SocketEvent.Read) {
+        updateMessages(
+            shouldUpdate = {
+                it.senderUserId == event.otherUserId &&
+                    it.recipientUserId == event.readerUserId &&
+                    it.status != MessageStatus.READ
+            },
+            update = { it.copy(status = MessageStatus.READ) }
+        )
+    }
+
+    private fun onMatched(event: SocketEvent.Matched) {
+        viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getMatchedUsers()
+            messageRepository.getChatList()
+        }
+        // The user whose like created the match sees the animation; the other one gets a notification.
+        if (event.match.senderUserId != currentUserId) return
+        // Stays up until the user picks "Send a message" or "Keep swiping".
+        _gotMatch.value = GotMatchState(
+            gotMatch = true,
+            recipientId = event.match.recipientUserId,
+            recipientImage = event.match.recipientImage.firstOrNull().orEmpty(),
+            recipientUsername = event.match.recipientUsername,
+        )
+    }
+
+    fun dismissMatch() {
+        _gotMatch.value = gotMatch.value.copy(gotMatch = false)
+    }
+
+    /** Unmatched or blocked (by either side): the server already deleted the conversation. */
+    private fun onRelationshipEnded(otherUserId: String) {
+        _state.value = state.value.copy(
+            messages = state.value.messages.filterNot {
+                it.senderUserId == otherUserId || it.recipientUserId == otherUserId
+            }
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getMatchedUsers()
+            messageRepository.getChatList()
+        }
+    }
+
+    private suspend fun showNotificationIfNeeded(event: SocketEvent) {
+        // While the app is in the background RunningService shows notifications instead.
+        if (RunningService.isRunning) return
+        val context = appContext ?: return
+        val notificationState = _getNotificationState.value
+        withContext(Dispatchers.IO) {
+            notifyForSocketEvent(
+                context = context,
+                event = event,
+                currentUserId = currentUserId,
+                openChatWith = notificationState.recipientId.takeIf { notificationState.onChatScreen == true }
+            )
+        }
+    }
+
+    private inline fun updateMessages(shouldUpdate: (MessageData) -> Boolean, update: (MessageData) -> MessageData) {
+        val messages = state.value.messages
+        if (messages.none(shouldUpdate)) return
+        _state.value = state.value.copy(messages = messages.map { if (shouldUpdate(it)) update(it) else it })
+    }
+
+    // --- User actions ---
+
+    fun sendMessage() {
+        val text = messageText.value
+        if (text.isBlank()) return
+        if (webSocketRepository.sendMessage(text)) {
+            _messageText.value = ""
+            _gifState.value = false
+        } else {
+            toast("Not connected. Please try again in a moment.")
+        }
+    }
+
+    fun onMessageChange(message: String) {
+        _messageText.value = message
+        webSocketRepository.sendTyping()
+    }
+
+    /** Tells the backend the current user has read the open conversation. */
+    fun markMessagesRead() {
+        webSocketRepository.markMessagesRead()
     }
 
     fun onGifStateChange() {
@@ -145,234 +267,9 @@ class ChatScreenViewModel @Inject constructor(
         }
     }
 
-
     private fun trendingGifs() {
         viewModelScope.launch(Dispatchers.IO) {
             _gifUrls.value = tenorRepo.trendingGifs()
-        }
-    }
-
-    fun getProfileData(username: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.getProfileID(username)
-        }
-    }
-
-    fun messageIsRead(messageId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            webSocketRepository.messageIsRead(messageId)
-        }
-    }
-
-
-    //Commands
-
-    private fun deliveredCommand(messageData: MessageData) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val recipientId = messageData.recipientUserId
-
-            val messageList = state.value.messages
-
-            val unDeliveredMessages = messageList.filter {
-                it.status == MessageStatus.SENT && it.recipientUserId == recipientId
-            }
-
-            if (unDeliveredMessages.isNotEmpty()) {
-                // Update the status of undelivered messages
-                val updatedMessages = state.value.messages.map { message ->
-                    if (message.recipientUserId == recipientId && message.status == MessageStatus.SENT) {
-                        message.copy(status = MessageStatus.DELIVERED)
-                    } else {
-                        message
-                    }
-                }
-
-                _state.value = state.value.copy(
-                    messages = updatedMessages
-                )
-            }
-        }
-
-    }
-
-    private fun readMessagesCommand(messageData: MessageData) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val senderId = messageData.senderUserId
-            val recipientId = messageData.recipientUserId
-
-            val messageListofRecipient =
-                state.value.messages.filter { it.recipientUserId == recipientId }
-
-            val unReadMessages = messageListofRecipient.filter {
-                it.status != MessageStatus.READ && it.recipientUserId == recipientId && it.senderUserId == senderId
-            }
-
-            if (unReadMessages.isNotEmpty()) {
-                // Update the status of undelivered messages
-                val updatedMessages = state.value.messages.map { message ->
-                    if (message.recipientUserId == recipientId && message.senderUserId == senderId && message.status == MessageStatus.DELIVERED) {
-                        message.copy(status = MessageStatus.READ)
-                    } else {
-                        message
-                    }
-                }
-                _state.value = state.value.copy(
-                    messages = updatedMessages
-                )
-            }
-        }
-
-    }
-
-    private fun triggerOnlineCommand(messageData: MessageData) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val recipientLastSeen =
-                messageData.recipientLastSeen ?: profileDataState.value?.lastSeen
-            val recipientUserId = messageData.recipientUserId
-
-            _state.value = state.value.copy(
-                recipientUserId = recipientUserId,
-                recipientOnlineStatus = messageData.recipientOnlineStatus,
-                recipientLastSeen = recipientLastSeen
-            )
-        }
-
-    }
-
-    private fun sendMessageCommand(messageData: MessageData, context: Context) {
-        val recipientId = getNotificationState.value.recipientId
-        val dataStore = NotificationPreferences(context)
-        val messageSenderIsCurrent = messageData.senderUserId == userDataState.value?.id
-        val chatScreenWithRecipient =
-            (recipientId == messageData.senderUserId || recipientId == messageData.recipientUserId) && getNotificationState.value.onChatScreen == true
-
-        if (!messageSenderIsCurrent && !chatScreenWithRecipient) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val text =
-                    if (messageData.text?.endsWith(".gif") == true) "Sent GIF" else messageData.text
-                        ?: ""
-                dataStore.getMessagesStatus.collect {
-                    if (it) {
-                        showNotification(
-                            channelId = "chat",
-                            context = context,
-                            text = text,
-                            title = messageData.senderUsername ?: "",
-                            notificationType = NotificationType.CHAT
-                        )
-                    }
-                }
-
-            }
-        }
-
-        val newList = state.value.messages.toMutableList().apply {
-            add(0, messageData)
-        }
-        _state.value = state.value.copy(
-            messages = newList
-        )
-    }
-
-    private fun typingCommand(messageData: MessageData) {
-        val recipientId = messageData.senderUserId
-
-        typingJob?.cancel()
-        typingJob = viewModelScope.launch(Dispatchers.IO) {
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
-            _state.value = state.value.copy(
-                recipientUserId = recipientId,
-                recipientIsTyping = true
-            )
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
-            delay(2000)
-            _state.value = state.value.copy(
-                recipientUserId = recipientId,
-                recipientIsTyping = false
-            )
-            Log.d("typingBober", "${_state.value.recipientIsTyping}")
-        }
-    }
-
-    private suspend fun likeSentCommand(
-        dataStore: NotificationPreferences,
-        context: Context
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dataStore.getLikesStatus.collect {
-                if (it) {
-                    showNotification(
-                        channelId = "like",
-                        context = context,
-                        title = "Bober",
-                        text = "Someone liked you!",
-                        notificationType = NotificationType.LIKE
-                    )
-                }
-            }
-        }
-
-    }
-
-    private suspend fun gotMatchCommand(
-        messageData: MessageData,
-        dataStore: NotificationPreferences,
-        context: Context
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val recipientId = messageData.recipientUserId ?: ""
-            if (recipientId != userDataState.value?.id) {
-                _gotMatch.value = gotMatch.value.copy(
-                    gotMatch = true,
-                    recipientId = recipientId
-                )
-                delay(3000)
-                _gotMatch.value = gotMatch.value.copy(
-                    gotMatch = false
-                )
-
-
-            } else {
-                dataStore.getMatchStatus.collect {
-                    if (it) {
-                        showNotification(
-                            channelId = "match",
-                            context = context,
-                            title = "Bober",
-                            text = "You've got a new match!",
-                            notificationType = NotificationType.MATCH
-                        )
-                    }
-                }
-            }
-        }
-
-    }
-
-    private fun noLongerMatchedCommand(context: Context) {
-        viewModelScope.launch(Dispatchers.Main) {
-            Toast.makeText(context, "You are no longer matched.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    fun sendMessage() {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (messageText.value.isNotBlank()) {
-                webSocketRepository.sendMessage(messageText.value)
-                _messageText.value = ""
-                _gifState.value = false
-            }
-        }
-    }
-
-
-
-
-    fun onMessageChange(message: String) {
-        _messageText.value = message
-        viewModelScope.launch(Dispatchers.IO) {
-            webSocketRepository.typingMessage()
         }
     }
 
@@ -385,36 +282,42 @@ class ChatScreenViewModel @Inject constructor(
         }
     }
 
+    fun getProfileData(username: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getProfileID(username)
+        }
+    }
 
     private fun getAllMessages() {
         viewModelScope.launch(Dispatchers.IO) {
             _state.value = state.value.copy(isLoading = true)
             val result = messageRepository.getPrivateMessages()
-            _state.value = state.value.copy(
-                messages = result.messageList?.map { it.toMessageData() } ?: listOf(),
-                isLoading = false
-            )
+            _state.value = if (result.success) {
+                state.value.copy(messages = result.messageList.map { it.toMessageData() }, isLoading = false)
+            } else {
+                // Keep what is on screen rather than wiping the conversation on a network error.
+                state.value.copy(isLoading = false)
+            }
         }
     }
 
     fun unMatch(recipientUserId: String, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            userRepository.unmatch(recipientUserId)
-            viewModelScope.launch(Dispatchers.Main) {
-                onSuccess()
+            val response = userRepository.unmatch(recipientUserId)
+            withContext(Dispatchers.Main) {
+                if (response.success) onSuccess() else toast(response.message)
             }
         }
     }
 
     fun block(recipientUserId: String, onSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            userRepository.block(recipientUserId)
-            viewModelScope.launch(Dispatchers.Main) {
-                onSuccess()
+            val response = userRepository.block(recipientUserId)
+            withContext(Dispatchers.Main) {
+                if (response.success) onSuccess() else toast(response.message)
             }
         }
     }
-
 
     fun openModalSheet() {
         _modalSheetState.value = true
@@ -440,5 +343,16 @@ class ChatScreenViewModel @Inject constructor(
             recipientOnlineStatus = recipientOnlineStatus,
             recipientLastSeen = recipientLastSeen
         )
+    }
+
+    private fun toast(message: String) {
+        val context = appContext ?: return
+        viewModelScope.launch(Dispatchers.Main) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private companion object {
+        const val TAG = "ChatScreenViewModel"
     }
 }

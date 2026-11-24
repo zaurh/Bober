@@ -1,9 +1,7 @@
 package com.zaurh.bober.screen.match
 
-import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zaurh.bober.data.user.BoberData
@@ -11,10 +9,13 @@ import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** The discover deck: people to swipe on, and like / pass actions. */
 @HiltViewModel
 class MatchViewModel @Inject constructor(
     private val userRepository: UserRepository
@@ -23,42 +24,41 @@ class MatchViewModel @Inject constructor(
     val userDataState: StateFlow<UserData?> = userRepository.userData
     val matchListState: StateFlow<List<BoberData?>> = userRepository.boberDataList
 
-    private val _distance: MutableState<Int> = mutableIntStateOf(0)
-    val distance: State<Int> = _distance
+    private val _loading = mutableStateOf(false)
+    /** True while the deck is being fetched and there's nothing to show yet. */
+    val loading: State<Boolean> = _loading
 
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    /** Errors from the backend to show to the user, e.g. "You don't have enough like token." */
+    val messages: SharedFlow<String> = _messages
 
-    fun getBobers(){
+    fun getBobers() {
         viewModelScope.launch(Dispatchers.IO) {
-            val a = userRepository.getBobers()
-            Log.d("getBobers", "${a.boberDataList}")
+            _loading.value = matchListState.value.isEmpty()
+            userRepository.getBobers()
+            _loading.value = false
         }
     }
 
-    fun sendLike(recipientId: String){
+    fun sendLike(recipientId: String) {
+        if (recipientId.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            userRepository.like(recipientId)
+            val response = userRepository.like(recipientId)
+            if (!response.success) _messages.emit(response.message)
         }
     }
 
-    fun pass(recipientId: String){
+    fun pass(recipientId: String) {
+        if (recipientId.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            userRepository.pass(recipientId)
+            val response = userRepository.pass(recipientId)
+            if (!response.success) _messages.emit(response.message)
         }
     }
-    fun encryptLocation(location: String){
+
+    fun encryptLocation(location: String) {
         viewModelScope.launch(Dispatchers.IO) {
             userRepository.encryptLocation(location)
         }
     }
-
-    fun decryptLocation(recipientLocation: String){
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.decryptLocation(recipientLocation)
-            _distance.value = response.distance
-            Log.d("dskjldslkjsd", "$response")
-        }
-    }
-
-
 }
-

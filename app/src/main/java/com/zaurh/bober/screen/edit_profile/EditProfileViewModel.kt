@@ -280,7 +280,7 @@ class EditProfileViewModel @Inject constructor(
                 val fileName = imageUri.lastPathSegment ?: "image.jpg"
 
                 inputStream?.use {
-                    val response = userRepository.uploadMedia(description, it, fileName)
+                    val response = userRepository.uploadMedia(it, fileName)
                     if (response.success) {
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
@@ -289,7 +289,7 @@ class EditProfileViewModel @Inject constructor(
                         onSuccess(response.fileLink)
                     } else {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                         }
                     }
                 }

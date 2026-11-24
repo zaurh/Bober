@@ -112,20 +112,20 @@ fun EP_Content(
                 ) {
                     Text(
                         text = "Images (${images.size}/6)",
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     if (images.size < 6) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (imageUploadLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    color = MaterialTheme.colorScheme.onSecondary
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                             Spacer(modifier = Modifier.size(4.dp))
                             Button(enabled = !imageUploadLoading,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondary
+                                    containerColor = MaterialTheme.colorScheme.primary
                                 ),
                                 onClick = {
                                     launcher.launch("image/*")

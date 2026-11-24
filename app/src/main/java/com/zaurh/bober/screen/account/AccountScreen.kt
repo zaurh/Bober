@@ -92,16 +92,16 @@ fun AccountScreen(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
             Text(
                 text = "@${user.username}",
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Text(text = user.name ?: "", color = MaterialTheme.colorScheme.primary)
+            Text(text = user.name ?: "", color = MaterialTheme.colorScheme.onSurface)
 
 
 

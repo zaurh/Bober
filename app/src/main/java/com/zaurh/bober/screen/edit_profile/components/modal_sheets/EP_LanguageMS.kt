@@ -61,13 +61,13 @@ fun EP_LanguageMS(
                     Text(
                         text = "Languages (${languageState.selectedLanguages.count()}/10)",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = editProfileViewModel::onLanguagesStateChange) {
                         Icon(
                             imageVector = Icons.Default.Done,
                             contentDescription = "",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -101,7 +101,7 @@ fun EP_LanguageMS(
                         languageState.selectedLanguages.contains(Languages.entries[index])
 
                     Button(modifier = Modifier.padding(4.dp), colors = ButtonDefaults.buttonColors(
-                        containerColor = if (alreadySelected) MaterialTheme.colorScheme.onTertiary else Color.Gray
+                        containerColor = if (alreadySelected) MaterialTheme.colorScheme.primary else Color.Gray
                     ), onClick = {
                         editProfileViewModel.onLanguagesChange(Languages.entries[index])
                     }) {

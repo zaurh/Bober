@@ -1,34 +1,31 @@
 package com.zaurh.bober.screen.home.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import com.zaurh.bober.ui.components.BoberTextField
 
 @Composable
 fun SearchBar(
     value: String,
     onValueChange: (String) -> Unit,
-    placeHolder: String
+    placeHolder: String,
+    modifier: Modifier = Modifier,
 ) {
-    TextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20)),
-        placeholder = { Text(text = placeHolder) },
+    BoberTextField(
         value = value,
         onValueChange = onValueChange,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.tertiary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent
-        )
+        placeholder = placeHolder,
+        modifier = modifier,
+        imeAction = ImeAction.Search,
+        leading = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailing = if (value.isNotEmpty()) {
+            { IconButton(onClick = { onValueChange("") }) { Icon(Icons.Default.Close, contentDescription = "Clear") } }
+        } else null,
     )
 }

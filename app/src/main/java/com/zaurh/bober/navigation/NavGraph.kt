@@ -1,6 +1,6 @@
 package com.zaurh.bober.navigation
 
-import SignUpGender
+import com.zaurh.bober.screen.sign_up.sign_up_gender.SignUpGender
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
@@ -81,7 +81,7 @@ fun SetupNavGraph(
             SignUpAbout(navController = navController, signUpViewModel = signUpViewModel)
         }
         composable(route = Screen.SignUpImage.route) {
-            SignUpImage(signUpViewModel = signUpViewModel)
+            SignUpImage(signUpViewModel = signUpViewModel, navController = navController)
         }
         composable(route = Screen.SignInScreen.route) {
             SignInScreen(

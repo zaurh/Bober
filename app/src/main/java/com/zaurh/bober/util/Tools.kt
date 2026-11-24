@@ -75,17 +75,23 @@ fun calculateAge(dateOfBirth: String): Int {
 }
 
 
+/** Matches the backend's `DateSerializer` format, e.g. `2024-07-08T08:53:28+0200`. */
 object DateSerializer : KSerializer<Date> {
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault())
+    // SimpleDateFormat isn't thread-safe, and the device locale could produce non-ASCII digits.
+    private fun dateFormat() = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
 
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: Date) {
-        encoder.encodeString(dateFormat.format(value))
+        encoder.encodeString(dateFormat().format(value))
     }
 
     override fun deserialize(decoder: Decoder): Date {
-        return dateFormat.parse(decoder.decodeString()) ?: throw SerializationException("Invalid date format")
+        return try {
+            dateFormat().parse(decoder.decodeString()) ?: throw SerializationException("Invalid date format")
+        } catch (e: java.text.ParseException) {
+            throw SerializationException("Invalid date format", e)
+        }
     }
 }
 

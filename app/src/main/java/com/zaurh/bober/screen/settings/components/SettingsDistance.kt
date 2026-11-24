@@ -50,10 +50,10 @@ fun SettingsDistance(
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Maximum distance", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+            Text(text = "Maximum distance", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
             Text(
                 text = "${sliderValue.toInt()} km.",
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp
             )
         }
@@ -66,9 +66,9 @@ fun SettingsDistance(
                 onValueChange(sliderValue)
             },
             colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.onSecondary,
-                activeTrackColor = MaterialTheme.colorScheme.onSecondary,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSecondary,
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.primary,
             ),
         )
         Spacer(modifier = Modifier.size(8.dp))
@@ -77,7 +77,7 @@ fun SettingsDistance(
                 .fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = "Show people further if there is \nno one in the selected distance.",
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Checkbox(
                 checked = showFullDistanceState,
@@ -86,9 +86,9 @@ fun SettingsDistance(
                     onSelectCheckBox(it)
                 },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.onSecondary,
+                    checkedColor = MaterialTheme.colorScheme.primary,
                     uncheckedColor = Color.Gray,
-                    checkmarkColor = MaterialTheme.colorScheme.tertiary
+                    checkmarkColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
             )
         }

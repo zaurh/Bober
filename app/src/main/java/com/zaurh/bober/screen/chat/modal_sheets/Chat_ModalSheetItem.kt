@@ -32,10 +32,10 @@ fun Chat_ModalSheetItem(
                 onClick()
             }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Row {
-            Icon(imageVector = icon, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
+            Icon(imageVector = icon, contentDescription = "", tint = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.size(8.dp))
-            Text(text = title, color = MaterialTheme.colorScheme.primary)
+            Text(text = title, color = MaterialTheme.colorScheme.onSurface)
         }
-        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
+        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = "", tint = MaterialTheme.colorScheme.onSurface)
     }
 }

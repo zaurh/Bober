@@ -22,21 +22,21 @@ fun EP_TextField(
     singleLine: Boolean = false
 ) {
     Column {
-        Text(text = title, color = MaterialTheme.colorScheme.primary)
+        Text(text = title, color = MaterialTheme.colorScheme.onSurface)
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20)),
             placeholder = { Text(text = placeholder) },
             colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
-                focusedContainerColor = MaterialTheme.colorScheme.tertiary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
-                cursorColor = MaterialTheme.colorScheme.onSecondary,
+                cursorColor = MaterialTheme.colorScheme.primary,
                 selectionColors = TextSelectionColors(
-                    handleColor = MaterialTheme.colorScheme.onSecondary,
-                    backgroundColor = MaterialTheme.colorScheme.onSecondary
+                    handleColor = MaterialTheme.colorScheme.primary,
+                    backgroundColor = MaterialTheme.colorScheme.primary
                 ),
             ),
             value = value,

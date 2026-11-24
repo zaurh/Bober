@@ -206,7 +206,7 @@ fun ProfileContent(
                             Text(
                                 text = user.name ?: "",
                                 fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -232,7 +232,7 @@ fun ProfileContent(
                         Spacer(modifier = Modifier.size(4.dp))
                         Text(
                             text = "${user.gender?.displayName}",
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     if (heightExist) {
@@ -248,7 +248,7 @@ fun ProfileContent(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
                                 text = "${user.height}cm",
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -261,7 +261,7 @@ fun ProfileContent(
                             text = "• About",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         Column(
@@ -287,7 +287,7 @@ fun ProfileContent(
                             text = "• Languages",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         FlowRow(
@@ -318,7 +318,7 @@ fun ProfileContent(
                             text = "• Interests",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         FlowRow(

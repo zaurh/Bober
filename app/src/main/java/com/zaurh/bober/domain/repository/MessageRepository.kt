@@ -12,4 +12,7 @@ interface MessageRepository {
     suspend fun getPrivateMessages(): GetAllMessagesResponse
     suspend fun getChatList(): ChatListResponse
 
+    /** Clears all cached data, e.g. on logout. */
+    fun clear()
+
 }

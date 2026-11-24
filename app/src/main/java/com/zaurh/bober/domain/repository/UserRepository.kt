@@ -12,6 +12,7 @@ import com.zaurh.bober.data.responses.MatchedUserData
 import com.zaurh.bober.data.responses.MatchedUserResponse
 import com.zaurh.bober.data.responses.MessageResponse
 import com.zaurh.bober.data.responses.UpdateUserResponse
+import com.zaurh.bober.data.responses.ValidateEmailResponse
 import com.zaurh.bober.data.responses.WhoLikesData
 import com.zaurh.bober.data.responses.WhoLikesResponse
 import com.zaurh.bober.data.user.BoberData
@@ -44,18 +45,28 @@ interface UserRepository {
     suspend fun getWhoLikes(): WhoLikesResponse
     suspend fun getMatchedUsers(): MatchedUserResponse
 
-    suspend fun uploadMedia(description: String, inputStream: InputStream, fileName: String): AddMediaResponse
+    suspend fun uploadMedia(inputStream: InputStream, fileName: String): AddMediaResponse
     suspend fun encryptLocation(location: String): GetLocationResponse
     suspend fun decryptLocation(recipientLocation: String): GetLocationResponse
 
-    suspend fun like(recipientId: String): UpdateUserResponse
-    suspend fun pass(recipientId: String): UpdateUserResponse
-    suspend fun unlike(recipientId: String): UpdateUserResponse
-    suspend fun unmatch(recipientId: String): UpdateUserResponse
-    suspend fun block(recipientId: String): UpdateUserResponse
+    // Relationship actions: the backend answers with success + message only. On success the
+    // repository refreshes whatever local state the action changed.
+    suspend fun like(recipientId: String): MessageResponse
+    suspend fun pass(recipientId: String): MessageResponse
+    suspend fun unlike(recipientId: String): MessageResponse
+    suspend fun unmatch(recipientId: String): MessageResponse
+    suspend fun block(recipientId: String): MessageResponse
     suspend fun report(recipientId: String, reason: String, optional: String): MessageResponse
-    suspend fun unblock(recipientId: String): UpdateUserResponse
+    suspend fun unblock(recipientId: String): MessageResponse
 
+    /** Emails a verification link to [email]. */
+    suspend fun sendEmailVerification(email: String): MessageResponse
+    /** Validates the token from the emailed link and, on success, reloads the user so the verified email shows. */
+    suspend fun verifyEmail(token: String): ValidateEmailResponse
+
+    /** Activates the Boberium premium card. */
     suspend fun boberium(): UpdateUserResponse
 
+    /** Clears all cached data, e.g. on logout. */
+    fun clear()
 }

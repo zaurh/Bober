@@ -33,7 +33,7 @@ fun NotificationItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+            Text(text = title, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
             Text(text = description, color = Color.Gray, fontSize = 12.sp)
         }
         Switch(
@@ -43,7 +43,7 @@ fun NotificationItem(
                 checkedBorderColor = Color.White.copy(alpha = 0.3f),
                 uncheckedBorderColor = Color.Gray,
                 checkedThumbColor = Color.White,
-                checkedTrackColor = MaterialTheme.colorScheme.secondary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
                 uncheckedTrackColor = Color.White
             )
         )

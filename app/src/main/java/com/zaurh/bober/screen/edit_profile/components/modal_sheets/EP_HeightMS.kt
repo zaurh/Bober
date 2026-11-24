@@ -60,12 +60,12 @@ fun EP_HeightMS(
                     Text(
                         text = "Height",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onHeightStateChange(false)
                     }) {
-                        Icon(imageVector = Icons.Default.Done, contentDescription = "", tint = MaterialTheme.colorScheme.primary)
+                        Icon(imageVector = Icons.Default.Done, contentDescription = "", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
                 Spacer(modifier = Modifier.size(4.dp))
@@ -74,13 +74,13 @@ fun EP_HeightMS(
                 Text(text = "Centimeters", fontSize = 12.sp, color = Color.Gray)
                 TextField(
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.tertiary,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.tertiary,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         selectionColors = TextSelectionColors(
-                            handleColor = MaterialTheme.colorScheme.onSecondary,
-                            backgroundColor = MaterialTheme.colorScheme.onSecondary
+                            handleColor = MaterialTheme.colorScheme.primary,
+                            backgroundColor = MaterialTheme.colorScheme.primary
                         )
                     ),
                     modifier = Modifier

@@ -1,13 +1,11 @@
 package com.zaurh.bober.screen.chat.components
 
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -24,17 +22,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import com.zaurh.bober.R
 import com.zaurh.bober.screen.chat.ChatScreenViewModel
+import com.zaurh.bober.ui.components.Avatar
 import com.zaurh.bober.util.lastSeenDay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,109 +38,68 @@ fun Chat_TopBar(
     navController: NavController,
     chatScreenViewModel: ChatScreenViewModel
 ) {
-    val profileData = chatScreenViewModel.profileDataState.collectAsState()
+    val profile = chatScreenViewModel.profileDataState.collectAsState().value
     val chatState = chatScreenViewModel.state.value
+    val live = chatState.recipientUserId != null && chatState.recipientUserId == profile?.id
 
-    val recipientOnline =
-        if (chatState.recipientUserId == profileData.value?.id) chatState.recipientOnlineStatus
-            ?: false else profileData.value?.online
-            ?: false
+    val online = if (live) chatState.recipientOnlineStatus ?: false else profile?.online ?: false
+    val typing = live && chatState.recipientIsTyping == true
+    val lastSeen = lastSeenDay(if (live) chatState.recipientLastSeen ?: profile?.lastSeen else profile?.lastSeen)
 
-    val recipientLastSeen = if (chatState.recipientUserId == profileData.value?.id) lastSeenDay(
-        chatState.recipientLastSeen ?: profileData.value?.lastSeen
-    ) else lastSeenDay(profileData.value?.lastSeen)
-
-    val recipientIsTyping =
-        if (chatState.recipientUserId == profileData.value?.id) chatState.recipientIsTyping
-            ?: false else false
-
-
+    val status = when {
+        typing -> "typing…"
+        online -> "online"
+        profile?.lastSeen != null && lastSeen.isNotEmpty() -> lastSeen
+        else -> ""
+    }
 
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+        navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        },
         title = {
-
-            Column() {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                onClick()
-                            },
-                        model = image,
-                        contentDescription = "",
-                        contentScale = ContentScale.Crop
+            Row(Modifier.clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+                Avatar(url = image, size = 40.dp, online = online)
+                Spacer(Modifier.size(12.dp))
+                Column {
+                    Text(
+                        profile?.name?.ifEmpty { null } ?: username,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Column() {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = username, color = MaterialTheme.colorScheme.primary)
-                            if (recipientOnline) {
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Icon(
-                                    modifier = Modifier.size(10.dp),
-                                    painter = painterResource(id = R.drawable.online_ic),
-                                    contentDescription = "",
-                                    tint = colorResource(id = R.color.darkGreen)
-                                )
-                            }
-                        }
-                        AnimatedVisibility(!recipientOnline && !recipientIsTyping && profileData.value?.lastSeen != null) {
-                            Text(text = recipientLastSeen, fontSize = 12.sp, color = Color.Gray)
-                        }
-                        AnimatedVisibility(recipientIsTyping) {
-                            Text(text = "typing...", fontSize = 12.sp, color = Color.Gray)
+                    AnimatedContent(targetState = status, label = "status") { text ->
+                        if (text.isNotEmpty()) {
+                            Text(
+                                text,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (typing || online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
-
                 }
-
-            }
-
-        },
-        navigationIcon = {
-            IconButton(onClick = {
-                navController.popBackStack()
-            }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "")
             }
         },
         actions = {
-            IconButton(onClick = {
-                chatScreenViewModel.openModalSheet()
-            }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (chatState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            color = MaterialTheme.colorScheme.secondary,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.size(8.dp))
-                    }
-                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
-                }
+            if (chatState.isLoading) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = chatScreenViewModel::openModalSheet) {
+                Icon(Icons.Default.MoreVert, contentDescription = "More")
             }
         }
     )
-    LaunchedEffect(profileData.value) {
-        profileData.value?.let {
-            chatScreenViewModel.initializeChatState(
-                recipientUserId = profileData.value?.id ?: "",
-                recipientOnlineStatus = profileData.value?.online ?: false,
-                recipientLastSeen = profileData.value?.lastSeen ?: 0L
-            )
 
+    LaunchedEffect(profile) {
+        profile?.let {
+            chatScreenViewModel.initializeChatState(
+                recipientUserId = it.id ?: "",
+                recipientOnlineStatus = it.online ?: false,
+                recipientLastSeen = it.lastSeen ?: 0L
+            )
         }
-    }
-    LaunchedEffect(chatState) {
-        Log.d("dfjkslfkjdfl", "${chatState.recipientUserId}")
-        Log.d("dfjkslfkjdfl", "${profileData.value?.id}")
-        Log.d("dfjkslfkjdfl", "${profileData.value?.online}")
-        Log.d("dfjkslfkjdfl", "${chatState.recipientOnlineStatus}")
     }
 }

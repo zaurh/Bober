@@ -1,251 +1,171 @@
 package com.zaurh.bober.data.repository
 
-import android.content.SharedPreferences
 import android.util.Log
-import com.zaurh.bober.data.message.MessageDataDto
+import com.zaurh.bober.data.remote.TokenStore
+import com.zaurh.bober.data.websocket.SocketEvent
+import com.zaurh.bober.data.websocket.SocketEventParser
 import com.zaurh.bober.domain.repository.WebSocketRepository
-import com.zaurh.bober.model.MessageData
 import com.zaurh.bober.util.Constants.WEBSOCKET_URL
-import com.zaurh.bober.util.Resource
-import io.ktor.client.HttpClient
-import io.ktor.client.features.websocket.webSocketSession
-import io.ktor.client.request.header
-import io.ktor.client.request.url
-import io.ktor.http.HttpHeaders
-import io.ktor.http.cio.websocket.Frame
-import io.ktor.http.cio.websocket.WebSocketSession
-import io.ktor.http.cio.websocket.close
-import io.ktor.http.cio.websocket.readText
-import io.ktor.http.cio.websocket.send
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.isActive
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
+import java.net.HttpURLConnection
 import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.math.min
 
+@Singleton
 class WebSocketRepoImpl @Inject constructor(
-    private val client: HttpClient,
-    private val prefs: SharedPreferences,
+    private val client: OkHttpClient,
+    private val tokenStore: TokenStore,
 ) : WebSocketRepository {
 
-    private var socket: WebSocketSession? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val parser = SocketEventParser()
+    private val lock = Any()
 
-    override suspend fun isConnected(): Boolean {
-        return socket?.isActive ?: false
+    private val _events = MutableSharedFlow<SocketEvent>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    override val events: SharedFlow<SocketEvent> = _events
+
+    private val _isConnected = MutableStateFlow(false)
+    override val isConnected: StateFlow<Boolean> = _isConnected
+
+    // Written only while holding [lock].
+    @Volatile
+    private var socket: WebSocket? = null
+    private var shouldBeConnected = false
+    private var reconnectJob: Job? = null
+    private var reconnectAttempt = 0
+
+    /** The backend remembers the recipient per connection, so it is re-sent after every reconnect. */
+    @Volatile
+    private var currentRecipientId: String? = null
+
+    override fun connect() {
+        synchronized(lock) {
+            shouldBeConnected = true
+            if (socket == null && reconnectJob?.isActive != true) openSocket()
+        }
     }
 
-    override suspend fun initSession(): Resource<Unit> {
-        return try {
-            socket = client.webSocketSession {
-                if (socket == null || socket?.isActive == false) {
-                    val token = prefs.getString("jwt", null) ?: ""
-                    url(WEBSOCKET_URL)
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+    override fun disconnect() {
+        synchronized(lock) {
+            shouldBeConnected = false
+            reconnectJob?.cancel()
+            reconnectJob = null
+            currentRecipientId = null
+            socket?.close(NORMAL_CLOSURE, null)
+            socket = null
+            _isConnected.value = false
+        }
+    }
+
+    override fun switchRecipient(recipientUserId: String) {
+        currentRecipientId = recipientUserId
+        send("switchRecipient:$recipientUserId")
+    }
+
+    override fun sendTyping() {
+        send("typing:")
+    }
+
+    override fun markMessagesRead() {
+        send("readMessages:")
+    }
+
+    override fun sendMessage(text: String): Boolean = send(text)
+
+    private fun send(text: String): Boolean {
+        val open = synchronized(lock) { socket.takeIf { _isConnected.value } }
+        return open?.send(text) ?: false
+    }
+
+    /** Must be called with [lock] held. */
+    private fun openSocket() {
+        if (!tokenStore.hasToken) {
+            Log.w(TAG, "Not connecting: no session token")
+            return
+        }
+        // The Authorization header is added by AuthInterceptor.
+        val request = Request.Builder().url(WEBSOCKET_URL).build()
+        socket = client.newWebSocket(request, Listener())
+    }
+
+    private inner class Listener : WebSocketListener() {
+
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            synchronized(lock) {
+                if (webSocket !== socket) return
+                reconnectAttempt = 0
+                _isConnected.value = true
             }
+            currentRecipientId?.let { webSocket.send("switchRecipient:$it") }
+        }
 
-            if (socket?.isActive == true) {
-                Resource.Success(Unit)
-            } else {
-                Resource.Error("Couldn't establish a connection.")
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            if (webSocket !== socket) return
+            _events.tryEmit(parser.parse(text))
+        }
+
+        override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+            webSocket.close(NORMAL_CLOSURE, null)
+        }
+
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            // The server closes with VIOLATED_POLICY when the account no longer exists.
+            onConnectionLost(webSocket, retry = code != POLICY_VIOLATION)
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            Log.w(TAG, "Socket failure: ${t.message}")
+            // 401: the token was rejected; reconnecting with the same token can't succeed.
+            onConnectionLost(webSocket, retry = response?.code != HttpURLConnection.HTTP_UNAUTHORIZED)
+        }
+    }
+
+    private fun onConnectionLost(webSocket: WebSocket, retry: Boolean) {
+        synchronized(lock) {
+            if (webSocket !== socket) return // An old socket we already replaced.
+            socket = null
+            _isConnected.value = false
+            if (retry && shouldBeConnected) scheduleReconnect()
+        }
+    }
+
+    /** Must be called with [lock] held. */
+    private fun scheduleReconnect() {
+        val delayMillis = min(MAX_BACKOFF_MS, INITIAL_BACKOFF_MS shl min(reconnectAttempt, 5))
+        reconnectAttempt++
+        reconnectJob = scope.launch {
+            delay(delayMillis)
+            synchronized(lock) {
+                reconnectJob = null
+                if (shouldBeConnected && socket == null) openSocket()
             }
-        } catch (e: Exception) {
-            Resource.Error("Couldn't establish a connection. ${e.message}")
         }
     }
 
-    override suspend fun switchRecipient(
-        newRecipientUserId: String
-    ) {
-        try {
-            socket?.let {
-                if (it.isActive) {
-                    it.send("switchRecipient:$newRecipientUserId")
-                }
-                Log.d("switchRecipient", "$newRecipientUserId")
-
-            }
-        } catch (e: Exception) {
-            Log.d("websocketBober", "switcherror: ${e.message}...")
-        }
-    }
-
-    override suspend fun typingMessage(): Resource<Unit> {
-        return try {
-            socket?.let {
-                if (it.isActive) {
-                    it.send("typing:")
-                }
-            }
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error(message = e.message ?: "")
-        }
-    }
-
-    override suspend fun messageIsDelivered(messageId: String): Resource<Unit> {
-        return try {
-            socket?.let {
-                if (it.isActive) {
-                    it.send("deliveredMessage:$messageId")
-                }
-            }
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error(message = e.message ?: "")
-        }
-    }
-
-    override suspend fun messageIsRead(messageId: String): Resource<Unit> {
-        return try {
-            socket?.let {
-                if (it.isActive) {
-                    it.send("readMessages:$messageId")
-                }
-            }
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error(message = e.message ?: "")
-        }
-    }
-
-    override suspend fun triggerOnline(): Resource<Unit> {
-        return try {
-            socket?.let {
-                if (it.isActive) {
-                    it.send("triggerOnline:")
-                }
-            }
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error(message = e.message ?: "")
-        }
-    }
-
-
-    override suspend fun sendMessage(
-        message: String
-    ): Resource<Unit> {
-        return try {
-            if (socket?.isActive == true) {
-                socket?.send(Frame.Text(message))
-                Log.d("websocketBober", "sendMessage socket is active")
-                Resource.Success(Unit)
-
-            } else {
-                Log.d("websocketBober", "sendmessage socket is not active...")
-
-                Resource.Error("Socket is not active")
-            }
-        } catch (e: Exception) {
-            Log.d("websocketBober", "sendmessage: ${e.message}...")
-
-            Resource.Error("Error: ${e.message}")
-        }
-    }
-
-    override suspend fun sendLike(profileId: String): Resource<Unit> {
-        return try {
-            if (socket?.isActive == true) {
-                socket?.send(Frame.Text("like_sent:$profileId"))
-                Resource.Success(Unit)
-            } else {
-                Resource.Error("Socket is not active")
-            }
-        } catch (e: Exception) {
-            Resource.Error("Error: ${e.message}")
-        }
-    }
-
-
-    override fun observeMessages(): Flow<MessageData> {
-        return try {
-            socket?.incoming
-                ?.receiveAsFlow()
-                ?.filter { it is Frame.Text }
-                ?.map {
-                    Log.d("websocketBober", "observing...")
-
-                    val json = (it as? Frame.Text)?.readText() ?: ""
-                    Log.d("websocketBober", "observing Json: $json")
-
-
-                    if (json.startsWith("Switched recipient to")) {
-                        MessageData(text = "switched to:")
-                    } else if (json.startsWith("typing:")) {
-                        val senderUserId = json.removePrefix("typing:")
-                        MessageData(text = "typing:", senderUserId = senderUserId)
-                    } else if (json == "like_sent:") {
-                        MessageData(text = "like_sent:")
-                    }
-                    else if (json.startsWith("got_match:")) {
-                        val recipientId = json.removePrefix("got_match:")
-                        MessageData(
-                            text = "got_match:",
-                            recipientUserId = recipientId
-                        )
-                    } else if (json.startsWith("deliveredMessage:")) {
-                        val recipientId = json.removePrefix("deliveredMessage:")
-                        MessageData(
-                            recipientUserId = recipientId,
-                            text = "deliveredMessage:"
-                        )
-                    } else if (json.startsWith("readMessages:")) {
-                        val recipientAndSenderId = json.removePrefix("readMessages:")
-                        val recipientId = recipientAndSenderId.take(36)
-                        val senderId = recipientAndSenderId.takeLast(36)
-
-                        MessageData(
-                            senderUserId = senderId,
-                            recipientUserId = recipientId,
-                            text = "readMessages:"
-                        )
-                    }
-                    else if (json.startsWith("no_longer_matched:")) {
-                        MessageData(
-                            text = "no_longer_matched:"
-                        )
-                    }
-                    else if (json.startsWith("triggerOnline:")) {
-
-                        val recipientUserId = json.substringAfter(":").take(36)
-
-                        val recipientOnlineStatus =
-                            json.substringAfter(recipientUserId).take(4).toBoolean()
-
-                        val recipientLastSeen =
-                            json.substringAfter(recipientUserId)
-                                .substringAfter(recipientOnlineStatus.toString())
-                                .toLong()
-
-                        MessageData(
-                            text = "triggerOnline:",
-                            recipientUserId = recipientUserId,
-                            recipientOnlineStatus = recipientOnlineStatus,
-                            recipientLastSeen = recipientLastSeen
-                        )
-                    } else {
-                        val messageDto = Json.decodeFromString<MessageDataDto>(json)
-                        messageDto.toMessageData()
-                    }
-                } ?: flow { }
-        } catch (e: Exception) {
-            Log.d("websocketBober", "error: ${e.message}")
-            e.printStackTrace()
-            flow { }
-        }
-    }
-
-
-    override suspend fun closeSession() {
-        try {
-            socket?.close()
-        } catch (e: Exception) {
-            Log.d("Bober_error", "${e.message}")
-        }
-
+    private companion object {
+        const val TAG = "WebSocketRepo"
+        const val NORMAL_CLOSURE = 1000
+        const val POLICY_VIOLATION = 1008
+        const val INITIAL_BACKOFF_MS = 1_000L
+        const val MAX_BACKOFF_MS = 30_000L
     }
 }

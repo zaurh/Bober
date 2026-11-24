@@ -33,6 +33,19 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Email verification link sent by the backend (send_email_verification). Verified via
+                 https://bober.zaurhasanov.com/.well-known/assetlinks.json, so it opens the app directly. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="bober.zaurhasanov.com"
+                    android:path="/verify_email" />
+            </intent-filter>
         </activity>
 
         <service

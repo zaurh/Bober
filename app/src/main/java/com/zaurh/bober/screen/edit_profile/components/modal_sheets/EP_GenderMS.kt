@@ -45,7 +45,7 @@ fun EP_GenderMS(
                     Text(
                         text = "Gender",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onGenderStateChange(false)
@@ -53,7 +53,7 @@ fun EP_GenderMS(
                         Icon(
                             imageVector = Icons.Default.Done,
                             contentDescription = "",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -69,7 +69,7 @@ fun EP_GenderMS(
                             }
                             .padding(8.dp)
                             .fillMaxWidth(),
-                        color = if (editProfileViewModel.gender.value == it) MaterialTheme.colorScheme.onSecondary else Color.Gray,
+                        color = if (editProfileViewModel.gender.value == it) MaterialTheme.colorScheme.primary else Color.Gray,
                         fontSize = 18.sp)
                 }
                 Spacer(modifier = Modifier.size(48.dp))

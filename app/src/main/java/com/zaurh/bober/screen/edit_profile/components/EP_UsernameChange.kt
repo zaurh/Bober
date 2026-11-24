@@ -62,7 +62,7 @@ fun EP_UsernameChange(
             confirmButton = {
                 val usernameIsSame = usernameState.text == currentUser.value?.username
                 Button(enabled = !usernameIsSame,colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = Color.LightGray
                 ), onClick = {
                     editProfileViewModel.checkUsername()

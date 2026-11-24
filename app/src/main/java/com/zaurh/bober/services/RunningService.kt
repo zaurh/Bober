@@ -5,127 +5,64 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.zaurh.bober.domain.repository.UserRepository
 import com.zaurh.bober.domain.repository.WebSocketRepository
-import com.zaurh.bober.model.MessageData
-import com.zaurh.bober.screen.settings.notifications.NotificationType
-import com.zaurh.bober.screen.settings.notifications.preferences.NotificationPreferences
-import com.zaurh.bober.screen.settings.notifications.showNotification
+import com.zaurh.bober.screen.settings.notifications.notifyForSocketEvent
 import com.zaurh.bober.ui.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class RunningService : Service() {
 
+    companion object {
+        /** True while the service runs (app in background); it then owns socket notifications. */
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+    }
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var eventsJob: Job? = null
 
     @Inject
     lateinit var webSocketRepository: WebSocketRepository
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isRunning = true
         startForegroundService()
-        startWebSocketConnection()
+        observeSocket()
         return START_NOT_STICKY
     }
 
-    private fun startWebSocketConnection() {
-        serviceScope.launch {
-            while (serviceScope.isActive) {
-                try {
-//                    if (!webSocketRepository.isConnected()) {
-//                        webSocketRepository.initSession() // Connect only if not connected
-//                    }
-
-                    webSocketRepository.observeMessages().collect { message ->
-                        // Handle incoming messages and notifications
-                        handleIncomingMessages(message)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    delay(5000) // Adjust this delay
-                }
+    private fun observeSocket() {
+        if (eventsJob?.isActive == true) return
+        // The connection is shared with the UI and reconnects by itself; this only makes sure it's open.
+        webSocketRepository.connect()
+        eventsJob = webSocketRepository.events
+            .onEach { event ->
+                notifyForSocketEvent(
+                    context = this@RunningService,
+                    event = event,
+                    currentUserId = userRepository.userData.value?.id
+                )
             }
-        }
+            .launchIn(serviceScope)
     }
-
-//    private fun startWebSocketConnection() {
-//        serviceScope.launch {
-//            if (serviceScope.isActive) {
-//                webSocketRepository.observeMessages().collect { message ->
-//                    handleIncomingMessages(message)
-//                }
-//            }
-//        }
-//    }
-
-
-    private suspend fun handleIncomingMessages(message: MessageData) {
-        val notification = NotificationPreferences(this@RunningService)
-        when (message.text) {
-            "typing:",
-            "triggerOnline:",
-            "readMessages:",
-            "deliveredMessage:",
-            "switched to:" -> {
-            }
-
-            "got_match:" -> {
-                notification.getLikesStatus.collect {
-                    if (it) {
-                        showNotification(
-                            channelId = "match",
-                            context = this@RunningService,
-                            text = "You've got a new match!",
-                            title = "Bober",
-                            notificationType = NotificationType.MATCH
-                        )
-                    }
-                }
-            }
-
-            "like_sent:" -> {
-                notification.getLikesStatus.collect {
-                    if (it) {
-                        showNotification(
-                            channelId = "like",
-                            context = this@RunningService,
-                            text = "Someone liked you!",
-                            title = "Bober",
-                            notificationType = NotificationType.LIKE
-                        )
-                    }
-                }
-            }
-
-            else -> notification.getMessagesStatus.collect {
-                if (it) {
-                    val text =
-                        if (message.text?.endsWith(".gif") == true) "Sent GIF" else message.text
-                            ?: ""
-                    showNotification(
-                        channelId = "chat",
-                        context = this@RunningService,
-                        text = text,
-                        title = "${message.senderUsername}",
-                        notificationType = NotificationType.CHAT
-                    )
-                }
-            }
-        }
-    }
-
 
     private fun startForegroundService() {
         val intent = Intent(this, MainActivity::class.java)
@@ -157,6 +94,7 @@ class RunningService : Service() {
 
 
     override fun onDestroy() {
+        isRunning = false
         super.onDestroy()
         serviceScope.cancel()
     }

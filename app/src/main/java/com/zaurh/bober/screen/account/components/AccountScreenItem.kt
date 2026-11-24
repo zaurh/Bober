@@ -46,14 +46,14 @@ fun AccountScreenItem(
                 contentDescription = ""
             )
             Spacer(modifier = Modifier.size(6.dp))
-            Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+            Text(text = title, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
         }
         if (count != ""){
             Box(modifier = Modifier
                 .size(30.dp)
                 .align(Alignment.TopEnd)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondary),
+                .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
                 ){
                 Text(text = count, color = Color.White, fontWeight = FontWeight.Bold)

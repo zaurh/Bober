@@ -35,13 +35,13 @@ fun EP_MultipleChoiceItem(
 ) {
     val focus = LocalFocusManager.current
     Column {
-        Text(text = title, color = MaterialTheme.colorScheme.primary)
+        Text(text = title, color = MaterialTheme.colorScheme.onSurface)
         Row(
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
                 .clip(RoundedCornerShape(20))
-                .background(MaterialTheme.colorScheme.tertiary)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(start = 8.dp, end = 8.dp)
                 .clickable {
                     focus.clearFocus()
@@ -53,7 +53,7 @@ fun EP_MultipleChoiceItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(modifier = Modifier.size(22.dp),tint = Color.Gray, painter = painterResource(id = icon), contentDescription = "")
                 Spacer(modifier = Modifier.size(8.dp))
-                Text(text = text, color = MaterialTheme.colorScheme.primary, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(text = text, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
             Icon(
                 tint = Color.Gray,

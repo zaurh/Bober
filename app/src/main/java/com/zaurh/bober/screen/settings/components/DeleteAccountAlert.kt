@@ -28,7 +28,7 @@ fun DeleteAccountAlert(
             onDismiss()
         }, confirmButton = {
             Button(colors = ButtonDefaults.buttonColors(
-               MaterialTheme.colorScheme.secondary
+               MaterialTheme.colorScheme.primary
             ), enabled = enabled, onClick = {
                 onDelete()
             }) {

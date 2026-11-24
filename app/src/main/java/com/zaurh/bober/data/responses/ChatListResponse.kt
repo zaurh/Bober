@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ChatListResponse(
     val success: Boolean,
-    val chatList: List<ChatData>,
+    val chatList: List<ChatData> = listOf(),
     val message: String = "No message.",
 )

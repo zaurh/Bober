@@ -1,31 +1,36 @@
 package com.zaurh.bober.domain.repository
 
-import com.zaurh.bober.model.MessageData
-import com.zaurh.bober.util.Resource
-import kotlinx.coroutines.flow.Flow
+import com.zaurh.bober.data.websocket.SocketEvent
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * The app-wide connection to the backend's `/chat-socket`.
+ *
+ * There is a single connection; every collector of [events] receives every event. Once [connect] is
+ * called the connection is kept alive and re-established after network drops until [disconnect].
+ */
 interface WebSocketRepository {
 
-    suspend fun isConnected(): Boolean
+    val events: SharedFlow<SocketEvent>
 
-    suspend fun initSession(): Resource<Unit>
+    /** True while the socket is open. Use it to resync (e.g. refetch messages) after a reconnect. */
+    val isConnected: StateFlow<Boolean>
 
-    suspend fun switchRecipient(newRecipientUserId: String)
+    /** Opens the connection if it isn't open yet. Safe to call repeatedly. */
+    fun connect()
 
-    suspend fun typingMessage(): Resource<Unit>
+    /** Closes the connection and stops reconnecting. */
+    fun disconnect()
 
-    suspend fun messageIsDelivered(messageId: String): Resource<Unit>
+    /** Selects the chat partner that subsequent messages, typing and read receipts are for. */
+    fun switchRecipient(recipientUserId: String)
 
-    suspend fun messageIsRead(messageId: String): Resource<Unit>
+    fun sendTyping()
 
-    suspend fun triggerOnline(): Resource<Unit>
+    /** Marks every message from the current recipient as read. */
+    fun markMessagesRead()
 
-    suspend fun sendMessage(message: String): Resource<Unit>
-
-    suspend fun sendLike(profileId: String): Resource<Unit>
-
-    fun observeMessages(): Flow<MessageData>
-
-    suspend fun closeSession()
-
+    /** Sends a chat message to the current recipient. Returns false if the socket isn't open. */
+    fun sendMessage(text: String): Boolean
 }

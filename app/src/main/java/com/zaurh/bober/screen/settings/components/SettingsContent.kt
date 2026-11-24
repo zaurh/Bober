@@ -16,11 +16,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.screen.settings.SettingsViewModel
+import com.zaurh.bober.screen.settings.email.EmailVerificationDialog
+import com.zaurh.bober.screen.settings.email.EmailVerificationViewModel
 import com.zaurh.bober.screen.settings.theme.CustomSwitcher
 import com.zaurh.bober.util.sendMail
 
@@ -30,7 +33,8 @@ fun SettingsContent(
     navController: NavController,
     darkTheme: Boolean,
     onThemeUpdated: () -> Unit,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    emailVerificationViewModel: EmailVerificationViewModel = hiltViewModel()
 ) {
     val currentUserData = settingsViewModel.userDataState.collectAsState()
     val deleteAccountState = settingsViewModel.deleteAccountState.value
@@ -133,6 +137,14 @@ fun SettingsContent(
             SettingsDivider()
 
             TitleItem(title = "Account")
+            val verifiedEmail = currentUser.email?.takeIf { it.isNotEmpty() && currentUser.emailIsVerified == true }
+            SettingsItem(
+                title = "Email",
+                description = verifiedEmail?.let { "$it · Verified" } ?: "Add and verify your email",
+                onClick = { emailVerificationViewModel.openDialog() },
+                icon = R.drawable.contact_ic
+            )
+            Spacer(modifier = Modifier.size(12.dp))
             SettingsItem(
                 title = "Log out",
                 description = "Log out of the application",
@@ -157,6 +169,14 @@ fun SettingsContent(
             )
         }
     }
+    val currentUser = currentUserData.value
+    EmailVerificationDialog(
+        state = emailVerificationViewModel.dialog.value,
+        verifiedEmail = currentUser?.email?.takeIf { it.isNotEmpty() && currentUser.emailIsVerified == true },
+        onEmailChange = emailVerificationViewModel::onEmailChange,
+        onSend = emailVerificationViewModel::sendVerification,
+        onDismiss = emailVerificationViewModel::closeDialog
+    )
     DeleteAccountAlert(
         alertState = deleteAccountState.alert,
         countdown = deleteAccountState.countdown,

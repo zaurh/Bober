@@ -3,18 +3,12 @@ package com.zaurh.bober.data.message
 import com.zaurh.bober.data.responses.ChatListResponse
 import com.zaurh.bober.data.responses.GetAllMessagesResponse
 import retrofit2.http.GET
-import retrofit2.http.Header
 
+/** Chat REST endpoints. Live messaging goes through the chat socket (see WebSocketRepository). */
 interface MessageApi {
     @GET("/messages")
-    suspend fun getPrivateMessages(
-        @Header("Authorization") token: String,
-    ): GetAllMessagesResponse
+    suspend fun getPrivateMessages(): GetAllMessagesResponse
 
     @GET("/chat_list")
-    suspend fun getChatList(
-        @Header("Authorization") token: String,
-    ): ChatListResponse
+    suspend fun getChatList(): ChatListResponse
 }
-
-

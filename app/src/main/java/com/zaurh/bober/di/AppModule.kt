@@ -5,139 +5,88 @@ import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ktx.storage
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.zaurh.bober.data.location.DefaultLocationTracker
 import com.zaurh.bober.data.message.MessageApi
-import com.zaurh.bober.data.repository.MessagesRepoImpl
-import com.zaurh.bober.data.repository.WebSocketRepoImpl
+import com.zaurh.bober.data.remote.AuthInterceptor
+import com.zaurh.bober.data.remote.NetworkJson
 import com.zaurh.bober.data.tenor.TenorApi
 import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.domain.repository.LocationTracker
-import com.zaurh.bober.domain.repository.MessageRepository
-import com.zaurh.bober.domain.repository.WebSocketRepository
 import com.zaurh.bober.util.Constants.BASE_URL
 import com.zaurh.bober.util.Constants.TENOR_BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.KotlinxSerializer
-import io.ktor.client.features.websocket.WebSockets
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
-
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-
+    /** Shared by REST calls and the chat socket so both authenticate the same way. */
     @Provides
     @Singleton
-    fun provideHttpClient(): HttpClient {
-        return HttpClient(CIO) {
-            install(WebSockets)
-            install(JsonFeature) {
-                serializer = KotlinxSerializer()
-            }
-        }
-    }
-
-    @Provides
-    @Singleton
-    fun provideMessageRepository(
-        api: MessageApi,
-        sharedPreferences: SharedPreferences,
-    ): MessageRepository {
-        return MessagesRepoImpl(api, sharedPreferences)
-    }
-
-    @Provides
-    @Singleton
-    fun provideWebsocketRepository(
-        sharedPreferences: SharedPreferences,
-        client: HttpClient
-    ): WebSocketRepository {
-        return WebSocketRepoImpl(client, sharedPreferences)
-    }
-
-
-    @Singleton
-    @Provides
-    fun provideFirebaseStorage(): FirebaseStorage = Firebase.storage
-
-    //Retrofit
-    @Singleton
-    @Provides
-    @Named("base")
-    fun provideBaseRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .addConverterFactory(GsonConverterFactory.create())
-            .baseUrl(BASE_URL)
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            // Image uploads can be large and slow on mobile networks.
+            .writeTimeout(60, TimeUnit.SECONDS)
+            // Detects dead chat connections; the backend also pings every 15s.
+            .pingInterval(20, TimeUnit.SECONDS)
             .build()
-    }
 
-
-    @Singleton
     @Provides
-    @Named("message")
-    fun provideMessageRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .addConverterFactory(GsonConverterFactory.create())
+    @Singleton
+    @Named("backend")
+    fun provideBackendRetrofit(client: OkHttpClient): Retrofit =
+        Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(NetworkJson.asConverterFactory("application/json".toMediaType()))
             .build()
-    }
 
-    @Singleton
     @Provides
+    @Singleton
     @Named("tenor")
-    fun provideTenorRetrofit(): Retrofit {
-        return Retrofit.Builder()
+    fun provideTenorRetrofit(): Retrofit =
+        Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .baseUrl(TENOR_BASE_URL)
             .build()
-    }
-
 
     @Provides
     @Singleton
-    fun provideRetrofitApi(@Named("base") retrofit: Retrofit): UserApi {
-        return retrofit.create(UserApi::class.java)
-    }
-
+    fun provideUserApi(@Named("backend") retrofit: Retrofit): UserApi =
+        retrofit.create(UserApi::class.java)
 
     @Provides
     @Singleton
-    fun provideMessageApi(@Named("message") retrofit: Retrofit): MessageApi {
-        return retrofit.create(MessageApi::class.java)
-    }
+    fun provideMessageApi(@Named("backend") retrofit: Retrofit): MessageApi =
+        retrofit.create(MessageApi::class.java)
 
     @Provides
     @Singleton
-    fun provideTenorApi(@Named("tenor") retrofit: Retrofit): TenorApi {
-        return retrofit.create(TenorApi::class.java)
-    }
-
+    fun provideTenorApi(@Named("tenor") retrofit: Retrofit): TenorApi =
+        retrofit.create(TenorApi::class.java)
 
     @Provides
     @Singleton
-    fun provideSharedPref(app: Application): SharedPreferences {
-        return app.getSharedPreferences("prefs", MODE_PRIVATE)
-    }
-
+    fun provideSharedPref(app: Application): SharedPreferences =
+        app.getSharedPreferences("prefs", MODE_PRIVATE)
 
     @Provides
     @Singleton
-    fun providesFusedLocationProviderClient(
-        application: Application
-    ): FusedLocationProviderClient =
+    fun providesFusedLocationProviderClient(application: Application): FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(application)
 
     @Provides
@@ -149,6 +98,4 @@ object AppModule {
         fusedLocationProviderClient = fusedLocationProviderClient,
         application = application
     )
-
-
 }

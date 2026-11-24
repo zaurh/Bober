@@ -99,7 +99,7 @@ fun Profile_ReportAlert(
                                 )
                             )
                             ExposedDropdownMenu(
-                                modifier = Modifier.background(MaterialTheme.colorScheme.secondary),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.primary),
                                 expanded = dropdownState,
                                 onDismissRequest = profileViewModel::onDropdownChange,
                             ) {
@@ -154,7 +154,7 @@ fun Profile_ReportAlert(
             },
             confirmButton = {
                 Button(enabled = !loading,colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),onClick = {
                     profileViewModel.report(
                         recipientId = profileData.value?.id ?: "",

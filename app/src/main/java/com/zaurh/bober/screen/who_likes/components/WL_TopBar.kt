@@ -16,7 +16,7 @@ fun WL_TopBar(
     navController: NavController
 ) {
     TopAppBar(
-        title = { Text(text = "Who likes me") },
+        title = { Text(text = "Likes you") },
         navigationIcon = {
             IconButton(onClick = {
                 navController.popBackStack()

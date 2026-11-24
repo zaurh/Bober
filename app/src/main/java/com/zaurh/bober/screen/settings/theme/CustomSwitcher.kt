@@ -57,14 +57,14 @@ fun CustomSwitcher(
                 .offset(x = offset)
                 .padding(all = padding)
                 .clip(shape = toggleShape)
-                .background(if (enabled) MaterialTheme.colorScheme.primary else Color.White)
+                .background(if (enabled) MaterialTheme.colorScheme.onSurface else Color.White)
         )
         Row(
             modifier = Modifier
                 .border(
                     border = BorderStroke(
                         width = borderWidth,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = parentShape
                 )

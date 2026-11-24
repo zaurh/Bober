@@ -19,7 +19,7 @@ fun EP_UsernameTextField(
     editProfileViewModel: EditProfileViewModel
 ) {
     Column {
-        Text(text = "Username", color = MaterialTheme.colorScheme.primary)
+        Text(text = "Username", color = MaterialTheme.colorScheme.onSurface)
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
@@ -28,8 +28,8 @@ fun EP_UsernameTextField(
                     editProfileViewModel.onUsernameChangeState()
                 },
             colors = TextFieldDefaults.colors(
-                disabledContainerColor = MaterialTheme.colorScheme.tertiary,
-                disabledTextColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledIndicatorColor = Color.Transparent
             ),
             enabled = false,

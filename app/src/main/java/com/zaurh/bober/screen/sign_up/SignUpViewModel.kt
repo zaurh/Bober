@@ -1,9 +1,7 @@
 package com.zaurh.bober.screen.sign_up
 
 import android.content.ContentResolver
-import android.content.Context
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -31,6 +29,8 @@ class SignUpViewModel @Inject constructor(
     private val authRepo: AuthRepo,
     private val userRepository: UserRepository
 ) : ViewModel() {
+
+    val signedIn: kotlinx.coroutines.flow.StateFlow<Boolean> = authRepo.signedIn
 
     private val _signUpLoading = mutableStateOf(false)
     val signUpLoading: State<Boolean> = _signUpLoading
@@ -145,52 +145,20 @@ class SignUpViewModel @Inject constructor(
     }
 
 
-    fun uploadMedia(
-        description: String,
-        imageUri: Uri,
-        contentResolver: ContentResolver,
-        context: Context,
-        onSuccess: (String) -> Unit
-    ) {
-        _imageState.value = imageState.value.copy(
-            loading = true
-        )
+    /** Uploads the picked photo; the backend returns the public link that sign-up then stores. */
+    fun uploadMedia(imageUri: Uri, contentResolver: ContentResolver) {
+        if (imageState.value.loading) return
+        _imageState.value = imageState.value.copy(loading = true, errorMessage = "")
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                _imageState.value = imageState.value.copy(
-                    pickedImage = ""
-                )
-                val inputStream = contentResolver.openInputStream(imageUri)
-                val fileName = imageUri.lastPathSegment ?: "image.jpg"
-
-                inputStream?.use {
-                    val response = userRepository.uploadMedia(description, it, fileName)
-                    if (response.success) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                        onSuccess(response.fileLink)
-                        _imageState.value = imageState.value.copy(
-                            pickedImage = response.fileLink
-                        )
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Failed upload", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+            val response = runCatching {
+                contentResolver.openInputStream(imageUri)?.use { stream ->
+                    userRepository.uploadMedia(stream, imageUri.lastPathSegment ?: "image.jpg")
                 }
-                _imageState.value = imageState.value.copy(
-                    loading = false
-                )
-
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-                _imageState.value = imageState.value.copy(
-                    loading = false
-                )
+            }.getOrNull()
+            _imageState.value = when {
+                response == null -> imageState.value.copy(loading = false, errorMessage = "Couldn't read that photo. Try another one.")
+                response.success -> imageState.value.copy(loading = false, pickedImage = response.fileLink, errorMessage = "")
+                else -> imageState.value.copy(loading = false, errorMessage = response.message)
             }
         }
     }
@@ -213,8 +181,10 @@ class SignUpViewModel @Inject constructor(
             } else {
                 withContext(Dispatchers.Main) {
                     _signUpLoading.value = false
+                    // Field errors go under their field; anything else (e.g. no connection) under the password.
+                    val general = response.message.takeIf { response.passwordError == null && response.imageError == null }
                     _passwordState.value = passwordState.value.copy(
-                        errorMessage = response.passwordError ?: ""
+                        errorMessage = response.passwordError ?: general ?: ""
                     )
                     _imageState.value = imageState.value.copy(
                         errorMessage = response.imageError ?: ""

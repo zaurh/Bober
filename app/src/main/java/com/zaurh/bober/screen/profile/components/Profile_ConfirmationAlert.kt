@@ -28,7 +28,7 @@ fun Profile_ConfirmationAlert(
             onDismiss()
         }, confirmButton = {
             Button(colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
+                containerColor = MaterialTheme.colorScheme.primary
             ), onClick = {
                 onConfirm()
             }) {

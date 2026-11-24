@@ -1,8 +1,9 @@
 package com.zaurh.bober.data.repository
 
-import android.content.SharedPreferences
+import com.zaurh.bober.data.remote.SessionEvents
+import com.zaurh.bober.data.remote.TokenStore
+import com.zaurh.bober.data.remote.apiCall
 import com.zaurh.bober.data.requests.CheckUsernameRequest
-import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
 import com.zaurh.bober.data.responses.AuthenticateResponse
@@ -12,55 +13,49 @@ import com.zaurh.bober.data.responses.SignUpResponse
 import com.zaurh.bober.data.user.Gender
 import com.zaurh.bober.data.user.Interests
 import com.zaurh.bober.data.user.ShowMe
+import com.zaurh.bober.data.user.UserApi
 import com.zaurh.bober.domain.repository.AuthRepo
+import com.zaurh.bober.domain.repository.MessageRepository
+import com.zaurh.bober.domain.repository.UserRepository
+import com.zaurh.bober.domain.repository.WebSocketRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.HttpURLConnection
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AuthRepoImpl @Inject constructor(
     private val api: UserApi,
-    private val prefs: SharedPreferences
+    private val tokenStore: TokenStore,
+    private val userRepository: UserRepository,
+    private val messageRepository: MessageRepository,
+    private val webSocketRepository: WebSocketRepository,
+    sessionEvents: SessionEvents,
 ) : AuthRepo {
 
     private val _signedIn = MutableStateFlow(false)
-    override val signedIn: StateFlow<Boolean>
-        get() = _signedIn
+    override val signedIn: StateFlow<Boolean> get() = _signedIn
 
-    private val _loading = MutableStateFlow(false)
-    override val loading: StateFlow<Boolean>
-        get() = _loading
-
-
-    override suspend fun checkUsername(username: String): MessageResponse {
-        return try {
-            val response = api.checkUsername(
-                CheckUsernameRequest(
-                    username = username
-                )
-            )
-            MessageResponse(
-                success = response.success,
-                message = response.message
-            )
-        } catch (e: Exception) {
-            MessageResponse(
-                success = false,
-                message = e.cause?.message ?: ""
-            )
-        }
-    }
-
-    private val ioScope = CoroutineScope(Dispatchers.IO)
+    // Starts true: the splash screen stays up until the saved session has been checked.
+    private val _loading = MutableStateFlow(true)
+    override val loading: StateFlow<Boolean> get() = _loading
 
     init {
-        ioScope.launch {
-            authenticate()
-        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        scope.launch { authenticate() }
+        scope.launch { sessionEvents.expired.collect { if (_signedIn.value) logout() } }
     }
 
+    override suspend fun checkUsername(username: String): MessageResponse =
+        apiCall({ MessageResponse(success = false, message = it) }) {
+            api.checkUsername(CheckUsernameRequest(username = username))
+        }
 
     override suspend fun signUp(
         username: String,
@@ -71,9 +66,9 @@ class AuthRepoImpl @Inject constructor(
         showMe: ShowMe,
         interests: List<Interests>
     ): SignUpResponse {
-        return try {
-            val response = api.signUp(
-                apiRequest = SignUpRequest(
+        val response = apiCall({ SignUpResponse(success = false, message = it) }) {
+            api.signUp(
+                SignUpRequest(
                     username = username,
                     password = password,
                     gender = gender,
@@ -83,104 +78,56 @@ class AuthRepoImpl @Inject constructor(
                     interests = interests
                 )
             )
-
-            if (response.success) {
-                signIn(username,password)
-            }
-
-            SignUpResponse(
-                success = response.success,
-                message = response.message,
-                user = response.user,
-                passwordError = response.passwordError,
-                imageError =response.imageError
-            )
-
-        } catch (e: Exception) {
-            SignUpResponse(
-                success = false,
-                message = e.cause?.message ?: ""
-            )
         }
+        // Sign-up doesn't return a token; sign in with the new credentials to get one.
+        if (response.success) signIn(username, password)
+        return response
     }
 
     override suspend fun signIn(username: String, password: String): SignInResponse {
-        return try {
-            val response = api.signIn(
-                apiRequest = SignInRequest(
-                    username = username,
-                    password = password
-                )
-            )
-            prefs.edit()
-                .putString("jwt", response.token)
-                .apply()
-
-
-            if (response.success) {
-                _signedIn.value = true
-            }
-
-            SignInResponse(
-                success = response.success,
-                message = response.message,
-                user = response.user
-            )
-        } catch (e: Exception) {
-
-            SignInResponse(
-                success = false,
-                message = e.localizedMessage ?: ""
-            )
+        val response = apiCall({ SignInResponse(success = false, message = it) }) {
+            api.signIn(SignInRequest(username = username, password = password))
         }
+        val token = response.token
+        if (response.success && !token.isNullOrBlank()) {
+            tokenStore.save(token)
+            _signedIn.value = true
+        }
+        return response.copy(token = null)
     }
 
     override suspend fun authenticate(): AuthenticateResponse {
-        return try {
-            _loading.value = true
-            val token = prefs.getString("jwt", null)
-            val response = api.authenticate("Bearer $token")
-
-            if (response.success) {
-                _signedIn.value = true
-                _loading.value = false
-            }else{
-                _loading.value = false
-            }
-
-            AuthenticateResponse(
-                success = response.success,
-                message = response.message
-            )
-
-
-        } catch (e: Exception) {
+        if (!tokenStore.hasToken) {
+            _signedIn.value = false
             _loading.value = false
-            AuthenticateResponse(
-                success = false,
-                message = e.message ?: ""
-            )
+            return AuthenticateResponse(success = false, message = "Not signed in.")
         }
+
+        _loading.value = true
+        var rejected = false
+        val response = try {
+            api.authenticate()
+        } catch (e: HttpException) {
+            // The token was rejected (expired, or signed with a rotated secret): sign in again.
+            rejected = e.code() == HttpURLConnection.HTTP_UNAUTHORIZED
+            if (rejected) tokenStore.clear()
+            AuthenticateResponse(success = false, message = "Session expired. Please sign in again.")
+        } catch (e: Exception) {
+            AuthenticateResponse(success = false, message = e.message ?: "Couldn't reach the server.")
+        }
+
+        // Offline or server hiccup: keep the saved session instead of bouncing to sign-in.
+        _signedIn.value = response.success || (!rejected && tokenStore.hasToken)
+        _loading.value = false
+        return response
     }
 
     override suspend fun logout(): AuthenticateResponse {
-        return try {
-            prefs.edit().clear().apply()
-
-            _signedIn.value = false
-
-            AuthenticateResponse(
-                success = true,
-                message = "Logged out."
-            )
-
-        } catch (e: Exception) {
-            AuthenticateResponse(
-                success = false,
-                message = "Couldn't log out."
-            )
-        }
+        webSocketRepository.disconnect()
+        tokenStore.clear()
+        userRepository.clear()
+        messageRepository.clear()
+        _signedIn.value = false
+        return AuthenticateResponse(success = true, message = "Logged out.")
     }
-
-
 }

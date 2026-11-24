@@ -83,7 +83,7 @@ dependencies {
 
     // Retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0") // Tenor only; the backend uses kotlinx
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:okhttp:4.4.1")
     implementation("com.squareup.okhttp3:okhttp-urlconnection:4.4.1")
@@ -112,12 +112,6 @@ dependencies {
     implementation ("com.airbnb.android:lottie-compose:6.0.0")
 
 
-    // Ktor
-
-//    implementation ("io.ktor:ktor-client-websockets:2.2.1")
-    implementation ("io.ktor:ktor-client-websockets:1.6.3")
-    implementation ("io.ktor:ktor-client-cio:1.6.3")
-    implementation ("io.ktor:ktor-client-serialization:1.6.3")
 
 
     //wheeltime picker

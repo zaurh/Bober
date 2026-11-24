@@ -25,7 +25,7 @@ fun DiscardChangesAlert(
             onDismiss()
         }, confirmButton = {
             Button(colors = ButtonDefaults.buttonColors(
-                MaterialTheme.colorScheme.secondary
+                MaterialTheme.colorScheme.primary
             ), onClick = {
                 onDiscard()
             }) {

@@ -1,45 +1,45 @@
 package com.zaurh.bober.data.message
 
 import android.annotation.SuppressLint
+import com.zaurh.bober.data.remote.FlexibleLongSerializer
 import com.zaurh.bober.model.MessageData
 import kotlinx.serialization.Serializable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
-import java.util.UUID
 
+/** A chat message exactly as the backend sends it (`/messages` and chat socket frames). */
 @Serializable
 data class MessageDataDto(
-    val text: String? = null,
-    val senderUsername: String? = null,
-    val senderUserId: String? = null,
-    val recipientUserId: String? = null,
-    val timestamp: Long? = null,
-    var status: MessageStatus = MessageStatus.SENT,
-    var deliveredTimestamp: Long? = null,
-    val id: String? = UUID.randomUUID().toString(),
-){
-    fun toMessageData(): MessageData {
-        val formattedDate = formatTimestampToTime(timestamp ?: 0)
-
-        return MessageData(
-            id = id,
-            text = text,
-            timestamp = formattedDate,
-            status = status,
-            deliveredTimestamp = deliveredTimestamp,
-            senderUsername = senderUsername,
-            senderUserId = senderUserId,
-            recipientUserId = recipientUserId
-        )
-    }
+    val id: String? = null,
+    val text: String = "",
+    val senderUsername: String = "",
+    val senderUserId: String = "",
+    val recipientUserId: String = "",
+    val recipientUsername: String = "",
+    val replyingMessageId: String = "",
+    @Serializable(with = FlexibleLongSerializer::class)
+    val timestamp: Long = 0,
+    val status: MessageStatus = MessageStatus.SENT,
+) {
+    fun toMessageData(): MessageData = MessageData(
+        id = id,
+        text = text,
+        timestamp = formatTimestampToTime(timestamp),
+        status = status,
+        senderUsername = senderUsername,
+        senderUserId = senderUserId,
+        recipientUserId = recipientUserId,
+        recipientUsername = recipientUsername,
+    )
 }
 
+@Serializable
 enum class MessageStatus {
-    SENT,       // Message was sent from the sender
-    DELIVERED,  // Message was delivered to the recipient
-    READ,       // Message was read by recipient
-    FAILED      // Message delivery failed
+    SENT,       // Stored on the server, not yet received by the recipient
+    DELIVERED,  // Reached the recipient's device
+    READ,       // Read by the recipient
+    FAILED      // Client-side only: could not be sent
 }
 
 @SuppressLint("SimpleDateFormat")

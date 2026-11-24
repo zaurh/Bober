@@ -1,48 +1,42 @@
 package com.zaurh.bober.di
 
-import android.content.SharedPreferences
 import com.zaurh.bober.data.repository.AuthRepoImpl
+import com.zaurh.bober.data.repository.MessagesRepoImpl
 import com.zaurh.bober.data.repository.TenorRepoImpl
 import com.zaurh.bober.data.repository.UserRepoImpl
-import com.zaurh.bober.data.tenor.TenorApi
-import com.zaurh.bober.data.user.UserApi
+import com.zaurh.bober.data.repository.WebSocketRepoImpl
 import com.zaurh.bober.domain.repository.AuthRepo
+import com.zaurh.bober.domain.repository.MessageRepository
 import com.zaurh.bober.domain.repository.TenorRepo
 import com.zaurh.bober.domain.repository.UserRepository
+import com.zaurh.bober.domain.repository.WebSocketRepository
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object ProvideRepositories {
+abstract class ProvideRepositories {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideUserRepository(
-        sharedPreferences: SharedPreferences,
-        api: UserApi
-    ): UserRepository {
-        return UserRepoImpl(api = api, prefs = sharedPreferences)
-    }
+    abstract fun bindUserRepository(impl: UserRepoImpl): UserRepository
 
-
-    @Provides
+    @Binds
     @Singleton
-    fun provideAuthRepo(
-        sharedPreferences: SharedPreferences,
-        api: UserApi
-    ): AuthRepo {
-        return AuthRepoImpl(api = api, prefs = sharedPreferences)
-    }
+    abstract fun bindAuthRepo(impl: AuthRepoImpl): AuthRepo
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideTenorRepo(
-        api: TenorApi
-    ): TenorRepo {
-        return TenorRepoImpl(api = api)
-    }
+    abstract fun bindMessageRepository(impl: MessagesRepoImpl): MessageRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWebSocketRepository(impl: WebSocketRepoImpl): WebSocketRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTenorRepo(impl: TenorRepoImpl): TenorRepo
 }

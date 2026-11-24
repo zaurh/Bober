@@ -43,11 +43,11 @@ fun SettingsAgeRange(
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Age range", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+            Text(text = "Age range", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
             val (start, end) = sliderValue.start.toInt() to sliderValue.endInclusive.toInt()
             Text(
                 text = "$start - $end",
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp
             )
         }
@@ -62,9 +62,9 @@ fun SettingsAgeRange(
                 )
             },
             colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.onSecondary,
-                activeTrackColor = MaterialTheme.colorScheme.onSecondary,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSecondary,
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.primary,
             )
         )
         Spacer(modifier = Modifier.size(8.dp))

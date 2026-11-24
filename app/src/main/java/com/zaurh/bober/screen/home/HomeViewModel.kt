@@ -45,10 +45,9 @@ class HomeViewModel @Inject constructor(
 
     fun getUserData(){
         viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.getUserData()
-            if (response.user == null){
-                authRepo.logout()
-            }
+            // An expired session is handled centrally (AuthInterceptor → AuthRepo.logout);
+            // a network error must not sign the user out.
+            userRepository.getUserData()
         }
     }
 
@@ -60,18 +59,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun switchRecipient(recipientUserId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            webSocketRepository.switchRecipient(
-                newRecipientUserId = recipientUserId
-            )
-        }
+        webSocketRepository.switchRecipient(recipientUserId)
     }
 
     fun newMatchToOld(matchUserId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val allMatches = matchListState.value
+            val allMatches = matchListState.value.filterNotNull()
             val updatedMatches = allMatches.map { match ->
-                if (match?.id == matchUserId) {
+                if (match.id == matchUserId) {
                     match.copy(new = false)
                 } else {
                     match

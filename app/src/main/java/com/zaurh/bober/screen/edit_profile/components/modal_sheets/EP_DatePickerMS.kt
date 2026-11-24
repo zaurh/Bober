@@ -56,7 +56,7 @@ fun EP_DatePickerMS(
                     Text(
                         text = "Birth date",
                         fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = {
                         editProfileViewModel.onDatePickerChange(false)
@@ -64,7 +64,7 @@ fun EP_DatePickerMS(
                         Icon(
                             imageVector = Icons.Default.Done,
                             contentDescription = "",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

@@ -41,7 +41,7 @@ fun EP_MediaItem(
             .clip(shape = RoundedCornerShape(20))
             .border(
                 3.dp,
-                color = if (isDragging) MaterialTheme.colorScheme.onSecondary else Color.Transparent,
+                color = if (isDragging) MaterialTheme.colorScheme.primary else Color.Transparent,
                 shape = RoundedCornerShape(20)
             )
     ) {

@@ -15,5 +15,5 @@ fun SettingsDivider() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .alpha(0.3f), thickness = 1.dp, color = MaterialTheme.colorScheme.secondary)
+            .alpha(0.3f), thickness = 1.dp, color = MaterialTheme.colorScheme.primary)
 }

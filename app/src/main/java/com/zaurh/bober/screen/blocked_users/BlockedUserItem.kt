@@ -49,17 +49,17 @@ fun BlockedUserItem(
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(text = "@${blockedUserData.username}", color = MaterialTheme.colorScheme.primary)
-                Text(text = "${blockedUserData.name}", color = MaterialTheme.colorScheme.primary)
+                Text(text = "@${blockedUserData.username}", color = MaterialTheme.colorScheme.onSurface)
+                Text(text = "${blockedUserData.name}", color = MaterialTheme.colorScheme.onSurface)
             }
         }
 
         Button(colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.tertiary
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),onClick = {
             onUnblockClick()
         }) {
-            Text(text = "Unblock", color = MaterialTheme.colorScheme.primary)
+            Text(text = "Unblock", color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
