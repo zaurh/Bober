@@ -10,12 +10,17 @@ import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.user.UserUpdate
 import com.zaurh.bober.domain.repository.AuthRepo
 import com.zaurh.bober.domain.repository.UserRepository
+import com.zaurh.bober.screen.settings.state.DeleteAccountState
+import com.zaurh.bober.screen.settings.state.LogoutState
 import com.zaurh.bober.screen.settings.state.ShowMeState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,12 +32,14 @@ class SettingsViewModel @Inject constructor(
 
     val userDataState: StateFlow<UserData?> = userRepository.userData
 
-
     private val _showMeState = mutableStateOf(ShowMeState(showMe = userDataState.value?.showMe ?: ShowMe.EVERYONE))
     val showMeState: State<ShowMeState> = _showMeState
 
     private val _deleteAccountState = mutableStateOf(DeleteAccountState())
     val deleteAccountState: State<DeleteAccountState> = _deleteAccountState
+
+    private val _logoutState = MutableStateFlow(LogoutState())
+        val logoutState = _logoutState.asStateFlow()
 
     private var countdownJob: Job? = null
 
@@ -156,15 +163,19 @@ class SettingsViewModel @Inject constructor(
 
 
     fun logout(onSuccess: () -> Unit){
+        _logoutState.update { it.copy(loading = true) }
+
         viewModelScope.launch(Dispatchers.IO){
             val response = authRepo.logout()
             if (response.success){
+                _logoutState.update { it.copy(loading = true, success = true, error = "") }
                 userRepository.clearProfileData()
                 userRepository.clearUserData()
-
                 viewModelScope.launch(Dispatchers.Main) {
                     onSuccess()
                 }
+            }else{
+                _logoutState.update { it.copy(loading = false, success = false, error = response.message) }
             }
         }
     }

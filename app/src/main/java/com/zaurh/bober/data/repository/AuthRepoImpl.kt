@@ -4,6 +4,7 @@ import android.util.Log
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
 import com.zaurh.bober.data.requests.FCMTokenRequest
+import com.zaurh.bober.data.requests.GoogleTokenRequest
 import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
 import com.zaurh.bober.data.requests.SignUpRequest
@@ -162,6 +163,39 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
+    override suspend fun googleVerify(token: String): SignInResponse {
+        return try {
+            val response = api.googleVerify(
+                googleTokenRequest = GoogleTokenRequest(
+                    token = token
+                )
+            )
+
+            if (response.success){
+                _signedIn.value = true
+                boberPreferences.saveSignedIn(true)
+                boberPreferences.saveJwtKey(response.token ?: "")
+                boberPreferences.saveCurrentUserId(response.user?.id ?: "")
+                response.user?.let {
+                    userDao.insertUser(it.toUserEntity())
+                }
+            }
+
+            SignInResponse(
+                success = response.success,
+                message = response.message,
+                user = response.user
+            )
+
+        } catch (e: Exception) {
+            SignInResponse(
+                success = false,
+                message = e.cause?.message ?: ""
+            )
+        }
+
+    }
+
     override suspend fun signIn(
         userId: String?,
         username: String,
@@ -177,7 +211,8 @@ class AuthRepoImpl @Inject constructor(
             )
 
             if (response.success){
-                Log.d("asdjlasdj", "${response.user?.id}")
+                _signedIn.value = true
+                boberPreferences.saveSignedIn(true)
                 boberPreferences.saveJwtKey(response.token ?: "")
                 boberPreferences.saveCurrentUserId(response.user?.id ?: "")
                 response.user?.let {
@@ -185,18 +220,6 @@ class AuthRepoImpl @Inject constructor(
                 }
             }
 
-
-
-//            prefs.edit()
-//                .putString("jwt", response.token)
-//                .apply()
-
-
-            if (response.success) {
-                _signedIn.value = true
-                boberPreferences.saveSignedIn(true)
-
-            }
 
             SignInResponse(
                 success = response.success,

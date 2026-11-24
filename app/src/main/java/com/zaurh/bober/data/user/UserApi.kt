@@ -3,6 +3,7 @@ package com.zaurh.bober.data.user
 import com.zaurh.bober.data.requests.CheckCurrentPasswordRequest
 import com.zaurh.bober.data.requests.CheckUsernameRequest
 import com.zaurh.bober.data.requests.FCMTokenRequest
+import com.zaurh.bober.data.requests.GoogleTokenRequest
 import com.zaurh.bober.data.requests.PremiumCardRequest
 import com.zaurh.bober.data.requests.SendEmailRequest
 import com.zaurh.bober.data.requests.SignInRequest
@@ -52,6 +53,11 @@ interface UserApi {
     suspend fun signUp(
         @Body apiRequest: SignUpRequest
     ): SignUpResponse
+
+    @POST("/google_verify")
+    suspend fun googleVerify(
+        @Body googleTokenRequest: GoogleTokenRequest
+    ): SignInResponse
 
     @POST("/sign_in")
     suspend fun signIn(

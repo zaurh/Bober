@@ -13,11 +13,11 @@ import com.zaurh.bober.data.user.UserData
 import com.zaurh.bober.data.user.UserUpdate
 import com.zaurh.bober.domain.repository.AuthRepo
 import com.zaurh.bober.domain.repository.UserRepository
+import com.zaurh.bober.screen.auth.sign_up.states.ImageState
 import com.zaurh.bober.screen.edit_profile.states.DeleteImageState
 import com.zaurh.bober.screen.edit_profile.states.InterestsState
 import com.zaurh.bober.screen.edit_profile.states.LanguageState
 import com.zaurh.bober.screen.edit_profile.states.UsernameState
-import com.zaurh.bober.screen.sign_up.states.ImageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow

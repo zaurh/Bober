@@ -15,11 +15,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.Period
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
 
 
 fun lastSeenDay(timestamp: Long?): String{
@@ -82,20 +81,29 @@ fun stringToLocalDate(dateString: String): LocalDate {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun calculateAge(dateOfBirth: String): Int {
-    if (dateOfBirth.isNotEmpty()){
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    if (dateOfBirth.isNotEmpty()) {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-        val dob = LocalDate.parse(dateOfBirth, formatter)
-        val currentDate = LocalDate.now()
-        val period = Period.between(dob, currentDate)
+        try {
+            val dob = formatter.parse(dateOfBirth) ?: return 0
+            val dobCalendar = Calendar.getInstance().apply { time = dob }
+            val todayCalendar = Calendar.getInstance()
 
-        return period.years
-    }else{
-        return 0
+            var age = todayCalendar.get(Calendar.YEAR) - dobCalendar.get(Calendar.YEAR)
+
+            if (todayCalendar.get(Calendar.DAY_OF_YEAR) < dobCalendar.get(Calendar.DAY_OF_YEAR)) {
+                age-- // Adjust if the birthday hasn't occurred yet this year
+            }
+
+            return age
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
+    return 0
 }
+
 
 
 object DateSerializer : KSerializer<Date> {

@@ -1,7 +1,6 @@
 package com.zaurh.bober.screen.profile.components
 
 import android.content.Intent
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -38,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -90,13 +90,14 @@ fun ProfileContent(
     profileViewModel: ProfileViewModel,
     chatScreenViewModel: ChatScreenViewModel,
     blockedUsersViewModel: BlockedUsersViewModel,
-    user: UserData,
+    profileData: UserData?,
     navController: NavController
 ) {
     val currentUser = profileViewModel.currentUserDataState.collectAsState()
     val matchListState = chatScreenViewModel.matchListState.value
     val blockListState = blockedUsersViewModel.blockedUsersState.value
-    val profileData = profileViewModel.profileDataState.collectAsState()
+//    val profileData = profileViewModel.profileDataState.collectAsState()
+    val profileLoading = profileViewModel.profileLoading.collectAsState()
     val imageIndex by profileViewModel.imageIndex
     val context = LocalContext.current
 
@@ -111,389 +112,425 @@ fun ProfileContent(
         navController = navController,
     )
 
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
             .background(color = MaterialTheme.colorScheme.surface)
             .padding(paddingValues)
     ) {
+        val configuration = LocalConfiguration.current
+        val screenHeight = configuration.screenHeightDp.dp
 
-        Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 48.dp)
-        ) {
-            val pagerState = rememberPagerState(
-                pageCount = { profileData.value?.imageUrl?.size ?: 10 },
-                initialPage = imageIndex ?: 0
-            )
-            val scope = rememberCoroutineScope()
-            var screenWidth by remember { mutableIntStateOf(0) }
+        if (profileLoading.value) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(screenHeight * 2 / 3)
+                        .clip(
+                            RoundedCornerShape(
+                                bottomStart = 30.dp,
+                                bottomEnd = 30.dp
+                            )
+                        )
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color.LightGray,
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary.copy(0.3f))
+                }
 
-            val configuration = LocalConfiguration.current
-            val screenHeight = configuration.screenHeightDp.dp
 
-            LaunchedEffect(key1 = pagerState.currentPage) {
-                profileViewModel.updateIndex(pagerState.currentPage)
             }
+        }
+        profileData?.let { profile ->
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 48.dp)
+            ) {
+                val pagerState = rememberPagerState(
+                    pageCount = { profile.imageUrl?.size ?: 10 },
+                    initialPage = imageIndex ?: 0
+                )
+                val scope = rememberCoroutineScope()
+                var screenWidth by remember { mutableIntStateOf(0) }
 
 
-            Box {
-                HorizontalPager(state = pagerState, key = {
-                    profileData.value?.imageUrl?.get(it) ?: ""
-                }) { index ->
-                    val imageUrl = profileData.value?.imageUrl?.get(index)
-                    AsyncImage(
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .height(screenHeight * 2 / 3)
-                            .onGloballyPositioned { layoutCoordinates ->
-                                screenWidth = layoutCoordinates.size.width
-                            }
-                            .pointerInput(Unit) {
-                                detectTapGestures { offset: Offset ->
-                                    if (offset.x < screenWidth / 2) {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(
-                                                pagerState.currentPage - 1
-                                            )
-                                        }
-                                    } else {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(
-                                                pagerState.currentPage + 1
-                                            )
+                LaunchedEffect(key1 = pagerState.currentPage) {
+                    profileViewModel.updateIndex(pagerState.currentPage)
+                }
+
+
+                Box {
+                    HorizontalPager(state = pagerState, key = {
+                        profile.imageUrl?.get(it) ?: ""
+                    }) { index ->
+                        val imageUrl = profile.imageUrl?.get(index)
+                        AsyncImage(
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .height(screenHeight * 2 / 3)
+                                .onGloballyPositioned { layoutCoordinates ->
+                                    screenWidth = layoutCoordinates.size.width
+                                }
+                                .pointerInput(Unit) {
+                                    detectTapGestures { offset: Offset ->
+                                        if (offset.x < screenWidth / 2) {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(
+                                                    pagerState.currentPage - 1
+                                                )
+                                            }
+                                        } else {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(
+                                                    pagerState.currentPage + 1
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)),
-                        model = imageUrl,
-                        contentDescription = "",
-                        placeholder = painterResource(id = R.drawable.placeholder_image)
-                    )
-                }
-
-                Row(
-                    Modifier
-                        .height(50.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(profileData.value?.imageUrl?.size ?: 1) { iteration ->
-                        val color =
-                            if (pagerState.currentPage == iteration) Color.White else Color.DarkGray
-                        Box(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .background(color)
-                                .width(40.dp)
-                                .height(5.dp)
-                        )
-                    }
-                }
-            }
-
-            Column(Modifier.padding(16.dp)) {
-                val userId = profileData.value?.id ?: ""
-
-                val inBlockList = blockListState.blockList.any { it.id == userId }
-
-
-                val inLikedList =
-                    currentUser.value?.likedUsers?.contains(userId) == true
-
-                val inMatchList =
-                    matchListState.matchList.any { it.id == userId }
-
-                val currentUserItself = currentUser.value?.id == userId
-
-                val jobTitleExist = user.jobTitle?.isNotEmpty() == true
-                val heightExist =
-                    user.height?.toString()?.isNotEmpty() == true && user.height.toString() != "0"
-                val nameExist = user.name?.isNotEmpty() == true
-                val aboutExist = user.aboutMe?.isNotEmpty() == true
-                val languagesExist = user.languages?.isNotEmpty() == true
-                val interestsExist = user.interests?.isNotEmpty() == true
-
-                if (nameExist || jobTitleExist) {
-                    Profile_CardItem {
-                        if (nameExist) {
-                            Text(
-                                text = user.name ?: "",
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontFamily = outfitFamily
-                            )
-                        }
-
-                        if (jobTitleExist) {
-                            Spacer(modifier = Modifier.size(4.dp))
-                            Text(
-                                text = user.jobTitle ?: "",
-                                color = Color.Gray,
-                                fontFamily = outfitFamily
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.size(16.dp))
-                Profile_CardItem {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            modifier = Modifier.size(16.dp),
-                            painter = painterResource(id = R.drawable.gender),
+                                .clip(
+                                    RoundedCornerShape(
+                                        bottomStart = 30.dp,
+                                        bottomEnd = 30.dp
+                                    )
+                                ),
+                            model = imageUrl,
                             contentDescription = "",
-                            tint = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
-                        Text(
-                            text = "${user.gender?.displayName}",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontFamily = outfitFamily
+                            placeholder = painterResource(id = R.drawable.placeholder_image)
                         )
                     }
-                    if (heightExist) {
-                        Spacer(modifier = Modifier.size(4.dp))
 
+                    Row(
+                        Modifier
+                            .height(50.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(profile.imageUrl?.size ?: 1) { iteration ->
+                            val color =
+                                if (pagerState.currentPage == iteration) Color.White else Color.DarkGray
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .background(color)
+                                    .width(40.dp)
+                                    .height(5.dp)
+                            )
+                        }
+                    }
+                }
+
+
+                Column(Modifier.padding(16.dp)) {
+                    val userId = profile.id ?: ""
+
+                    val inBlockList = blockListState.blockList.any { it.id == userId }
+
+
+                    val inLikedList =
+                        currentUser.value?.likedUsers?.contains(userId) == true
+
+                    val inMatchList =
+                        matchListState.matchList.any { it.id == userId }
+
+                    val currentUserItself = currentUser.value?.id == userId
+
+                    val jobTitleExist = profile.jobTitle?.isNotEmpty() == true
+                    val heightExist =
+                        profile.height?.toString()
+                            ?.isNotEmpty() == true && profile.height.toString() != "0"
+                    val nameExist = profile.name?.isNotEmpty() == true
+                    val aboutExist = profile.aboutMe?.isNotEmpty() == true
+                    val languagesExist = profile.languages?.isNotEmpty() == true
+                    val interestsExist = profile.interests?.isNotEmpty() == true
+
+                    if (nameExist || jobTitleExist) {
+                        Profile_CardItem {
+                            if (nameExist) {
+                                Text(
+                                    text = profile.name ?: "",
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontFamily = outfitFamily
+                                )
+                            }
+
+                            if (jobTitleExist) {
+                                Spacer(modifier = Modifier.size(4.dp))
+                                Text(
+                                    text = profile.jobTitle ?: "",
+                                    color = Color.Gray,
+                                    fontFamily = outfitFamily
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.size(16.dp))
+                    Profile_CardItem {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 modifier = Modifier.size(16.dp),
-                                painter = painterResource(id = R.drawable.height),
+                                painter = painterResource(id = R.drawable.gender),
                                 contentDescription = "",
                                 tint = Color.Gray
                             )
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
-                                text = "${user.height}cm",
+                                text = "${profile.gender?.displayName}",
                                 color = MaterialTheme.colorScheme.primary,
                                 fontFamily = outfitFamily
                             )
                         }
+                        if (heightExist) {
+                            Spacer(modifier = Modifier.size(4.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    modifier = Modifier.size(16.dp),
+                                    painter = painterResource(id = R.drawable.height),
+                                    contentDescription = "",
+                                    tint = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.size(4.dp))
+                                Text(
+                                    text = "${profile.height}cm",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontFamily = outfitFamily
+                                )
+                            }
+                        }
+
                     }
-
-                }
-                if (aboutExist) {
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Profile_CardItem(modifier = Modifier.height(160.dp)) {
-                        Text(
-                            text = "• About",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontFamily = outfitFamily
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                        ) {
-
+                    if (aboutExist) {
+                        Spacer(modifier = Modifier.size(16.dp))
+                        Profile_CardItem(modifier = Modifier.height(160.dp)) {
                             Text(
-                                text = user.aboutMe ?: "",
-                                color = Color.Gray,
-                                overflow = TextOverflow.Ellipsis,
+                                text = "• About",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontFamily = outfitFamily
                             )
-                        }
-                    }
-                }
-                if (languagesExist) {
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Profile_CardItem {
-                        val languages = user.languages
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
 
-                        Text(
-                            text = "• Languages",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontFamily = outfitFamily
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            languages?.forEachIndexed { index, language ->
                                 Text(
-                                    text = language.displayName,
+                                    text = profile.aboutMe ?: "",
                                     color = Color.Gray,
+                                    overflow = TextOverflow.Ellipsis,
                                     fontFamily = outfitFamily
                                 )
-                                if (index < languages.size - 1) {
-                                    Text(
-                                        text = ",",
-                                        modifier = Modifier.padding(end = 4.dp),
-                                        color = Color.Gray,
-                                        fontFamily = outfitFamily
-                                    )
-                                }
                             }
                         }
                     }
-                }
-                if (interestsExist) {
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Profile_CardItem {
-                        val interests = user.interests
+                    if (languagesExist) {
+                        Spacer(modifier = Modifier.size(16.dp))
+                        Profile_CardItem {
+                            val languages = profile.languages
 
-                        Text(
-                            text = "• Interests",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontFamily = outfitFamily
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            interests?.forEachIndexed { index, interest ->
-                                Text(
-                                    text = interest.displayName,
-                                    color = Color.Gray,
-                                    fontFamily = outfitFamily
-                                )
-                                if (index < interests.size - 1) {
-                                    Text(
-                                        text = ",",
-                                        modifier = Modifier.padding(end = 4.dp),
-                                        color = Color.Gray,
-                                        fontFamily = outfitFamily
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                Spacer(modifier = Modifier.size(32.dp))
-
-                val nameText = if (user.name != "") "${user.name}" else "${user.username}"
-
-
-                if (inLikedList && !inMatchList && !currentUserItself) {
-                    ProfileScreenButtonItem(
-                        title = "Unlike $nameText",
-                        isLoading = profileViewModel.unLikeLoading.value
-                    ) {
-                        profileViewModel.unLike(
-                            recipientId = profileData.value?.id ?: ""
-                        ) {
-                            navController.popBackStack()
-                        }
-                    }
-                } else if (inMatchList && !currentUserItself) {
-                    ProfileScreenButtonItem(
-                        title = "Unmatch $nameText",
-                        isLoading = profileViewModel.unMatchLoading.value
-                    ) {
-                        profileViewModel.onUnMatchStateChange()
-                    }
-                }
-                val sendIntent: Intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "https://zaurh.github.io/bobersite/?username=${user.username}"
-                    )
-                    type = "text/plain"
-                }
-                val shareIntent = Intent.createChooser(sendIntent, null)
-
-
-                ProfileScreenButtonItem(title = "Share $nameText's profile") {
-                    context.startActivity(shareIntent)
-                }
-                if (!currentUserItself) {
-                    ProfileScreenButtonItem(title = "Report $nameText") {
-                        profileViewModel.onReportStateChange()
-                    }
-                }
-
-                if (!currentUserItself) {
-                    ProfileScreenButtonItem(
-                        title = if (inBlockList) "Unblock $nameText" else "Block $nameText"
-                    ) {
-                        if (inBlockList) {
-                            blockedUsersViewModel.unBlockUser(
-                                recipientId = profileData.value?.id ?: ""
+                            Text(
+                                text = "• Languages",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = outfitFamily
                             )
-                        } else {
-                            blockedUsersViewModel.onBlockStateChange()
+                            Spacer(modifier = Modifier.size(4.dp))
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                languages?.forEachIndexed { index, language ->
+                                    Text(
+                                        text = language.displayName,
+                                        color = Color.Gray,
+                                        fontFamily = outfitFamily
+                                    )
+                                    if (index < languages.size - 1) {
+                                        Text(
+                                            text = ",",
+                                            modifier = Modifier.padding(end = 4.dp),
+                                            color = Color.Gray,
+                                            fontFamily = outfitFamily
+                                        )
+                                    }
+                                }
+                            }
                         }
-
                     }
-                }
+                    if (interestsExist) {
+                        Spacer(modifier = Modifier.size(16.dp))
+                        Profile_CardItem {
+                            val interests = profile.interests
 
-
-            }
-
-        }
-
-        LaunchedEffect(true) {
-            Log.d("dsalkjdsalkad", "${profileData.value?.id in blockListState.blockList.map { it.id }}")
-            Log.d("dsalkjdsalkad", "${currentUser.value?.likedUsers?.contains(profileData.value?.id)}")
-            Log.d("dsalkjdsalkad", "${currentUser.value?.id != profileData.value?.id}")
-            Log.d("dsalkjdsalkad", "${profileData.value?.id}")
-            Log.d("dsalkjdsalkad", "${blockListState.blockList.map { it.id }}")
-        }
-        AnimatedVisibility(
-            visible =
-            (profileData.value?.id !in blockListState.blockList.map { it.id }) &&
-                    currentUser.value?.likedUsers?.contains(profileData.value?.id) == false &&
-                    currentUser.value?.id != profileData.value?.id,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it })
-        )
-        {
-            Row(
-                Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                AnimatedBorderCard(
-                    imageVector = Icons.Default.Clear,
-                    imageColor = Color.Red,
-                    gradient = Brush.sweepGradient(
-                        listOf(
-                            colorResource(R.color.likeColor1),
-                            Color.Red
-                        )
-                    ),
-                    onCardClick = {
-                        profileViewModel.pass(recipientId = user.id ?: "", onSuccess = {
-                            navController.popBackStack()
-                        })
+                            Text(
+                                text = "• Interests",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = outfitFamily
+                            )
+                            Spacer(modifier = Modifier.size(4.dp))
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                interests?.forEachIndexed { index, interest ->
+                                    Text(
+                                        text = interest.displayName,
+                                        color = Color.Gray,
+                                        fontFamily = outfitFamily
+                                    )
+                                    if (index < interests.size - 1) {
+                                        Text(
+                                            text = ",",
+                                            modifier = Modifier.padding(end = 4.dp),
+                                            color = Color.Gray,
+                                            fontFamily = outfitFamily
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
-                )
-                AnimatedBorderCard(
-                    imageVector = Icons.Default.Favorite,
-                    imageColor = colorResource(R.color.green),
-                    gradient = Brush.sweepGradient(
-                        listOf(
-                            colorResource(R.color.likeColor2),
-                            colorResource(R.color.green)
-                        )
-                    ),
-                    onCardClick = {
-                        profileViewModel.like(
-                            recipientId = user.id ?: "",
-                            onSuccess = {
+
+
+                    Spacer(modifier = Modifier.size(32.dp))
+
+                    val nameText =
+                        if (profile.name != "") "${profile.name}" else "${profile.username}"
+
+
+                    if (inLikedList && !inMatchList && !currentUserItself) {
+                        ProfileScreenButtonItem(
+                            title = "Unlike $nameText",
+                            isLoading = profileViewModel.unLikeLoading.value
+                        ) {
+                            profileViewModel.unLike(
+                                recipientId = profile.id ?: ""
+                            ) {
                                 navController.popBackStack()
                             }
-                        )
+                        }
+                    } else if (inMatchList && !currentUserItself) {
+                        ProfileScreenButtonItem(
+                            title = "Unmatch $nameText",
+                            isLoading = profileViewModel.unMatchLoading.value
+                        ) {
+                            profileViewModel.onUnMatchStateChange()
+                        }
                     }
-                )
+                    val sendIntent: Intent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "https://zaurh.github.io/bobersite/?username=${profile.username}"
+                        )
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, null)
+
+
+                    ProfileScreenButtonItem(title = "Share $nameText's profile") {
+                        context.startActivity(shareIntent)
+                    }
+                    if (!currentUserItself) {
+                        ProfileScreenButtonItem(title = "Report $nameText") {
+                            profileViewModel.onReportStateChange()
+                        }
+                    }
+
+                    if (!currentUserItself) {
+                        ProfileScreenButtonItem(
+                            title = if (inBlockList) "Unblock $nameText" else "Block $nameText"
+                        ) {
+                            if (inBlockList) {
+                                blockedUsersViewModel.unBlockUser(
+                                    recipientId = profile.id ?: ""
+                                )
+                            } else {
+                                blockedUsersViewModel.onBlockStateChange()
+                            }
+
+                        }
+                    }
+
+
+                }
+
+
             }
 
+
+            AnimatedVisibility(
+                visible =
+                (profile.id !in blockListState.blockList.map { it.id }) &&
+                        currentUser.value?.likedUsers?.contains(profile.id) == false &&
+                        currentUser.value?.id != profile.id,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it })
+            )
+            {
+                Row(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    AnimatedBorderCard(
+                        imageVector = Icons.Default.Clear,
+                        imageColor = Color.Red,
+                        gradient = Brush.sweepGradient(
+                            listOf(
+                                colorResource(R.color.likeColor1),
+                                Color.Red
+                            )
+                        ),
+                        onCardClick = {
+                            profileViewModel.pass(recipientId = profile.id ?: "", onSuccess = {
+                                navController.popBackStack()
+                            })
+                        }
+                    )
+                    AnimatedBorderCard(
+                        imageVector = Icons.Default.Favorite,
+                        imageColor = colorResource(R.color.green),
+                        gradient = Brush.sweepGradient(
+                            listOf(
+                                colorResource(R.color.likeColor2),
+                                colorResource(R.color.green)
+                            )
+                        ),
+                        onCardClick = {
+                            profileViewModel.like(
+                                recipientId = profile.id ?: "",
+                                onSuccess = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+                    )
+                }
+
+            }
+
+
         }
+
 
     }
 

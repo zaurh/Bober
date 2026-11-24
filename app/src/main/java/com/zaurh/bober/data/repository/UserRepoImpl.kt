@@ -91,8 +91,12 @@ class UserRepoImpl @Inject constructor(
 
     override suspend fun getUserData(): GetUserDataResponse {
         return try {
+
             val token = getToken()
             val response = api.getUserData("Bearer $token")
+            Log.d("GetUserData", "$response")
+            Log.d("GetUserData", "$token")
+
 
             if (response.success) {
                 _userData.value = response.user

@@ -11,18 +11,21 @@ android {
     namespace = "com.zaurh.bober"
     compileSdk = 34
 
+
+
     defaultConfig {
         applicationId = "com.zaurh.bober"
         minSdk = 24
         targetSdk = 34
-        versionCode = 25
-        versionName = "1.1.5"
+        versionCode = 26
+        versionName = "1.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
     }
+
 
     buildTypes {
         release {
@@ -33,6 +36,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -82,7 +86,7 @@ dependencies {
     //Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // Retrofit
+    //retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
@@ -155,5 +159,7 @@ dependencies {
 
     //LeakCanary
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
 }

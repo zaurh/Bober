@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import com.zaurh.bober.screen.auth.sign_up.sign_up_image.image_edit.ImageEditViewModel
 import com.zaurh.bober.screen.edit_profile.components.EP_Content
 import com.zaurh.bober.screen.edit_profile.components.EP_TopBar
 import com.zaurh.bober.screen.edit_profile.components.EP_UsernameChange
@@ -13,7 +14,6 @@ import com.zaurh.bober.screen.edit_profile.components.modal_sheets.EP_GenderMS
 import com.zaurh.bober.screen.edit_profile.components.modal_sheets.EP_HeightMS
 import com.zaurh.bober.screen.edit_profile.components.modal_sheets.EP_InterestsMS
 import com.zaurh.bober.screen.edit_profile.components.modal_sheets.EP_LanguageMS
-import com.zaurh.bober.screen.sign_up.sign_up_image.image_edit.ImageEditViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

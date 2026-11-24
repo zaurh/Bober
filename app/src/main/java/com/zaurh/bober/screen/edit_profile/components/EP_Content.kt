@@ -50,10 +50,10 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.zaurh.bober.R
 import com.zaurh.bober.navigation.Screen
+import com.zaurh.bober.screen.auth.sign_up.sign_up_image.components.ImageThumbnail
+import com.zaurh.bober.screen.auth.sign_up.sign_up_image.components.getMediaFromGallery
+import com.zaurh.bober.screen.auth.sign_up.sign_up_image.image_edit.ImageEditViewModel
 import com.zaurh.bober.screen.edit_profile.EditProfileViewModel
-import com.zaurh.bober.screen.sign_up.sign_up_image.components.ImageThumbnail
-import com.zaurh.bober.screen.sign_up.sign_up_image.components.getMediaFromGallery
-import com.zaurh.bober.screen.sign_up.sign_up_image.image_edit.ImageEditViewModel
 import com.zaurh.bober.ui.theme.outfitFamily
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
@@ -92,14 +92,14 @@ fun EP_Content(
         alertState = editProfileViewModel.discardChangesAlert.value,
         onDismiss = editProfileViewModel::onDiscardChangesAlert
     ) {
+        focus.clearFocus()
+        editProfileViewModel.onDiscardChangesAlert()
         navController.popBackStack()
     }
 
     LaunchedEffect(key1 = userDataState.value?.imageUrl) {
         editProfileViewModel.onImageChange(imageList = userDataState.value?.imageUrl ?: listOf())
     }
-
-
 
 
     val externalStoragePermission = Manifest.permission.READ_EXTERNAL_STORAGE
@@ -124,7 +124,7 @@ fun EP_Content(
             imageUrlState.value.imageUrl?.let {
                 editProfileViewModel.updateImage(
                     fileLink = it
-                ){
+                ) {
                     imageEditViewModel.resetEditing(true)
                 }
             }
@@ -133,7 +133,7 @@ fun EP_Content(
 
     val launcher = rememberLauncherForActivityResult(
         contract =
-        ActivityResultContracts.GetContent()
+            ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             editProfileViewModel.selectImage(it.toString()) {
@@ -164,214 +164,215 @@ fun EP_Content(
                                 }
                             }
                         }
+                    }
                 }
-            }
 
-            FloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 48.dp, end = 36.dp),
-                containerColor = MaterialTheme.colorScheme.onSecondary,
-                onClick = {
-                    launcher.launch("image/*")
-                }) {
-                Icon(
-                    painter = painterResource(R.drawable.folder_ic),
-                    contentDescription = "folder",
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.size(24.dp)
-                )
+                FloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 48.dp, end = 36.dp),
+                    containerColor = MaterialTheme.colorScheme.onSecondary,
+                    onClick = {
+                        launcher.launch("image/*")
+                    }) {
+                    Icon(
+                        painter = painterResource(R.drawable.folder_ic),
+                        contentDescription = "folder",
+                        tint = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
-}
 
 
 
 
-Surface(
-modifier = Modifier
-.fillMaxSize()
-.padding(padding)
-.background(MaterialTheme.colorScheme.surface)
-) {
-    Column(
-        Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp)
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
-        userDataState.value?.let {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Images (${images.size}/6)",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontFamily = outfitFamily
-                )
-                if (images.size < 6) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (imageUrlState.value.loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onSecondary
-                            )
-                        }
-                        Spacer(modifier = Modifier.size(4.dp))
-                        Button(enabled = !imageUrlState.value.loading,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            onClick = {
-                                focus.clearFocus()
-                                if (isPermissionGranted) {
-                                    editProfileViewModel.bottomSheetTrigger()
-                                } else {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
-                                    } else {
-                                        launcher.launch("image/*")
-                                    }
-                                }
-
-                            }) {
-                            Text(
-                                text = if (imageUrlState.value.loading) "Uploading..." else "+ Add new image",
-                                color = Color.White,
-                                fontFamily = outfitFamily,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-
-                }
-
-            }
-
-            val state =
-                rememberReorderableLazyGridState(
-                    onMove = { from, to ->
-                        dataImage.value = dataImage.value.toMutableList().apply {
-                            add(to.index, removeAt(from.index))
-                        }
-                        editProfileViewModel.onDiscardChanges(true)
-                    })
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                state = state.gridState,
-                modifier = Modifier
-                    .height(if (images.size > 3) 400.dp else 200.dp)
-                    .reorderable(state)
-            ) {
-                items(images, { it }) { item ->
-                    ReorderableItem(
-                        state = state,
-                        key = item,
-                        defaultDraggingModifier = Modifier
-                    ) { isDragging ->
-                        EP_MediaItem(
-                            modifier = Modifier.detectReorderAfterLongPress(state),
-                            image = item,
-                            isDragging = isDragging,
-                            onClick = {
-                                editProfileViewModel.onDeleteImageState(selectedImage = it)
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp)
+        ) {
+            userDataState.value?.let {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Images (${images.size}/6)",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = outfitFamily
+                    )
+                    if (images.size < 6) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (imageUrlState.value.loading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onSecondary
+                                )
                             }
-                        )
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Button(
+                                enabled = !imageUrlState.value.loading,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                onClick = {
+                                    focus.clearFocus()
+                                    if (isPermissionGranted) {
+                                        editProfileViewModel.bottomSheetTrigger()
+                                    } else {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                                        } else {
+                                            launcher.launch("image/*")
+                                        }
+                                    }
+
+                                }) {
+                                Text(
+                                    text = if (imageUrlState.value.loading) "Uploading..." else "+ Add new image",
+                                    color = Color.White,
+                                    fontFamily = outfitFamily,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+
                     }
 
                 }
 
-            }
-            EP_DeleteImageAlert(editProfileViewModel = editProfileViewModel)
+                val state =
+                    rememberReorderableLazyGridState(
+                        onMove = { from, to ->
+                            dataImage.value = dataImage.value.toMutableList().apply {
+                                add(to.index, removeAt(from.index))
+                            }
+                            editProfileViewModel.onDiscardChanges(true)
+                        })
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    state = state.gridState,
+                    modifier = Modifier
+                        .height(if (images.size > 3) 400.dp else 200.dp)
+                        .reorderable(state)
+                ) {
+                    items(images, { it }) { item ->
+                        ReorderableItem(
+                            state = state,
+                            key = item,
+                            defaultDraggingModifier = Modifier
+                        ) { isDragging ->
+                            EP_MediaItem(
+                                modifier = Modifier.detectReorderAfterLongPress(state),
+                                image = item,
+                                isDragging = isDragging,
+                                onClick = {
+                                    editProfileViewModel.onDeleteImageState(selectedImage = it)
+                                }
+                            )
+                        }
 
-            EP_UsernameTextField(editProfileViewModel = editProfileViewModel)
-            Spacer(modifier = Modifier.size(16.dp))
-            EP_TextField(
-                title = "Name",
-                placeholder = "Add your name",
-                value = editProfileViewModel.nameState.value,
-                onValueChange = editProfileViewModel::onNameChange,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.size(16.dp))
+                    }
 
-            EP_TextField(
-                title = "About me (${editProfileViewModel.aboutMeState.value.count()}/300)",
-                placeholder = "Tell something about yourself",
-                value = editProfileViewModel.aboutMeState.value,
-                onValueChange = editProfileViewModel::onAboutMeChange
-            )
-            Spacer(modifier = Modifier.size(16.dp))
-
-            val height = editProfileViewModel.heightTextState.value
-            EP_MultipleChoiceItem(
-                title = "Height",
-                icon = R.drawable.height,
-                text = if (height.isEmpty() || height.toInt() == 0) "Add height" else height
-            ) {
-                editProfileViewModel.onHeightStateChange(true)
-            }
-            Spacer(modifier = Modifier.size(16.dp))
-
-            EP_MultipleChoiceItem(
-                title = "Birth date",
-                icon = R.drawable.date_ic,
-                text = editProfileViewModel.birthDateState.value.ifEmpty {
-                    "Add birth date"
                 }
-            ) {
-                editProfileViewModel.onDatePickerChange(true)
+                EP_DeleteImageAlert(editProfileViewModel = editProfileViewModel)
+
+                EP_UsernameTextField(editProfileViewModel = editProfileViewModel)
+                Spacer(modifier = Modifier.size(16.dp))
+                EP_TextField(
+                    title = "Name",
+                    placeholder = "Add your name",
+                    value = editProfileViewModel.nameState.value,
+                    onValueChange = editProfileViewModel::onNameChange,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.size(16.dp))
+
+                EP_TextField(
+                    title = "About me (${editProfileViewModel.aboutMeState.value.count()}/300)",
+                    placeholder = "Tell something about yourself",
+                    value = editProfileViewModel.aboutMeState.value,
+                    onValueChange = editProfileViewModel::onAboutMeChange
+                )
+                Spacer(modifier = Modifier.size(16.dp))
+
+                val height = editProfileViewModel.heightTextState.value
+                EP_MultipleChoiceItem(
+                    title = "Height",
+                    icon = R.drawable.height,
+                    text = if (height.isEmpty() || height.toInt() == 0) "Add height" else height
+                ) {
+                    editProfileViewModel.onHeightStateChange(true)
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+
+                EP_MultipleChoiceItem(
+                    title = "Birth date",
+                    icon = R.drawable.date_ic,
+                    text = editProfileViewModel.birthDateState.value.ifEmpty {
+                        "Add birth date"
+                    }
+                ) {
+                    editProfileViewModel.onDatePickerChange(true)
+                }
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+
+                val languages = editProfileViewModel.languageState.value.selectedLanguages
+
+                EP_MultipleChoiceItem(
+                    title = "Languages",
+                    icon = R.drawable.language_ic,
+                    text = languages.joinToString(", ") { it.displayName }
+                        .ifEmpty { "Add languages you speak" },
+                    onClick = editProfileViewModel::onLanguagesStateChange
+                )
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                val gender = editProfileViewModel.gender.value
+                EP_MultipleChoiceItem(
+                    title = "Gender",
+                    icon = R.drawable.gender,
+                    text = gender?.displayName ?: "",
+                    onClick = {
+                        editProfileViewModel.onGenderStateChange(true)
+                    })
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                val interests = editProfileViewModel.interestsState.value.selectedInterests
+
+                EP_MultipleChoiceItem(
+                    title = "Interests",
+                    icon = R.drawable.language_ic,
+                    text = interests.joinToString(", ") { it.displayName }
+                        .ifEmpty { "Add your interests" },
+                    onClick = editProfileViewModel::onInterestsStateChange
+                )
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                EP_TextField(
+                    title = "Job title",
+                    placeholder = "What do you do?",
+                    value = editProfileViewModel.jobTitleState.value,
+                    onValueChange = editProfileViewModel::onJobTitleChange,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.size(48.dp))
             }
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-
-            val languages = editProfileViewModel.languageState.value.selectedLanguages
-
-            EP_MultipleChoiceItem(
-                title = "Languages",
-                icon = R.drawable.language_ic,
-                text = languages.joinToString(", ") { it.displayName }
-                    .ifEmpty { "Add languages you speak" },
-                onClick = editProfileViewModel::onLanguagesStateChange
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            val gender = editProfileViewModel.gender.value
-            EP_MultipleChoiceItem(
-                title = "Gender",
-                icon = R.drawable.gender,
-                text = gender?.displayName ?: "",
-                onClick = {
-                    editProfileViewModel.onGenderStateChange(true)
-                })
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            val interests = editProfileViewModel.interestsState.value.selectedInterests
-
-            EP_MultipleChoiceItem(
-                title = "Interests",
-                icon = R.drawable.language_ic,
-                text = interests.joinToString(", ") { it.displayName }
-                    .ifEmpty { "Add your interests" },
-                onClick = editProfileViewModel::onInterestsStateChange
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            EP_TextField(
-                title = "Job title",
-                placeholder = "What do you do?",
-                value = editProfileViewModel.jobTitleState.value,
-                onValueChange = editProfileViewModel::onJobTitleChange,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.size(48.dp))
         }
     }
-}
 }

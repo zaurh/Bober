@@ -14,7 +14,9 @@ import com.zaurh.bober.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,6 +28,9 @@ class ProfileViewModel @Inject constructor(
     val currentUserDataState: StateFlow<UserData?> = userRepository.userData
 
     val profileDataState: StateFlow<UserData?> = userRepository.profileData
+
+    private val _profileLoading = MutableStateFlow(false)
+        val profileLoading = _profileLoading.asStateFlow()
 
     private val _unMatchLoading = mutableStateOf(false)
     val unMatchLoading: State<Boolean> = _unMatchLoading
@@ -67,7 +72,13 @@ class ProfileViewModel @Inject constructor(
 
     fun getProfileID(recipientId: String) {
         getProfileJob = viewModelScope.launch(Dispatchers.IO) {
-            userRepository.getProfileID(recipientId)
+            _profileLoading.value = true
+            val result = userRepository.getProfileID(recipientId)
+            if (result.success){
+                _profileLoading.value = false
+            }else{
+                _profileLoading.value = false
+            }
         }
     }
 

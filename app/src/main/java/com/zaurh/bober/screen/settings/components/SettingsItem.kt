@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +27,7 @@ import com.zaurh.bober.ui.theme.outfitFamily
 @Composable
 fun SettingsItem(
     title: String,
+    loading: Boolean = false,
     description: String,
     onClick: () -> Unit,
     icon: Int,
@@ -51,7 +53,17 @@ fun SettingsItem(
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = title, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontFamily = outfitFamily)
+                    Spacer(Modifier.size(4.dp))
+                    if (loading){
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            color = MaterialTheme.colorScheme.secondary,
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
                 Text(text = description, color = Color.Gray, fontSize = 12.sp, fontFamily = outfitFamily)
             }
         }

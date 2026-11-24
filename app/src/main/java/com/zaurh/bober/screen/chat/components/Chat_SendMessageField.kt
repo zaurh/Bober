@@ -44,7 +44,7 @@ fun Chat_SendMessageField(
 
     TextField(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth()\
             .focusRequester(focusRequester)
             .padding(8.dp)
             .heightIn(max = 200.dp)

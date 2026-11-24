@@ -7,7 +7,7 @@ import com.zaurh.bober.data.user.room.UserDao
 import com.zaurh.bober.data.user.room.UserDataConverters
 import com.zaurh.bober.data.user.room.UserEntity
 
-@Database(entities = [MessageEntity::class, UserEntity::class], version = 7)
+@Database(entities = [MessageEntity::class, UserEntity::class], version = 8)
 @TypeConverters(UserDataConverters::class)
 
 abstract class MessageDatabase : RoomDatabase() {

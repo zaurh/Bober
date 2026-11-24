@@ -35,6 +35,7 @@ fun SettingsContent(
 ) {
     val currentUserData = settingsViewModel.userDataState.collectAsState()
     val deleteAccountState = settingsViewModel.deleteAccountState.value
+    val logoutState = settingsViewModel.logoutState.collectAsState()
     val context = LocalContext.current
 
     Surface(
@@ -157,10 +158,11 @@ fun SettingsContent(
             TitleItem(title = "Account")
             SettingsItem(
                 title = "Log out",
+                loading = logoutState.value.loading,
                 description = "Log out of the application",
                 onClick = {
                     settingsViewModel.logout {
-                        navController.navigate(Screen.SignInScreen.route) {
+                        navController.navigate(Screen.WelcomeScreen.route) {
                             popUpTo(0)
                         }
                     }

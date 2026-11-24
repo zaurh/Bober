@@ -2,6 +2,7 @@ package com.zaurh.bober.navigation
 
 sealed class Screen(val route: String){
 
+    data object WelcomeScreen: Screen(route = "welcome_screen")
     data object PagerScreen: Screen(route = "pager_screen")
     data object SignUpUsername: Screen(route = "sign_up_username_screen")
     data object SignUpGender: Screen(route = "sign_up_gender_screen")

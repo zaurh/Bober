@@ -26,6 +26,7 @@ interface AuthRepo {
         showMe: ShowMe,
         interests: List<Interests>
     ): SignUpResponse
+    suspend fun googleVerify(token: String): SignInResponse
     suspend fun signIn(userId: String? = null,username: String, password: String): SignInResponse
     suspend fun resetPassword(email: String): MessageResponse
     suspend fun checkPassword(password: String): MessageResponse

@@ -8,22 +8,27 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavController
 import com.zaurh.bober.screen.profile.ProfileViewModel
 import com.zaurh.bober.ui.theme.outfitFamily
+import com.zaurh.bober.util.calculateAge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Profile_TopBar(
     navController: NavController,
     profileViewModel: ProfileViewModel,
-    username: String,
-    age: String
 ) {
+    val profileData = profileViewModel.profileDataState.collectAsState()
 
     TopAppBar(title = {
-        val ageText = if (age != "0") ", $age" else ""
-        Text(text = "$username$ageText", fontFamily = outfitFamily)
+        profileData.value?.let {
+            val age = calculateAge(profileData.value?.birthDate ?: "").toString()
+            val ageText = if (age != "0") ", $age" else ""
+            Text(text = "${it.username}$ageText", fontFamily = outfitFamily)
+        }
+
     }, navigationIcon = {
         IconButton(onClick = {
             navController.popBackStack()

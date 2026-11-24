@@ -35,10 +35,9 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.isFlexibleUpdateAllowed
 import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.zaurh.bober.domain.repository.WebSocketRepository
-import com.zaurh.bober.navigation.Screen
 import com.zaurh.bober.navigation.SetupNavGraph
+import com.zaurh.bober.screen.auth.sign_in.SignInViewModel
 import com.zaurh.bober.screen.settings.theme.preferences.ThemePreferences
-import com.zaurh.bober.screen.sign_in.SignInViewModel
 import com.zaurh.bober.ui.theme.BoberTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -98,7 +97,6 @@ class MainActivity : ComponentActivity() {
             }
             LaunchedEffect(deepLinkState.value) {
                 if (deepLinkState.value.isNotEmpty()) {
-
                     // Introduce a short delay before clearing the state
                     delay(500) // Adjust delay time as needed
                     deepLinkState.value = ""
@@ -125,7 +123,7 @@ class MainActivity : ComponentActivity() {
             BoberTheme(darkTheme = savedTheme.value ?: false) {
                 LaunchedEffect(key1 = loading.value) {
                     if (!loading.value) {
-                        delay(500)
+                        delay(1000)
                         appReady = true
                     }
                 }
@@ -139,7 +137,7 @@ class MainActivity : ComponentActivity() {
                         startDestination =
                         if (signedIn.value) "chat_graph"
                         else
-                            Screen.SignInScreen.route,
+                            "sign_in_graph",
                         deepLink = deepLinkState.value,
                         darkTheme = savedTheme.value ?: false,
                         onThemeUpdated = {

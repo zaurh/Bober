@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 data class UserData(
     val id: String? = "",
     val fcmToken: String? = "",
+    val googleId: String? = "",
     val premiumCards: List<PremiumCardData>? = listOf(),
     val name: String? = "",
     val gender: Gender? = Gender.PREFER_NOT_TO_SAY,
@@ -43,6 +44,7 @@ data class UserData(
 
 fun UserData.toUserEntity() = UserEntity(
     userId = id,
+    googleId = googleId,
     premiumCards = premiumCards,
     name = name,
     gender = gender,

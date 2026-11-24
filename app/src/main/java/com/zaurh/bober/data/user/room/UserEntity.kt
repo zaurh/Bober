@@ -21,6 +21,7 @@ import com.zaurh.bober.data.user.UserData
 data class UserEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val userId: String?,
+    val googleId: String?,
     val premiumCards: List<PremiumCardData>?,
     val name: String?,
     val gender: Gender?,
